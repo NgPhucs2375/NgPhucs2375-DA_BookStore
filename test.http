@@ -26,3 +26,43 @@ Content-Type: application/json
   "price": 299000.0,
   "stockQuantity": 50
 }
+
+### =========================================
+### TEST TÍNH NĂNG AUTH (ĐĂNG NHẬP / ĐĂNG KÝ)
+### =========================================
+
+### 1. Đăng ký tài khoản mới
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "scu",
+  "passwordHash": "hehe@1337"
+}
+
+### 2. Đăng ký lại tài khoản trùng tên (Test lỗi)
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "scu",
+  "passwordHash": "123456"
+}
+
+### 3. Đăng nhập đúng thông tin
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "scu",
+  "passwordHash": "Scu123"
+}
+
+### 4. Đăng nhập sai mật khẩu (Hacker test)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "scu",
+  "passwordHash": "Scu"
+}

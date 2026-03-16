@@ -22,5 +22,7 @@ public class Book {
     private Double price;
     private Integer stockQuantity;
 
-
+    @ManyToOne
+    @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS
+    private Category category;
 }

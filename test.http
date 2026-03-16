@@ -26,3 +26,42 @@ Content-Type: application/json
   "price": 299000.0,
   "stockQuantity": 50
 }
+
+
+### ================= BẢNG THỂ LOẠI (CATEGORY) =================
+
+### 1. Thêm một thể loại mới (Ví dụ: Sách CNTT)
+POST http://localhost:8080/api/categories
+Content-Type: application/json
+
+{
+  "name": "Sách CNTT",
+  "description": "Các sách về lập trình, phần mềm và hệ thống"
+}
+
+### 2. Thêm một thể loại thứ hai (Ví dụ: Văn học)
+POST http://localhost:8080/api/categories
+Content-Type: application/json
+
+{
+  "name": "Văn học",
+  "description": "Tiểu thuyết, truyện ngắn, thơ ca"
+}
+
+### 3. Xem toàn bộ danh sách thể loại
+GET http://localhost:8080/api/categories
+
+### Thêm sách mới có gắn Thể loại (Sách CNTT - ID 1)
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "Clean Code",
+  "author": "Robert C. Martin",
+  "description": "Sách gối đầu giường cho Coder",
+  "price": 350000.0,
+  "stockQuantity": 20,
+  "category": {
+    "id": 1
+  }
+}

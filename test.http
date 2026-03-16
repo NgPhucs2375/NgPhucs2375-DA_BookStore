@@ -28,6 +28,7 @@ Content-Type: application/json
 }
 
 
+
 ### ================= BẢNG THỂ LOẠI (CATEGORY) =================
 
 ### 1. Thêm một thể loại mới (Ví dụ: Sách CNTT)
@@ -63,5 +64,44 @@ Content-Type: application/json
   "stockQuantity": 20,
   "category": {
     "id": 1
-  }
+  }}
+
+### =========================================
+### TEST TÍNH NĂNG AUTH (ĐĂNG NHẬP / ĐĂNG KÝ)
+### =========================================
+
+### 1. Đăng ký tài khoản mới
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "scu",
+  "passwordHash": "hehe@1337"
+}
+
+### 2. Đăng ký lại tài khoản trùng tên (Test lỗi)
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "scu",
+  "passwordHash": "123456"
+}
+
+### 3. Đăng nhập đúng thông tin
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "scu",
+  "passwordHash": "Scu123"
+}
+
+### 4. Đăng nhập sai mật khẩu (Hacker test)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "scu",
+  "passwordHash": "Scu"
 }

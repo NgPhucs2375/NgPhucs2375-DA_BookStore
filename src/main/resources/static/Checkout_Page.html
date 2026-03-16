@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth bg-[#fbfaf8]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKOM - Thanh Toán Đơn Hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-peach': '#F8D9C0',
+                        'brand-cream': '#FAF5E8',
+                        'brand-biscuit': '#D19C74',
+                        'brand-dark': '#5D4037',
+                        'brand-accent': '#E5CBB5',
+                        'brand-orange': '#ea580c',
+                        'brand-orange-light': '#ffedd5',
+                        'brand-green': '#16a34a',
+                    },
+                    fontFamily: {
+                        sans: ['Quicksand', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(93, 64, 55, 0.05)',
+                        'float': '0 10px 30px -5px rgba(93, 64, 55, 0.1)',
+                        'sticky': '0 -4px 20px rgba(0, 0, 0, 0.05)',
+                        'card': '0 0 0 1px #E5CBB5, 0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                        'card-active': '0 0 0 2px #ea580c, 0 4px 15px -3px rgba(234, 88, 12, 0.2)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #D19C74; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b88560; }
+
+        /* Custom Radio Cards Logic */
+        .radio-card-input { display: none; }
+
+        /* Trạng thái mặc định của Label đóng vai trò như Card */
+        .radio-card-label {
+            display: flex;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 0 0 1px #E5CBB5;
+        }
+
+        .radio-card-label:hover {
+            background-color: #FAF5E8;
+        }
+
+        /* Vòng tròn Radio tùy chỉnh */
+        .radio-circle {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #cbd5e1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .radio-circle::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background-color: #ea580c;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Trạng thái Active khi được chọn */
+        .radio-card-input:checked + .radio-card-label {
+            box-shadow: 0 0 0 2px #ea580c, 0 4px 15px -3px rgba(234, 88, 12, 0.15);
+            background-color: #fffaf0;
+        }
+
+        .radio-card-input:checked + .radio-card-label .radio-circle {
+            border-color: #ea580c;
+        }
+
+        .radio-card-input:checked + .radio-card-label .radio-circle::after {
+            transform: scale(1);
+        }
+
+        /* Floating Label Input Fields */
+        .floating-input {
+            width: 100%;
+            padding: 1.25rem 1rem 0.5rem 1rem;
+            border: 1px solid #E5CBB5;
+            border-radius: 0.5rem;
+            outline: none;
+            background-color: white;
+            transition: border-color 0.2s ease;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #5D4037;
+        }
+
+        .floating-input:focus {
+            border-color: #D19C74;
+            box-shadow: 0 0 0 3px rgba(209, 156, 116, 0.2);
+        }
+
+        .floating-label {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+
+        .floating-input:focus ~ .floating-label,
+        .floating-input:not(:placeholder-shown) ~ .floating-label {
+            top: 0.5rem;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #D19C74;
+        }
+
+        /* Ẩn hiện chi tiết form thanh toán thẻ */
+        .credit-card-form {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.3s ease-out;
+        }
+        .radio-card-input:checked ~ .credit-card-form {
+            grid-template-rows: 1fr;
+        }
+        .credit-card-form > div {
+            overflow: hidden;
+        }
+
+    </style>
+</head>
+<body class="text-brand-dark flex flex-col min-h-screen selection:bg-brand-biscuit selection:text-white">
+
+<header class="bg-white sticky top-0 z-50 shadow-sm border-b border-brand-accent">
+    <div class="max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
+
+        <div class="flex items-center gap-4 lg:gap-6">
+            <a href="#" class="text-3xl font-extrabold tracking-tighter text-brand-dark hover:text-brand-biscuit transition-colors flex items-center gap-2">
+                <div class="bg-brand-biscuit text-white p-1.5 rounded-lg shadow-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </div>
+                BOOKOM
+            </a>
+            <div class="h-8 w-px bg-brand-accent hidden md:block"></div>
+            <h1 class="text-xl lg:text-2xl font-bold text-brand-dark hidden md:block uppercase tracking-widest">Thanh Toán An Toàn</h1>
+        </div>
+
+        <div class="hidden sm:flex items-center gap-3 lg:gap-4 text-xs lg:text-sm font-bold">
+            <a href="#" class="flex items-center gap-2 text-gray-500 hover:text-brand-biscuit transition">
+                <div class="w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center border border-gray-300"><svg class="w-3 h-3 lg:w-4 lg:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
+                <span class="hidden lg:block">Giỏ Hàng</span>
+            </a>
+            <div class="w-8 lg:w-12 h-px bg-brand-orange"></div>
+            <div class="flex items-center gap-2 text-brand-orange">
+                <div class="w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-brand-orange text-white flex items-center justify-center border-2 border-brand-orange shadow-sm">2</div>
+                <span class="hidden lg:block text-brand-orange">Thanh Toán</span>
+            </div>
+            <div class="w-8 lg:w-12 h-px bg-brand-accent"></div>
+            <div class="flex items-center gap-2 text-gray-400">
+                <div class="w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-white text-gray-400 flex items-center justify-center border-2 border-gray-300">3</div>
+                <span class="hidden lg:block">Hoàn Tất</span>
+            </div>
+        </div>
+
+        <a href="#" class="sm:hidden text-brand-biscuit font-bold text-sm flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Quay lại
+        </a>
+    </div>
+</header>
+
+<main class="flex-grow pb-24">
+
+    <div class="bg-brand-orange w-full h-1"></div>
+
+    <section class="max-w-[1200px] mx-auto px-4 md:px-6 pt-8 pb-12 flex flex-col lg:flex-row gap-8 xl:gap-10">
+
+        <div class="w-full lg:w-7/12 xl:w-8/12 flex flex-col gap-8">
+
+            <div class="bg-white border border-brand-accent rounded-2xl shadow-sm p-6 lg:p-8">
+                <h2 class="text-xl font-bold text-brand-dark uppercase tracking-wide flex items-center gap-3 mb-6 border-b border-brand-accent pb-4">
+                    <div class="bg-brand-peach/50 p-2 rounded-lg text-brand-orange">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </div>
+                    1. Địa Chỉ Giao Hàng
+                </h2>
+
+                <div class="flex flex-col gap-4 mb-6">
+
+                    <div class="relative">
+                        <input type="radio" name="address" id="address_1" class="radio-card-input" checked>
+                        <label for="address_1" class="radio-card-label bg-white p-4 rounded-xl">
+                            <div class="radio-circle mt-1 mr-4"></div>
+                            <div class="flex-grow">
+                                <div class="flex items-center gap-3 mb-1">
+                                    <h3 class="font-bold text-brand-dark text-base">William Trần</h3>
+                                    <span class="text-gray-400 font-medium text-sm">|</span>
+                                    <span class="font-bold text-gray-600 text-sm">0987 654 321</span>
+                                    <span class="bg-brand-orange text-white text-[10px] font-black px-2 py-0.5 rounded ml-auto uppercase shadow-sm">Mặc Định</span>
+                                </div>
+                                <div class="text-sm text-gray-600 font-medium leading-relaxed">
+                                    Căn hộ A12.05, Tòa nhà Innovation, Công viên Phần mềm Quang Trung<br>
+                                    Phường Tân Chánh Hiệp, Quận 12, TP. Hồ Chí Minh
+                                </div>
+                                <span class="inline-block border border-green-500 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded mt-2">Nhà Riêng</span>
+                            </div>
+                            <button type="button" class="text-sm font-bold text-brand-biscuit hover:underline ml-4 h-max mt-1">Sửa</button>
+                        </label>
+                    </div>
+
+                    <div class="relative">
+                        <input type="radio" name="address" id="address_2" class="radio-card-input">
+                        <label for="address_2" class="radio-card-label bg-white p-4 rounded-xl">
+                            <div class="radio-circle mt-1 mr-4"></div>
+                            <div class="flex-grow">
+                                <div class="flex items-center gap-3 mb-1">
+                                    <h3 class="font-bold text-brand-dark text-base">Will Đặng</h3>
+                                    <span class="text-gray-400 font-medium text-sm">|</span>
+                                    <span class="font-bold text-gray-600 text-sm">0901 234 567</span>
+                                </div>
+                                <div class="text-sm text-gray-600 font-medium leading-relaxed">
+                                    Tầng 5, Tòa nhà Bitexco Financial Tower, Số 2 Hải Triều<br>
+                                    Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh
+                                </div>
+                                <span class="inline-block border border-blue-500 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded mt-2">Văn Phòng</span>
+                            </div>
+                            <button type="button" class="text-sm font-bold text-brand-biscuit hover:underline ml-4 h-max mt-1">Sửa</button>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-6 border-t border-brand-accent border-dashed pt-6">
+                    <div class="flex items-center gap-2 text-brand-orange font-bold text-sm mb-4 cursor-pointer hover:text-orange-700 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Thêm địa chỉ giao hàng mới
+                    </div>
+
+                    <div class="bg-brand-cream/40 p-5 rounded-xl border border-brand-accent grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="relative w-full">
+                            <input type="text" id="fullname" class="floating-input" placeholder=" ">
+                            <label for="fullname" class="floating-label">Họ và Tên người nhận</label>
+                        </div>
+                        <div class="relative w-full">
+                            <input type="tel" id="phone" class="floating-input" placeholder=" ">
+                            <label for="phone" class="floating-label">Số điện thoại liên hệ</label>
+                        </div>
+
+                        <div class="relative w-full md:col-span-2">
+                            <select class="w-full padding-for-select border border-brand-accent rounded-lg outline-none bg-white transition-colors text-sm font-semibold text-brand-dark cursor-pointer appearance-none focus:border-brand-biscuit focus:ring-4 focus:ring-brand-biscuit/20" style="padding: 1rem 1rem;">
+                                <option value="" disabled selected>Chọn Tỉnh / Thành Phố</option>
+                                <option value="HCM">Hồ Chí Minh</option>
+                                <option value="HN">Hà Nội</option>
+                                <option value="DN">Đà Nẵng</option>
+                                <option value="CT">Cần Thơ</option>
+                                <option value="HP">Hải Phòng</option>
+                                <option value="BD">Bình Dương</option>
+                                <option value="DNA">Đồng Nai</option>
+                                <option value="VT">Bà Rịa - Vũng Tàu</option>
+                                <option value="LA">Long An</option>
+                            </select>
+                            <svg class="w-5 h-5 absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+
+                        <div class="relative w-full md:col-span-2">
+                            <input type="text" id="address_detail" class="floating-input" placeholder=" ">
+                            <label for="address_detail" class="floating-label">Số nhà, Tên đường, Tòa nhà, Phường/Xã...</label>
+                        </div>
+
+                        <div class="md:col-span-2 flex items-center gap-4 mt-2">
+                            <span class="text-sm font-bold text-gray-500">Loại địa chỉ:</span>
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="radio" name="addr_type" class="accent-brand-orange w-4 h-4">
+                                <span class="text-sm font-medium group-hover:text-brand-orange transition">Nhà riêng</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="radio" name="addr_type" class="accent-brand-orange w-4 h-4">
+                                <span class="text-sm font-medium group-hover:text-brand-orange transition">Văn phòng</span>
+                            </label>
+                        </div>
+
+                        <div class="md:col-span-2 flex justify-end gap-3 mt-2">
+                            <button type="button" class="px-6 py-2 rounded-lg font-bold text-sm text-gray-600 hover:bg-gray-100 transition border border-transparent">Hủy</button>
+                            <button type="button" class="px-6 py-2 rounded-lg font-bold text-sm bg-brand-dark text-white hover:bg-brand-biscuit transition shadow-sm">Lưu Địa Chỉ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-brand-accent rounded-2xl shadow-sm p-6 lg:p-8">
+                <h2 class="text-xl font-bold text-brand-dark uppercase tracking-wide flex items-center gap-3 mb-6 border-b border-brand-accent pb-4">
+                    <div class="bg-blue-100 p-2 rounded-lg text-blue-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    </div>
+                    2. Phương Thức Giao Hàng
+                </h2>
+
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="relative">
+                        <input type="radio" name="shipping" id="ship_standard" class="radio-card-input" checked>
+                        <label for="ship_standard" class="radio-card-label bg-white p-4 lg:p-5 rounded-xl items-center">
+                            <div class="radio-circle mr-4"></div>
+                            <div class="flex-grow flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h3 class="font-bold text-brand-dark text-base">Giao Hàng Tiêu Chuẩn</h3>
+                                    </div>
+                                    <p class="text-sm text-gray-500 font-medium">Nhận hàng vào <span class="text-brand-green font-bold">Thứ 3, 17 Tháng 3</span></p>
+                                </div>
+                                <div class="font-black text-brand-dark text-lg md:text-right">
+                                    35.000đ
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="relative">
+                        <input type="radio" name="shipping" id="ship_express" class="radio-card-input">
+                        <label for="ship_express" class="radio-card-label bg-white p-4 lg:p-5 rounded-xl items-center">
+                            <div class="radio-circle mr-4"></div>
+                            <div class="flex-grow flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h3 class="font-bold text-brand-dark text-base">Giao Hàng Nhanh</h3>
+                                        <span class="bg-red-100 text-red-600 text-[10px] font-black px-2 py-0.5 rounded shadow-sm border border-red-200">Gợi Ý</span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 font-medium">Nhận hàng vào <span class="text-brand-green font-bold">Thứ 2, 16 Tháng 3</span></p>
+                                </div>
+                                <div class="font-black text-brand-dark text-lg md:text-right">
+                                    50.000đ
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="relative opacity-60 grayscale cursor-not-allowed">
+                        <input type="radio" name="shipping" id="ship_fire" class="radio-card-input" disabled>
+                        <label for="ship_fire" class="flex p-4 lg:p-5 rounded-xl items-center bg-gray-50 border border-gray-200">
+                            <div class="radio-circle mr-4"></div>
+                            <div class="flex-grow flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h3 class="font-bold text-gray-600 text-base">Giao Hỏa Tốc 2H</h3>
+                                        <span class="bg-gray-200 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded">Không Hỗ Trợ</span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 font-medium">Chỉ áp dụng trong nội thành TP.HCM hoặc Hà Nội.</p>
+                                </div>
+                                <div class="font-black text-gray-400 text-lg md:text-right">
+                                    --
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-brand-accent rounded-2xl shadow-sm p-6 lg:p-8">
+                <h2 class="text-xl font-bold text-brand-dark uppercase tracking-wide flex items-center gap-3 mb-6 border-b border-brand-accent pb-4">
+                    <div class="bg-green-100 p-2 rounded-lg text-green-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    </div>
+                    3. Phương Thức Thanh Toán
+                </h2>
+
+                <div class="grid grid-cols-1 gap-4">
+
+                    <div class="relative">
+                        <input type="radio" name="payment" id="pay_cod" class="radio-card-input" checked>
+                        <label for="pay_cod" class="radio-card-label bg-white p-4 rounded-xl items-center">
+                            <div class="radio-circle mr-4"></div>
+                            <div class="w-12 h-12 bg-[#E1F5FE] border border-[#B3E5FC] rounded-lg flex items-center justify-center mr-4 flex-shrink-0 text-[#0288D1]">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </div>
+                            <div class="flex-grow">
+                                <h3 class="font-bold text-brand-dark text-base mb-1">Thanh toán tiền mặt khi nhận hàng (COD)</h3>
+                                <p class="text-sm text-gray-500 font-medium">Bạn chỉ phải thanh toán khi nhận được sách.</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="relative">
+                        <input type="radio" name="payment" id="pay_momo" class="radio-card-input">
+                        <label for="pay_momo" class="radio-card-label bg-white p-4 rounded-xl items-center">
+                            <div class="radio-circle mr-4"></div>
+                            <div class="w-12 h-12 bg-[#FCE4EC] border border-[#ffb6c1] rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                                <div class="text-[#A50064] font-black text-sm tracking-tighter">MoMo</div>
+                            </div>
+                            <div class="flex-grow">
+                                <h3 class="font-bold text-brand-dark text-base mb-1">Thanh toán qua Ví điện tử MoMo</h3>
+                                <p class="text-sm text-gray-500 font-medium">Mở ứng dụng MoMo để quét mã QR.</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="relative">
+                        <input type="radio" name="payment" id="pay_card" class="radio-card-input">
+                        <label for="pay_card" class="radio-card-label bg-white p-4 rounded-xl items-center z-10 relative">
+                            <div class="radio-circle mr-4"></div>
+                            <div class="w-12 h-12 bg-[#E8EAF6] border border-[#C5CAE9] rounded-lg flex items-center justify-center mr-4 flex-shrink-0 text-[#3F51B5]">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex items-center gap-3 mb-1">
+                                    <h3 class="font-bold text-brand-dark text-base">Thẻ tín dụng / Ghi nợ quốc tế</h3>
+                                    <div class="flex gap-1">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" class="h-3 object-contain">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/2560px-Mastercard-logo.svg.png" class="h-4 object-contain">
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-500 font-medium">Hỗ trợ Visa, Mastercard, JCB, Amex.</p>
+                            </div>
+                        </label>
+
+                        <div class="credit-card-form -mt-2">
+                            <div class="bg-brand-cream/30 border border-brand-accent border-t-0 rounded-b-xl p-6 pt-8">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="relative w-full col-span-2">
+                                        <input type="text" id="cc_number" class="floating-input font-mono tracking-widest text-lg" placeholder=" ">
+                                        <label for="cc_number" class="floating-label">Số thẻ tín dụng</label>
+                                        <svg class="w-6 h-6 absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                                    </div>
+                                    <div class="relative w-full col-span-2">
+                                        <input type="text" id="cc_name" class="floating-input uppercase" placeholder=" ">
+                                        <label for="cc_name" class="floating-label">Tên in trên thẻ (Không dấu)</label>
+                                    </div>
+                                    <div class="relative w-full">
+                                        <input type="text" id="cc_exp" class="floating-input font-mono" placeholder=" ">
+                                        <label for="cc_exp" class="floating-label">Ngày hết hạn (MM/YY)</label>
+                                    </div>
+                                    <div class="relative w-full">
+                                        <input type="password" id="cc_cvv" class="floating-input font-mono tracking-widest" placeholder=" " maxlength="3">
+                                        <label for="cc_cvv" class="floating-label">Mã CVV/CVC</label>
+                                        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-help group">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            <div class="absolute bottom-full right-0 mb-2 w-48 bg-brand-dark text-white text-xs p-2 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                                                3 chữ số bảo mật ở mặt sau thẻ của bạn.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 mt-4 text-xs font-bold text-green-600 bg-green-50 px-3 py-2 rounded border border-green-100">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                    Thông tin thẻ được mã hóa 100% qua cổng thanh toán OnePay.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="bg-white border border-brand-accent rounded-2xl shadow-sm p-6">
+                <h3 class="font-bold text-brand-dark text-sm uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    Ghi Chú Đơn Hàng (Tùy chọn)
+                </h3>
+                <textarea class="w-full bg-brand-bg border border-brand-accent rounded-xl p-4 outline-none focus:border-brand-biscuit focus:ring-4 focus:ring-brand-biscuit/20 transition-all text-sm text-brand-dark resize-none h-24 font-medium" placeholder="Ví dụ: Giao hàng ngoài giờ hành chính, bọc thêm hộp carton chống sốc..."></textarea>
+            </div>
+
+        </div>
+
+        <div class="w-full lg:w-5/12 xl:w-4/12 relative">
+            <div class="bg-white border border-brand-accent rounded-2xl shadow-float sticky top-24 flex flex-col overflow-hidden">
+
+                <div class="bg-brand-dark text-brand-cream px-6 py-5 flex items-center justify-between">
+                    <h2 class="text-lg font-black uppercase tracking-widest flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Tóm Tắt Đơn Hàng
+                    </h2>
+                    <span class="bg-white text-brand-dark text-xs font-bold px-2 py-1 rounded-full">3 Sản Phẩm</span>
+                </div>
+
+                <div class="p-6 max-h-[35vh] overflow-y-auto border-b border-brand-accent sidebar-scroll">
+
+                    <div class="flex gap-4 mb-5">
+                        <div class="relative w-16 aspect-[3/4] bg-[#2c3e50] border border-gray-200 rounded shadow-sm flex-shrink-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-[6px] text-center px-1">ĐẠI GIA GATSBY</span>
+                            <span class="absolute -top-2 -right-2 bg-brand-orange text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">x2</span>
+                        </div>
+                        <div class="flex flex-col flex-grow justify-center">
+                            <h4 class="font-bold text-brand-dark text-xs leading-snug mb-1 line-clamp-2">Đại Gia Gatsby (Bản Đặc Biệt)</h4>
+                            <p class="text-[10px] text-gray-500 font-medium mb-1">Loại: Bìa Cứng</p>
+                            <div class="font-bold text-brand-dark text-sm">200.000đ</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 mb-5">
+                        <div class="relative w-16 aspect-[3/4] bg-[#8e44ad] border border-gray-200 rounded shadow-sm flex-shrink-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-[6px] text-center px-1">NHÀ GIẢ KIM</span>
+                            <span class="absolute -top-2 -right-2 bg-brand-orange text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">x1</span>
+                        </div>
+                        <div class="flex flex-col flex-grow justify-center">
+                            <h4 class="font-bold text-brand-dark text-xs leading-snug mb-1 line-clamp-2">Nhà Giả Kim (Tái bản 2024)</h4>
+                            <p class="text-[10px] text-gray-500 font-medium mb-1">Loại: Bìa Mềm</p>
+                            <div class="font-bold text-brand-dark text-sm">71.000đ</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <div class="relative w-16 aspect-[3/4] bg-[#c0392b] border border-gray-200 rounded shadow-sm flex-shrink-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-[6px] text-center px-1 leading-tight">TƯ DUY<br>NHANH CHẬM</span>
+                            <span class="absolute -top-2 -right-2 bg-brand-orange text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">x1</span>
+                        </div>
+                        <div class="flex flex-col flex-grow justify-center">
+                            <h4 class="font-bold text-brand-dark text-xs leading-snug mb-1 line-clamp-2">Tư Duy Nhanh Và Chậm</h4>
+                            <p class="text-[10px] text-gray-500 font-medium mb-1">Loại: Bìa Cứng</p>
+                            <div class="font-bold text-brand-dark text-sm">250.000đ</div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="p-6 border-b border-brand-accent bg-brand-bg/50">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-bold text-brand-dark text-sm">Mã Khuyến Mãi / Voucher</h3>
+                        <a href="#" class="text-xs font-bold text-brand-biscuit hover:underline">Xem Kho Voucher</a>
+                    </div>
+                    <div class="flex border border-brand-accent rounded-lg overflow-hidden shadow-inner bg-white">
+                        <input type="text" placeholder="Nhập mã BOOKOM..." class="w-full px-4 py-2 outline-none text-sm font-medium uppercase text-brand-dark">
+                        <button class="bg-gray-800 text-white px-5 font-bold text-sm hover:bg-black transition">Áp Dụng</button>
+                    </div>
+
+                    <div class="mt-3 flex items-center justify-between bg-green-50 border border-green-200 px-3 py-2 rounded text-xs font-bold text-green-700">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            BOOKOM15K (Giảm 15.000đ)
+                        </div>
+                        <button class="text-gray-400 hover:text-red-500 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    </div>
+                </div>
+
+                <div class="p-6 flex flex-col gap-4 text-sm text-brand-dark font-medium">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-500">Tạm tính (4 sản phẩm)</span>
+                        <span class="font-bold text-base">521.000đ</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-500">Phí vận chuyển tiêu chuẩn</span>
+                        <span class="font-bold text-base">35.000đ</span>
+                    </div>
+                    <div class="flex justify-between items-center text-brand-orange">
+                        <span>Giảm giá từ Shop (Combo)</span>
+                        <span class="font-bold text-base">-25.000đ</span>
+                    </div>
+                    <div class="flex justify-between items-center text-brand-orange">
+                        <span>Voucher BOOKOM</span>
+                        <span class="font-bold text-base">-15.000đ</span>
+                    </div>
+
+                    <hr class="border-brand-accent my-2">
+
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between items-end">
+                            <span class="text-base font-bold uppercase">Tổng thanh toán</span>
+                            <span class="text-3xl lg:text-4xl font-black text-brand-orange">516.000đ</span>
+                        </div>
+                        <div class="text-right text-[10px] text-gray-400 font-bold">(Đã bao gồm VAT nếu có)</div>
+                    </div>
+
+                    <button class="w-full bg-brand-orange text-white text-xl font-black py-4 lg:py-5 rounded-xl shadow-[0_10px_20px_rgba(234,88,12,0.3)] hover:bg-orange-700 transition-all transform hover:-translate-y-1 mt-4 uppercase tracking-widest flex items-center justify-center gap-3 group">
+                        Đặt Hàng Ngay
+                        <svg class="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+
+                    <p class="text-center text-[10px] text-gray-500 mt-2 leading-relaxed">
+                        Nhấn "Đặt Hàng Ngay" đồng nghĩa với việc bạn đồng ý tuân theo <br>
+                        <a href="#" class="text-brand-biscuit hover:underline">Điều khoản Dịch vụ</a> và <a href="#" class="text-brand-biscuit hover:underline">Chính sách Bảo mật</a> của BOOKOM.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+</main>
+
+<footer class="bg-white border-t border-brand-accent py-8">
+    <div class="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+
+        <div class="text-xs font-bold text-gray-500 text-center md:text-left">
+            © 2026 BOOKOM. Nền tảng phân phối sách bản quyền.<br>
+            <span class="font-medium opacity-80">Đồ án nhóm: Bon chang linh ngu lam.</span>
+        </div>
+
+        <div class="flex flex-col items-center md:items-end gap-3">
+            <div class="flex gap-2">
+                <div class="h-6 w-10 border border-gray-200 rounded flex items-center justify-center bg-gray-50 text-[8px] font-bold text-blue-900">VISA</div>
+                <div class="h-6 w-10 border border-gray-200 rounded flex items-center justify-center bg-gray-50 text-[8px] font-bold text-red-600">MASTER</div>
+                <div class="h-6 w-10 border border-gray-200 rounded flex items-center justify-center bg-gray-50 text-[8px] font-bold text-pink-600">MOMO</div>
+                <div class="h-6 w-10 border border-gray-200 rounded flex items-center justify-center bg-gray-50 text-[8px] font-bold text-green-600">COD</div>
+            </div>
+            <div class="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                <svg class="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                Dữ liệu của bạn được bảo vệ qua kết nối mã hóa SSL an toàn.
+            </div>
+        </div>
+
+    </div>
+</footer>
+
+</body>
+</html>

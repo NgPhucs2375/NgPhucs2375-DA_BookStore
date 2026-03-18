@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKOM - Chi Tiết Sách Premium (Theme Nâu Warm)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-brown-dark': '#4a3b32',  /* Nâu đậm chính */
+                        'brand-brown-light': '#cda27a', /* Nâu nhạt accent */
+                        'brand-orange': '#ea580c',      /* Cam BOOKOM */
+                        'brand-bg': '#fbfaf8',          /* Nền kem cực nhạt */
+                        'brand-border': '#eaddcf',
+                        'brand-section': '#FFFFFF'       /* Nền trắng cho các khối nội dung */
+                    },
+                    fontFamily: { sans: ['Quicksand', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-bg font-sans text-brand-brown-dark">
+
+<header class="bg-white sticky top-0 z-50 shadow-sm border-b border-brand-border px-8 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-8">
+        <a href="index.html" class="text-3xl font-black tracking-tighter flex items-center gap-2">
+            <span class="text-brand-orange">BOOK</span><span class="text-brand-brown-dark">OM</span>
+        </a>
+        
+        <nav class="hidden md:flex items-center gap-8 font-bold text-sm uppercase tracking-widest text-brand-brown-dark/80">
+            <a href="index.html" class="hover:text-brand-orange transition active:text-brand-orange">Trang chủ</a>
+            <a href="#" class="hover:text-brand-orange transition">Sách</a>
+            <a href="#" class="hover:text-brand-orange transition">Thể loại</a>
+            <a href="#" class="hover:text-brand-orange transition">Liên hệ</a>
+        </nav>
+
+        <div class="flex items-center gap-6">
+            <div class="relative hidden lg:block">
+                <input type="text" placeholder="Tìm cuốn sách bạn yêu thích..." class="w-72 bg-slate-50 border border-brand-border rounded-xl px-5 py-2.5 outline-none focus:ring-2 ring-brand-brown-light transition font-medium text-sm text-brand-brown-dark">
+            </div>
+            <a href="Cart_Page.html" class="relative group text-brand-brown-dark/60">
+                <svg class="w-7 h-7 group-hover:text-brand-orange transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                <span class="absolute -top-1 -right-2 bg-brand-orange text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">2</span>
+            </a>
+            <div class="w-10 h-10 rounded-xl bg-brand-brown-dark text-white flex items-center justify-center font-bold shadow-md">T</div>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-12 space-y-12">
+    
+    <div class="bg-brand-section p-12 rounded-[2rem] border-2 border-brand-brown-dark shadow-lg flex flex-col md:flex-row gap-12">
+        
+        <div class="w-full md:w-2/5 space-y-8">
+            <div class="aspect-[3/4] bg-slate-100 rounded-3xl border border-brand-border overflow-hidden p-8 flex items-center justify-center shadow-inner relative group">
+                <div class="w-full h-full bg-slate-300 rounded-2xl flex items-center justify-center text-slate-500 text-3xl font-black transform group-hover:scale-105 transition-transform duration-700">
+                    ẢNH BÌA SÁCH
+                </div>
+                <div class="absolute top-6 left-6 bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-black uppercase">-30%</div>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-4">
+                <div class="aspect-square bg-slate-100 rounded-2xl border-2 border-brand-orange shadow-sm"></div>
+                <div class="aspect-square bg-slate-100 rounded-2xl border border-brand-border cursor-pointer transition"></div>
+                <div class="aspect-square bg-slate-100 rounded-2xl border border-brand-border cursor-pointer transition"></div>
+                <div class="aspect-square bg-slate-100 rounded-2xl border border-brand-border cursor-pointer transition"></div>
+            </div>
+
+            <div class="border border-brand-border rounded-3xl p-6 flex items-center justify-between bg-slate-50 mt-10 shadow-inner">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center text-white font-black text-xl">NS</div>
+                    <div>
+                        <h4 class="font-bold text-lg text-brand-brown-dark">Nhà Sách Tuổi Trẻ</h4>
+                        <div class="flex items-center gap-3 mt-1.5">
+                            <span class="text-xs font-bold text-gray-500">Shop Cũ</span>
+                            <span class="text-xs font-bold text-gray-500">2.5k Theo dõi</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="Shop_Storefront.html" class="px-5 py-2 border-2 border-brand-brown-light text-brand-brown-light rounded-xl font-bold text-sm hover:bg-brand-brown-light hover:text-white transition">Xem Shop</a>
+            </div>
+        </div>
+
+        <div class="w-full md:w-3/5 space-y-10">
+            <div class="space-y-4">
+                <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Mới về</span>
+                <h1 class="text-5xl font-black leading-tight tracking-tighter text-brand-brown-dark">Tâm Lý Học Đám Đông</h1>
+                <div class="flex items-baseline gap-6 py-6 border-y border-brand-border">
+                    <span class="text-5xl font-black text-brand-orange">85.000đ</span>
+                    <span class="text-2xl text-slate-300 line-through">120.000đ</span>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="flex items-center gap-6">
+                    <span class="text-sm font-bold uppercase tracking-widest text-gray-400 w-24">Bìa:</span>
+                    <div class="flex gap-2">
+                        <button class="px-5 py-2.5 border-2 border-brand-orange bg-orange-50/50 rounded-xl font-bold text-sm text-brand-orange shadow-sm">Bìa mềm</button>
+                        <button class="px-5 py-2.5 border border-brand-border rounded-xl font-semibold text-sm hover:border-brand-brown-light transition">Bìa cứng</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <span class="text-sm font-bold uppercase tracking-widest text-gray-400 w-24">Tình trạng:</span>
+                    <div class="flex gap-2">
+                        <button class="px-5 py-2.5 border border-brand-border rounded-xl font-semibold text-sm hover:border-brand-brown-light transition">Mới (100%)</button>
+                        <button class="px-5 py-2.5 border-2 border-brand-orange bg-orange-50/50 rounded-xl font-bold text-sm text-brand-orange shadow-sm">Like new (99%)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-5 pt-10 border-t border-brand-border">
+                <div class="flex items-center gap-4 bg-slate-50 border border-brand-border rounded-2xl p-2 w-full sm:w-auto self-start shadow-inner">
+                    <span class="text-sm font-bold uppercase tracking-widest text-gray-400 px-2">SL:</span>
+                    <button class="w-10 h-10 flex items-center justify-center font-bold text-xl hover:text-brand-orange">-</button>
+                    <input type="text" value="1" class="w-10 text-center font-black bg-transparent outline-none">
+                    <button class="w-10 h-10 flex items-center justify-center font-bold text-xl hover:text-brand-orange">+</button>
+                </div>
+                <button class="flex-1 bg-brand-brown-dark text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm hover:bg-black transition active:scale-95 shadow-lg shadow-brand-brown-dark/20">
+                    Thêm vào giỏ
+                </button>
+                <button class="flex-1 bg-brand-brown-dark text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm hover:bg-black transition active:scale-95 shadow-lg shadow-brand-brown-dark/20">
+                    Mua ngay
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-brand-section p-12 rounded-[2rem] border-2 border-brand-brown-dark shadow-lg">
+        <h2 class="text-2xl font-black mb-10 text-brand-brown-dark tracking-tight">Sách tương tự dành cho bạn</h2>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div class="space-y-4 group">
+                <div class="aspect-[3/4] bg-slate-100 rounded-3xl border border-brand-border p-5 flex items-center justify-center transition hover:shadow-md">
+                    <div class="w-full h-full bg-slate-300 rounded-2xl shadow-inner group-hover:scale-105 transition duration-500"></div>
+                </div>
+                <div>
+                    <p class="text-base font-bold text-brand-brown-dark group-hover:text-brand-orange transition">Clean Code</p>
+                    <p class="text-sm font-black text-brand-orange mt-1">125.000đ</p>
+                </div>
+            </div>
+            <div class="space-y-4 group">
+                <div class="aspect-[3/4] bg-slate-100 rounded-3xl border border-brand-border p-5 flex items-center justify-center transition hover:shadow-md">
+                    <div class="w-full h-full bg-slate-300 rounded-2xl shadow-inner group-hover:scale-105 transition duration-500"></div>
+                </div>
+                <div>
+                    <p class="text-base font-bold text-brand-brown-dark group-hover:text-brand-orange transition">Nhà giả kim</p>
+                    <p class="text-sm font-black text-brand-orange mt-1">89.000đ</p>
+                </div>
+            </div>
+            <div class="space-y-4 group">
+                <div class="aspect-[3/4] bg-slate-100 rounded-3xl border border-brand-border p-5 flex items-center justify-center transition hover:shadow-md">
+                    <div class="w-full h-full bg-slate-300 rounded-2xl shadow-inner group-hover:scale-105 transition duration-500"></div>
+                </div>
+                <div>
+                    <p class="text-base font-bold text-brand-brown-dark group-hover:text-brand-orange transition">Tâm lý học đám đông</p>
+                    <p class="text-sm font-black text-brand-orange mt-1">85.000đ</p>
+                </div>
+            </div>
+            <div class="space-y-4 group">
+                <div class="aspect-[3/4] bg-slate-100 rounded-3xl border border-brand-border p-5 flex items-center justify-center transition hover:shadow-md">
+                    <div class="w-full h-full bg-slate-300 rounded-2xl shadow-inner group-hover:scale-105 transition duration-500"></div>
+                </div>
+                <div>
+                    <p class="text-base font-bold text-brand-brown-dark group-hover:text-brand-orange transition">Cha giàu cha nghèo</p>
+                    <p class="text-sm font-black text-brand-orange mt-1">110.000đ</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-brand-brown-dark text-slate-100 mt-20 py-16 px-8 border-t border-brand-border shadow-2xl">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+        <a href="index.html" class="text-3xl font-black tracking-tighter flex items-center gap-2">
+            <span class="text-brand-orange">BOOK</span><span class="text-white">OM</span>
+        </a>
+        <p class="text-xs font-semibold tracking-widest uppercase opacity-80 text-center md:text-right">© Đồ án nhóm: Ban chang linh ngu lam - 2026</p>
+    </div>
+</footer>
+
+</body>
+</html>

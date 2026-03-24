@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKOM SELLER HUB - Quản lý Kho Hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-brown': '#cda27a',
+                        'brand-dark': '#4a3b32',
+                        'brand-bg': '#f1f5f9',
+                        'brand-orange': '#ea580c',
+                        'brand-border': '#e2e8f0',
+                    },
+                    fontFamily: { sans: ['Quicksand', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-bg font-sans text-brand-dark flex h-screen overflow-hidden">
+
+<aside class="w-64 bg-white border-r border-brand-border flex flex-col hidden md:flex h-full shadow-sm z-20">
+    <div class="h-20 flex items-center px-6 border-b border-brand-border">
+        <a href="Seller_Dashboard.html" class="text-2xl font-black text-brand-dark">SELLER <span class="text-brand-orange">HUB</span></a>
+    </div>
+    <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+        <a href="Seller_Dashboard.html" class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg> Tổng quan
+        </a>
+        <a href="Seller_Orders.html" class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> Đơn hàng mới
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 bg-brand-brown/10 text-brand-dark rounded-lg font-bold shadow-sm">
+            <svg class="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg> Kho hàng
+        </a>
+        <a href="Seller_Analytics.html" class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> Doanh thu
+        </a>
+    </nav>
+</aside>
+
+<main class="flex-1 flex flex-col overflow-hidden">
+    <header class="h-20 bg-white border-b border-brand-border flex items-center justify-between px-8 z-10 shadow-sm">
+        <h1 class="text-xl font-bold">Quản lý kho sách</h1>
+        <a href="Seller_Product_Detail.html" class="bg-brand-orange text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-orange-700 transition flex items-center gap-2 hover:scale-105 active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Thêm sách mới
+        </a>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8 space-y-6">
+        <div class="flex flex-col md:flex-row justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-brand-border">
+            <div class="flex gap-2 w-full md:w-auto">
+                <input type="text" placeholder="Tìm theo tên, mã SKU..." class="px-4 py-2 border border-brand-border rounded-lg text-sm outline-none focus:border-brand-brown w-full md:w-64 font-medium">
+                <select class="px-4 py-2 border border-brand-border rounded-lg text-sm outline-none focus:border-brand-brown font-medium bg-white">
+                    <option>Tất cả danh mục</option>
+                    <option>Sách Văn học</option>
+                    <option>Kỹ năng sống</option>
+                    <option>Công nghệ IT</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2 text-sm font-bold text-slate-500">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span> 5 Sắp hết hàng
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-b border-brand-border">
+                    <tr>
+                        <th class="px-6 py-5">Sản phẩm</th>
+                        <th class="px-6 py-5">Danh mục</th>
+                        <th class="px-6 py-5">Giá bán</th>
+                        <th class="px-6 py-5">Kho</th>
+                        <th class="px-6 py-5">Trạng thái</th>
+                        <th class="px-6 py-5 text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-brand-border">
+                    <tr class="hover:bg-slate-50 transition group">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-16 bg-slate-800 rounded-md shadow-sm"></div>
+                                <div>
+                                    <a href="Seller_Product_Detail.html" class="font-bold text-brand-dark group-hover:text-brand-orange transition">Tâm Lý Học Đám Đông</a>
+                                    <p class="text-[10px] font-bold text-slate-400 mt-1">SKU: BK-PSY-001</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-slate-500 font-medium">Kỹ năng sống</td>
+                        <td class="px-6 py-4 font-black">85.000đ</td>
+                        <td class="px-6 py-4 font-black text-brand-dark">120</td>
+                        <td class="px-6 py-4">
+                            <span class="bg-green-100 text-green-600 px-2.5 py-1 rounded-md text-[10px] font-black uppercase">Đang bán</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="Seller_Product_Detail.html" class="text-brand-brown hover:text-brand-orange font-bold text-sm underline">Sửa</a>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition group bg-red-50/30">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-16 bg-brand-brown rounded-md shadow-sm"></div>
+                                <div>
+                                    <a href="Seller_Product_Detail.html" class="font-bold text-brand-dark group-hover:text-brand-orange transition">Clean Code (Java)</a>
+                                    <p class="text-[10px] font-bold text-slate-400 mt-1">SKU: BK-IT-099</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-slate-500 font-medium">Công nghệ IT</td>
+                        <td class="px-6 py-4 font-black">250.000đ</td>
+                        <td class="px-6 py-4 font-black text-red-500">03</td>
+                        <td class="px-6 py-4">
+                            <span class="bg-red-100 text-red-600 px-2.5 py-1 rounded-md text-[10px] font-black uppercase flex items-center gap-1 w-max">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg> Sắp hết
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="Seller_Product_Detail.html" class="text-brand-brown hover:text-brand-orange font-bold text-sm underline">Nhập thêm</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKOM SELLER HUB - Báo cáo doanh thu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-brown': '#cda27a',
+                        'brand-dark': '#4a3b32',
+                        'brand-bg': '#f1f5f9',
+                        'brand-orange': '#ea580c',
+                        'brand-border': '#e2e8f0',
+                    },
+                    fontFamily: { sans: ['Quicksand', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-bg font-sans text-brand-dark flex h-screen overflow-hidden">
+
+<aside class="w-64 bg-white border-r border-brand-border flex flex-col hidden md:flex h-full shadow-sm z-20">
+    <div class="h-20 flex items-center px-6 border-b border-brand-border">
+        <a href="Seller_Dashboard.html" class="text-2xl font-black text-brand-dark">SELLER <span class="text-brand-orange">HUB</span></a>
+    </div>
+    <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+        <a href="Seller_Dashboard.html" class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg> Tổng quan
+        </a>
+        <a href="Seller_Orders.html" class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> Đơn hàng mới
+        </a>
+        <a href="Inventory_Management.html" class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg> Kho hàng
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 bg-brand-brown/10 text-brand-dark rounded-lg font-bold shadow-sm">
+            <svg class="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> Doanh thu
+        </a>
+    </nav>
+</aside>
+
+<main class="flex-1 flex flex-col overflow-hidden bg-brand-bg">
+    <header class="h-20 bg-white border-b border-brand-border flex items-center justify-between px-8 z-10 shadow-sm">
+        <div>
+            <h1 class="text-2xl font-black text-brand-dark">Báo cáo doanh thu</h1>
+            <p class="text-sm font-bold text-slate-400 mt-1">Cập nhật lần cuối: Hôm nay, 10:45 AM</p>
+        </div>
+        <div class="flex gap-4">
+            <select class="bg-white border border-brand-border text-slate-600 text-base font-bold px-4 py-2.5 rounded-lg outline-none focus:border-brand-brown cursor-pointer shadow-sm">
+                <option>7 ngày qua</option>
+                <option>Tháng này</option>
+                <option>Năm nay</option>
+            </select>
+            <button class="bg-slate-800 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-black transition flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Xuất Báo Cáo
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8 space-y-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border hover:border-brand-brown/50 transition duration-300 relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 w-24 h-24 bg-green-50 rounded-full group-hover:scale-150 transition duration-500 ease-out"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Tổng doanh thu</p>
+                        <h3 class="text-4xl font-black text-brand-dark">128.5M <span class="text-base font-bold text-slate-400">VNĐ</span></h3>
+                    </div>
+                    <div class="p-3 bg-green-100 text-green-600 rounded-xl">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                </div>
+                <div class="relative z-10 mt-5 flex items-center gap-2 text-sm font-bold text-green-500">
+                    <span class="bg-green-100 px-2 py-1 rounded text-xs">+14.5%</span>
+                    <span class="text-slate-500">so với tuần trước</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border hover:border-brand-brown/50 transition duration-300 relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-50 rounded-full group-hover:scale-150 transition duration-500 ease-out"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Đơn thành công</p>
+                        <h3 class="text-4xl font-black text-brand-dark">1,240</h3>
+                    </div>
+                    <div class="p-3 bg-blue-100 text-blue-600 rounded-xl">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    </div>
+                </div>
+                <div class="relative z-10 mt-5 flex items-center gap-2 text-sm font-bold text-blue-500">
+                    <span class="bg-blue-100 px-2 py-1 rounded text-xs">+8.2%</span>
+                    <span class="text-slate-500">so với tuần trước</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border hover:border-brand-brown/50 transition duration-300 relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 w-24 h-24 bg-red-50 rounded-full group-hover:scale-150 transition duration-500 ease-out"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Tỷ lệ hoàn/hủy</p>
+                        <h3 class="text-4xl font-black text-brand-dark">2.4%</h3>
+                    </div>
+                    <div class="p-3 bg-red-100 text-red-600 rounded-xl">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                </div>
+                <div class="relative z-10 mt-5 flex items-center gap-2 text-sm font-bold text-red-500">
+                    <span class="bg-red-100 px-2 py-1 rounded text-xs">-0.5%</span>
+                    <span class="text-slate-500">Cải thiện tốt</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="bg-white rounded-2xl border border-brand-border shadow-sm p-8">
+                <h3 class="font-black text-brand-dark text-lg mb-6">Top Sách Bán Chạy</h3>
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-20 bg-slate-800 rounded-md shadow-sm border border-slate-200"></div>
+                            <div>
+                                <p class="text-base font-bold text-brand-dark">Hành Trình Phương Đông</p>
+                                <p class="text-sm text-slate-500 font-medium mt-1">Sách Tôn Giáo</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-black text-brand-orange">12.5M</p>
+                            <p class="text-xs font-bold text-slate-400 mt-1">420 cuốn</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-20 bg-brand-brown rounded-md shadow-sm border border-slate-200"></div>
+                            <div>
+                                <p class="text-base font-bold text-brand-dark">Tâm Lý Học Đám Đông</p>
+                                <p class="text-sm text-slate-500 font-medium mt-1">Kỹ Năng Sống</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-black text-brand-orange">9.2M</p>
+                            <p class="text-xs font-bold text-slate-400 mt-1">315 cuốn</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-20 bg-slate-300 rounded-md shadow-sm border border-slate-200"></div>
+                            <div>
+                                <p class="text-base font-bold text-brand-dark">Clean Code (Java)</p>
+                                <p class="text-sm text-slate-500 font-medium mt-1">Công Nghệ</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-black text-brand-orange">8.5M</p>
+                            <p class="text-xs font-bold text-slate-400 mt-1">112 cuốn</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="w-full mt-8 py-3.5 border border-brand-border rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition">Xem tất cả sản phẩm</button>
+            </div>
+
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-brand-border shadow-sm overflow-hidden flex flex-col">
+                <div class="px-8 py-6 border-b border-brand-border flex justify-between items-center">
+                    <h3 class="font-black text-brand-dark text-lg">Giao dịch đối soát gần đây</h3>
+                    <button class="text-sm text-brand-orange font-bold hover:underline">Xem biến động số dư</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-base">
+                        <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs tracking-widest border-b border-brand-border">
+                            <tr>
+                                <th class="px-8 py-5">Mã Giao Dịch</th>
+                                <th class="px-8 py-5">Thời gian</th>
+                                <th class="px-8 py-5">Loại</th>
+                                <th class="px-8 py-5">Số tiền</th>
+                                <th class="px-8 py-5">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            <tr class="hover:bg-slate-50 transition cursor-pointer">
+                                <td class="px-8 py-5 font-bold text-slate-700">#TRX-89210</td>
+                                <td class="px-8 py-5 text-slate-500 font-medium">Hôm nay, 14:30</td>
+                                <td class="px-8 py-5">
+                                    <span class="flex items-center gap-2 font-bold text-slate-600">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span> Thanh toán đơn hàng
+                                    </span>
+                                </td>
+                                <td class="px-8 py-5 font-black text-green-600 text-base">+ 450.000đ</td>
+                                <td class="px-8 py-5">
+                                    <span class="bg-green-100 text-green-600 px-3 py-1.5 rounded-md text-xs font-black uppercase">Hoàn tất</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition cursor-pointer">
+                                <td class="px-8 py-5 font-bold text-slate-700">#TRX-89209</td>
+                                <td class="px-8 py-5 text-slate-500 font-medium">Hôm nay, 09:15</td>
+                                <td class="px-8 py-5">
+                                    <span class="flex items-center gap-2 font-bold text-slate-600">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span> Phí sàn (5%)
+                                    </span>
+                                </td>
+                                <td class="px-8 py-5 font-black text-orange-500 text-base">- 22.500đ</td>
+                                <td class="px-8 py-5">
+                                    <span class="bg-green-100 text-green-600 px-3 py-1.5 rounded-md text-xs font-black uppercase">Hoàn tất</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition cursor-pointer">
+                                <td class="px-8 py-5 font-bold text-slate-700">#TRX-89150</td>
+                                <td class="px-8 py-5 text-slate-500 font-medium">Hôm qua, 18:00</td>
+                                <td class="px-8 py-5">
+                                    <span class="flex items-center gap-2 font-bold text-slate-600">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Rút tiền
+                                    </span>
+                                </td>
+                                <td class="px-8 py-5 font-black text-brand-dark text-base">5.000.000đ</td>
+                                <td class="px-8 py-5">
+                                    <span class="bg-blue-100 text-blue-600 px-3 py-1.5 rounded-md text-xs font-black uppercase">Đang xử lý</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

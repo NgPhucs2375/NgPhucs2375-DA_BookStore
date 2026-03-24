@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKOM ADMIN - Duyệt Gian Hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-brown': '#cda27a',
+                        'admin-dark': '#0f172a',
+                        'brand-bg': '#f1f5f9',
+                        'brand-orange': '#ea580c',
+                        'brand-border': '#e2e8f0',
+                        'brand-meta': '#64748B',
+                    },
+                    fontFamily: { sans: ['Quicksand', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-bg font-sans text-slate-800 flex h-screen overflow-hidden">
+
+<aside class="w-64 bg-slate-900 text-slate-300 flex flex-col hidden md:flex h-full shadow-xl z-20">
+    <div class="h-24 flex items-center px-8 border-b border-slate-800 bg-slate-950">
+        <a href="Admin.html" class="text-3xl font-black text-white flex items-center gap-2">
+            BOOKOM <span class="bg-brand-orange text-white text-[10px] px-2 py-1 rounded tracking-widest uppercase align-top mt-1">Admin</span>
+        </a>
+    </div>
+    
+    <nav class="flex-1 overflow-y-auto p-6 space-y-2">
+        <p class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 mt-2">Hệ thống</p>
+        <a href="Admin.html" class="flex items-center gap-4 px-5 py-3.5 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition font-semibold">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a２ ２ ０ ０１２ ２v２a２ ２ ０ ０１－２ ２Ｈ６a２ ２ ０ ０１－２－２v－２zM１４ １６a２ ２ ０ ０１２－２h２a２ ２ ０ ０１２ ２v２a２ ２ ０ ０１－２ ２h－２a２ ２ ０ ０１－２－２v－２z"></path></svg>
+            <span class="text-base">Tổng quan</span>
+        </a>
+        <a href="Admin_Users.html" class="flex items-center gap-4 px-5 py-3.5 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition font-semibold">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg> <span class="text-base">Người dùng</span>
+        </a>
+        <a href="#" class="flex items-center gap-4 px-5 py-3.5 bg-brand-orange text-white rounded-lg font-bold shadow-lg shadow-orange-500/20 transition">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg> <span class="text-base">Gian hàng</span>
+            <span class="ml-auto bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">3</span>
+        </a>
+        <a href="Admin_Books.html" class="flex items-center gap-4 px-5 py-3.5 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition font-semibold">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> <span class="text-base">Kiểm duyệt Sách</span>
+        </a>
+    </nav>
+</aside>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <header class="h-24 bg-white border-b border-brand-border flex items-center justify-between px-10 z-10 shadow-sm">
+        <h1 class="text-2xl font-bold text-admin-dark">Xét Duyệt Gian Hàng Mới</h1>
+        <div class="flex items-center gap-4 cursor-pointer group">
+            <div class="w-12 h-12 bg-admin-dark rounded-full flex items-center justify-center text-white font-black">AD</div>
+        </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-10 space-y-8">
+        
+        <div class="flex gap-2 border-b border-brand-border">
+            <button class="px-6 py-4 border-b-2 border-brand-orange text-brand-orange font-bold text-base bg-orange-50/50">Yêu cầu mới (3)</button>
+            <button class="px-6 py-4 border-b-2 border-transparent text-brand-meta hover:text-admin-dark font-semibold text-base transition">Đã duyệt (1,205)</button>
+            <button class="px-6 py-4 border-b-2 border-transparent text-brand-meta hover:text-admin-dark font-semibold text-base transition">Bị từ chối (42)</button>
+        </div>
+
+        <div class="bg-white border border-brand-border rounded-sm shadow-sm flex flex-col">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 border-b border-brand-border">
+                        <tr>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide">Tên Shop Đăng Ký</th>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide">Người đại diện</th>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide">Hồ sơ pháp lý</th>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide">Thời gian nộp</th>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide text-right">Quyết định</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-brand-border">
+                        
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-7 py-5">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded bg-brand-brown text-white flex items-center justify-center font-bold text-lg shadow-sm">TN</div>
+                                    <div>
+                                        <p class="text-base font-bold text-admin-dark">Sách Trẻ Năng Động</p>
+                                        <p class="text-sm font-semibold text-brand-meta mt-1">Danh mục: Đa dạng</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-7 py-5">
+                                <p class="text-base font-semibold text-admin-dark">Nguyễn Hải Đăng</p>
+                                <p class="text-sm font-semibold text-brand-meta mt-1">090xxxx123</p>
+                            </td>
+                            <td class="px-7 py-5">
+                                <span class="bg-blue-100 text-blue-600 px-3 py-1.5 rounded text-xs font-bold uppercase mb-2 inline-block">Giấy phép KD</span>
+                                <p class="text-base font-bold text-admin-dark">MST: 0312456789</p>
+                                <button class="text-sm text-brand-orange font-bold hover:underline mt-1 flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> Xem ảnh GPKD
+                                </button>
+                            </td>
+                            <td class="px-7 py-5">
+                                <p class="text-base font-semibold text-admin-dark">Hôm nay</p>
+                                <p class="text-sm font-semibold text-brand-meta mt-1">14:20 PM</p>
+                            </td>
+                            <td class="px-7 py-5 text-right space-y-2">
+                                <button class="w-full bg-green-500 text-white px-4 py-2.5 rounded text-sm font-bold hover:bg-green-600 transition shadow-sm">Phê Duyệt</button>
+                                <button class="w-full bg-white border border-slate-300 text-slate-700 px-4 py-2.5 rounded text-sm font-bold hover:bg-slate-100 transition">Từ chối</button>
+                            </td>
+                        </tr>
+
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-7 py-5">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded bg-slate-800 text-white flex items-center justify-center font-bold text-lg shadow-sm">C</div>
+                                    <div>
+                                        <p class="text-base font-bold text-admin-dark">Tiệm Sách Cũ 1990</p>
+                                        <p class="text-sm font-semibold text-brand-meta mt-1">Danh mục: Văn học</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-7 py-5">
+                                <p class="text-base font-semibold text-admin-dark">Trần Bảo Vân</p>
+                                <p class="text-sm font-semibold text-brand-meta mt-1">098xxxx000</p>
+                            </td>
+                            <td class="px-7 py-5">
+                                <span class="bg-slate-200 text-slate-600 px-3 py-1.5 rounded text-xs font-bold uppercase mb-2 inline-block">Cá nhân</span>
+                                <p class="text-base font-bold text-admin-dark">CCCD: 079201010101</p>
+                                <button class="text-sm text-brand-orange font-bold hover:underline mt-1 flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> Xem ảnh CCCD (2 mặt)
+                                </button>
+                            </td>
+                            <td class="px-7 py-5">
+                                <p class="text-base font-semibold text-admin-dark">Hôm qua</p>
+                                <p class="text-sm font-semibold text-brand-meta mt-1">09:15 AM</p>
+                            </td>
+                            <td class="px-7 py-5 text-right space-y-2">
+                                <button class="w-full bg-green-500 text-white px-4 py-2.5 rounded text-sm font-bold hover:bg-green-600 transition shadow-sm">Phê Duyệt</button>
+                                <button class="w-full bg-white border border-slate-300 text-slate-700 px-4 py-2.5 rounded text-sm font-bold hover:bg-slate-100 transition">Từ chối</button>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

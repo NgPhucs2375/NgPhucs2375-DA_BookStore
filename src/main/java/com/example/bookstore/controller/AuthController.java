@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController // Vẫn là báo cho Spring Boot biết đây là chỗ tạo API
+@CrossOrigin("*") // kiểu cấp thẻ VIP để auth được quyền trỏ vô data của SP vậy á
 @RequestMapping("/api/auth") // Đặt địa chỉ gốc là /api/auth
 public class AuthController {
 

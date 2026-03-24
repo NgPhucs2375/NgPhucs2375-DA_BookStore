@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController // Bao cho SB biet class nay chuyen dung de tao API tra ve du lieu(thuong la dinh dang JSON) chu khong phai tra ve giao dien HTML
+@CrossOrigin("*") // thẻ VIP để có thể ra vào dữ liệu
 @RequestMapping("/api/books") // Dat "dia chi goc" cho toan bo cac API trong class nay
 public class BookController {
 

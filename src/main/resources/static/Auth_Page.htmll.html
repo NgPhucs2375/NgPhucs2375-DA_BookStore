@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOOKOM - Cổng Đăng Nhập & Thành Viên Cao Cấp</title>
-
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -813,56 +813,45 @@
     </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // 1. CHỨC NĂNG ẨN/HIỆN MẬT KHẨU
-        const toggleBtns = document.querySelectorAll('.toggle-password');
+    // --- KHAI BÁO CẤU HÌNH API ---
+    const API_BASE_URL = 'http://localhost:8080/api/auth';
 
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtns = document.querySelectorAll('.toggle-password');
         toggleBtns.forEach(btn => {
             btn.addEventListener('click', function() {
-                // Tìm input ngay trước nút bấm
                 const input = this.parentElement.querySelector('input');
                 const svg = this.querySelector('svg');
-
                 if (input.type === 'password') {
                     input.type = 'text';
-                    // Đổi SVG sang hình Mắt nhắm
                     svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
                     this.classList.add('text-brand-orange');
                 } else {
                     input.type = 'password';
-                    // Đổi SVG sang hình Mắt mở
                     svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
                     this.classList.remove('text-brand-orange');
                 }
             });
         });
 
-        // 2. CHỨC NĂNG ĐO ĐỘ MẠNH YẾU MẬT KHẨU TỰ ĐỘNG
+        // Đo độ mạnh mật khẩu
         const regPass = document.getElementById('reg_pass');
-        const bars = [
-            document.getElementById('strength-bar-1'),
-            document.getElementById('strength-bar-2'),
-            document.getElementById('strength-bar-3'),
-            document.getElementById('strength-bar-4')
-        ];
+        const bars = [document.getElementById('strength-bar-1'), document.getElementById('strength-bar-2'), document.getElementById('strength-bar-3'), document.getElementById('strength-bar-4')];
         const strengthText = document.getElementById('strength-text');
 
         if(regPass) {
             regPass.addEventListener('input', (e) => {
+                // dùng biểu thức chính quy để quy định password
                 const val = e.target.value;
                 let score = 0;
-
-                // Thuật toán chấm điểm
                 if (val.length >= 8) score++;
                 if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
                 if (/\d/.test(val)) score++;
                 if (/[^A-Za-z0-9]/.test(val)) score++;
 
-                // Reset toàn bộ thanh màu về trạng thái xám ban đầu
-                bars.forEach(bar => {
-                    bar.className = 'h-1.5 w-full bg-gray-200 rounded-full transition-all duration-300';
-                });
+                bars.forEach(bar => bar.className = 'h-1.5 w-full bg-gray-200 rounded-full transition-all duration-300');
 
                 if (val.length === 0) {
                     strengthText.innerText = 'Mật khẩu';
@@ -870,7 +859,6 @@
                     return;
                 }
 
-                // Cập nhật giao diện theo Score
                 if (score <= 1) {
                     bars[0].classList.replace('bg-gray-200', 'bg-brand-red');
                     strengthText.innerText = 'Yếu';
@@ -880,24 +868,14 @@
                     bars[1].classList.replace('bg-gray-200', 'bg-brand-orange');
                     strengthText.innerText = 'Trung Bình';
                     strengthText.className = 'text-[10px] font-bold text-brand-orange ml-2 uppercase tracking-wide whitespace-nowrap w-16 text-center';
-                } else if (score === 3) {
-                    bars[0].classList.replace('bg-gray-200', 'bg-brand-green');
-                    bars[1].classList.replace('bg-gray-200', 'bg-brand-green');
-                    bars[2].classList.replace('bg-gray-200', 'bg-brand-green');
-                    strengthText.innerText = 'Khá';
-                    strengthText.className = 'text-[10px] font-bold text-brand-green ml-2 uppercase tracking-wide whitespace-nowrap w-16 text-center';
-                } else if (score >= 4) {
-                    bars.forEach(bar => bar.classList.replace('bg-gray-200', 'bg-brand-green'));
-                    // Thêm hiệu ứng phát sáng cho cấp độ cao nhất
-                    bars[3].classList.add('shadow-[0_0_8px_rgba(22,163,74,0.4)]');
-                    bars[2].classList.add('shadow-[0_0_8px_rgba(22,163,74,0.4)]');
-                    strengthText.innerText = 'Rất Mạnh';
+                } else if (score >= 3) {
+                    bars.forEach((bar, index) => { if(index <= score -1) bar.classList.replace('bg-gray-200', 'bg-brand-green') });
+                    strengthText.innerText = score === 3 ? 'Khá' : 'Rất Mạnh';
                     strengthText.className = 'text-[10px] font-bold text-brand-green ml-2 uppercase tracking-wide whitespace-nowrap w-16 text-center';
                 }
             });
         }
 
-        // 3. AUTO JUMP OTP INPUT (Gõ xong ô 1 tự nhảy sang ô 2)
         const otpInputs = document.querySelectorAll('.otp-input');
         otpInputs.forEach((input, index) => {
             input.addEventListener('keyup', (e) => {
@@ -905,12 +883,80 @@
                     otpInputs[index + 1].focus();
                 }
             });
-            // Hỗ trợ xóa lùi
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
                     otpInputs[index - 1].focus();
                 }
             });
+        });
+
+        // ==========================================================
+        // PHẦN 2: LOGIC GỌI API BẰNG AXIOS
+        // ==========================================================
+
+        // 1. XỬ LÝ ĐĂNG NHẬP
+        const loginBtn = document.querySelector('.view-login .btn-primary');
+        loginBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Ngăn trình duyệt tự load lại trang
+
+            // Lấy giá trị từ input
+            const username = document.getElementById('log_email').value;
+            const password = document.getElementById('log_pass').value;
+
+            if (!username || !password) {
+                Swal.fire({ icon: 'warning', title: 'Oops...', text: 'Vui lòng điền đầy đủ thông tin!'});
+                return;
+            }
+
+            // Gọi API
+            axios.post(`${API_BASE_URL}/login`, {
+                username: username,
+                passwordHash: password
+            })
+                .then(response => {
+                    Swal.fire({ icon: 'success', title: 'Tuyệt vời!', text: 'Đăng nhập thành công!', timer: 1500, showConfirmButton: false })
+                        .then(() => {
+                            // Chuyển sang trang người mua sau khi popup tắt
+                            window.location.href = "Discovery_Page.html";
+                        });
+                })
+                .catch(error => {
+                    Swal.fire({ icon: 'error', title: 'Đăng nhập thất bại', text: error.response ? error.response.data : 'Lỗi kết nối Server' });
+                });
+        });
+
+        // 2. XỬ LÝ ĐĂNG KÝ
+        // Tìm nút "Hoàn Tất" bằng cách lấy label điều hướng đến reg-3
+        const registerBtn = document.querySelector('label[for="route-reg-3"]');
+
+        registerBtn.addEventListener('click', (e) => {
+            // Lấy email từ bước 1 làm username
+            const email = document.getElementById('reg_email').value;
+            const password = document.getElementById('reg_pass').value;
+            const passConfirm = document.getElementById('reg_pass_conf').value;
+
+            // Kiểm tra sơ bộ
+            if(password !== passConfirm) {
+                e.preventDefault(); // Chặn chuyển sang trang OTP
+                Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Mật khẩu xác nhận không khớp!'});
+                return;
+            }
+
+            // Gọi API Đăng ký
+            axios.post(`${API_BASE_URL}/register`, {
+                username: email, // Trong User.java dùng username, tạm lấy email gán vào
+                passwordHash: password
+            })toan yeu phuc
+                .then(response => {
+                    // Thành công thì cho phép chuyển qua view OTP (route-reg-3)
+                    Swal.fire({ icon: 'success', title: 'Thành công!', text: 'Đăng ký thành công. Vui lòng kiểm tra OTP!', timer: 2000, showConfirmButton: false });
+                    // Cập nhật email trên màn hình OTP
+                    document.querySelector('.view-reg-3 span').innerText = email;
+                })
+                .catch(error => {
+                    e.preventDefault(); // Nếu lỗi thì không cho sang trang OTP
+                    Swal.fire({ icon: 'error', title: 'Đăng ký thất bại', text: error.response ? error.response.data : 'Lỗi kết nối Server' });
+                });
         });
     });
 </script>

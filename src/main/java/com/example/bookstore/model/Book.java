@@ -21,6 +21,8 @@ public class Book {
     private String description;
     private Double price;
     private Integer stockQuantity;
+    @Column(length = 500)
+    private String imageUrl;
 
     @ManyToOne
     @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS

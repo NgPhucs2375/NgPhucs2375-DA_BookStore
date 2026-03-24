@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BOOKOM - Khám Phá Thế Giới Sách Mới</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -332,337 +334,340 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-10">
+<!--      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-10">-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow">-20%</div>
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#2c3e50] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Bắt Trẻ Đồng Xanh</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Văn Học</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Bắt Trẻ Đồng Xanh (The Catcher In The Rye)</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">J.D. Salinger</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">76.000đ</span> <span class="text-gray-400 text-[10px] line-through block -mt-1">95.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow">-20%</div>-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#2c3e50] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Bắt Trẻ Đồng Xanh</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Văn Học</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Bắt Trẻ Đồng Xanh (The Catcher In The Rye)</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">J.D. Salinger</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">76.000đ</span> <span class="text-gray-400 text-[10px] line-through block -mt-1">95.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#8e44ad] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Nhà Giả Kim</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tiểu Thuyết</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Nhà Giả Kim (Tái Bản 2024)</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Paulo Coelho</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">89.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#8e44ad] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Nhà Giả Kim</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tiểu Thuyết</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Nhà Giả Kim (Tái Bản 2024)</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Paulo Coelho</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">89.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded shadow">HOT</div>
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#c0392b] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Đắc Nhân Tâm</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Kỹ Năng</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Đắc Nhân Tâm - How To Win Friends</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Dale Carnegie</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">86.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded shadow">HOT</div>-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#c0392b] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Đắc Nhân Tâm</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Kỹ Năng</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Đắc Nhân Tâm - How To Win Friends</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Dale Carnegie</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">86.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#16a085] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Sapiens</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Lịch Sử</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Sapiens: Lược Sử Loài Người</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Yuval Noah Harari</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">255.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#16a085] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Sapiens</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Lịch Sử</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Sapiens: Lược Sử Loài Người</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Yuval Noah Harari</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">255.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden sm:flex">
-          <div class="absolute top-3 left-3 z-10 bg-[#27ae60] text-white text-[10px] font-black px-2 py-1 rounded shadow">BẢN ĐẸP</div>
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#2980b9] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Harry Potter</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Thiếu Nhi</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Harry Potter Và Hòn Đá Phù Thủy</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">J.K. Rowling</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">150.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden sm:flex">-->
+<!--          <div class="absolute top-3 left-3 z-10 bg-[#27ae60] text-white text-[10px] font-black px-2 py-1 rounded shadow">BẢN ĐẸP</div>-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#2980b9] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Harry Potter</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Thiếu Nhi</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Harry Potter Và Hòn Đá Phù Thủy</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">J.K. Rowling</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">150.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow">-10%</div>
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#e67e22] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Suối Nguồn</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tiểu Thuyết</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Suối Nguồn (Bìa Cứng)</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Ayn Rand</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">225.000đ</span> <span class="text-gray-400 text-[10px] line-through block -mt-1">250.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow">-10%</div>-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#e67e22] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Suối Nguồn</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tiểu Thuyết</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Suối Nguồn (Bìa Cứng)</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Ayn Rand</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">225.000đ</span> <span class="text-gray-400 text-[10px] line-through block -mt-1">250.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#34495e] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Bố Già</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tiểu Thuyết</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Bố Già (The Godfather)</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Mario Puzo</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">115.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#34495e] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Bố Già</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tiểu Thuyết</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Bố Già (The Godfather)</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Mario Puzo</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">115.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded shadow">MỚI</div>
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#1abc9c] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Tư Duy Nhanh</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tâm Lý</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Tư Duy Nhanh Và Chậm</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Daniel Kahneman</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">268.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded shadow">MỚI</div>-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#1abc9c] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Tư Duy Nhanh</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tâm Lý</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Tư Duy Nhanh Và Chậm</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Daniel Kahneman</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">268.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden md:flex">
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#9b59b6] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Tâm Lý Học</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tâm Lý</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Tâm Lý Học Đám Đông</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Gustave Le Bon</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">90.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden md:flex">-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#9b59b6] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Tâm Lý Học</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tâm Lý</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Tâm Lý Học Đám Đông</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Gustave Le Bon</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">90.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden lg:flex">
-          <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow">-50%</div>
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#3498db] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Dế Mèn</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Văn Học Việt</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Dế Mèn Phiêu Lưu Ký</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Tô Hoài</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">45.000đ</span> <span class="text-gray-400 text-[10px] line-through block -mt-1">90.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden lg:flex">-->
+<!--          <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow">-50%</div>-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#3498db] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Dế Mèn</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Văn Học Việt</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Dế Mèn Phiêu Lưu Ký</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Tô Hoài</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">45.000đ</span> <span class="text-gray-400 text-[10px] line-through block -mt-1">90.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#95a5a6] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Cho Tôi Xin</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Truyện Dài</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Cho Tôi Xin Một Vé Đi Tuổi Thơ</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Nguyễn Nhật Ánh</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">75.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#95a5a6] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Cho Tôi Xin</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Truyện Dài</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Cho Tôi Xin Một Vé Đi Tuổi Thơ</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Nguyễn Nhật Ánh</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">75.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded shadow">HOT</div>
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#2c3e50] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Cha Giàu</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Kinh Tế</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Dạy Con Làm Giàu (Tập 1)</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Robert Kiyosaki</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">95.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded shadow">HOT</div>-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#2c3e50] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Cha Giàu</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Kinh Tế</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Dạy Con Làm Giàu (Tập 1)</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Robert Kiyosaki</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">95.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#f39c12] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Từ Tốt Đến Vĩ Đại</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Quản Trị</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Từ Tốt Đến Vĩ Đại</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Jim Collins</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">145.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#f39c12] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Từ Tốt Đến Vĩ Đại</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Quản Trị</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Từ Tốt Đến Vĩ Đại</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Jim Collins</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">145.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow">-15%</div>
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#8e44ad] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Tôi Thấy Hoa</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Văn Học</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Tôi Thấy Hoa Vàng Trên Cỏ Xanh</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Nguyễn Nhật Ánh</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">80.750đ</span> <span class="text-gray-400 text-[10px] line-through block -mt-1">95.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow">-15%</div>-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#8e44ad] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Tôi Thấy Hoa</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Văn Học</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Tôi Thấy Hoa Vàng Trên Cỏ Xanh</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Nguyễn Nhật Ánh</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">80.750đ</span> <span class="text-gray-400 text-[10px] line-through block -mt-1">95.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden sm:flex">
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#16a085] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Thiên Tài</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tâm Lý</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Thiên Tài Bên Trái, Kẻ Điên Bên Phải</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Cao Minh</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">129.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden sm:flex">-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#16a085] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Thiên Tài</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tâm Lý</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Thiên Tài Bên Trái, Kẻ Điên Bên Phải</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Cao Minh</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">129.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#d35400] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Hai Số Phận</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tiểu Thuyết</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Hai Số Phận (Kane and Abel)</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Jeffrey Archer</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">150.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#d35400] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Hai Số Phận</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tiểu Thuyết</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Hai Số Phận (Kane and Abel)</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Jeffrey Archer</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">150.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded shadow">MỚI</div>
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#2c3e50] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Clean Code</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">CNTT</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Clean Code: A Handbook of Agile...</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Robert C. Martin</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">350.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded shadow">MỚI</div>-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#2c3e50] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Clean Code</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">CNTT</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Clean Code: A Handbook of Agile...</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Robert C. Martin</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">350.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#2980b9] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Đồi Gió Hú</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Văn Học Tác Điển</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Đồi Gió Hú (Wuthering Heights)</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Emily Brontë</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">95.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#2980b9] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Đồi Gió Hú</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Văn Học Tác Điển</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Đồi Gió Hú (Wuthering Heights)</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Emily Brontë</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">95.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★<span class="text-gray-300">★</span></div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden md:flex">
-          <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow">-30%</div>
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#c0392b] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Đi Tìm Lẽ Sống</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tâm Lý</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Đi Tìm Lẽ Sống</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">Viktor E. Frankl</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">55.300đ</span> <span class="text-gray-400 text-[10px] line-through block -mt-1">79.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden md:flex">-->
+<!--          <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow">-30%</div>-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#c0392b] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Đi Tìm Lẽ Sống</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tâm Lý</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Đi Tìm Lẽ Sống</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">Viktor E. Frankl</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">55.300đ</span> <span class="text-gray-400 text-[10px] line-through block -mt-1">79.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden lg:flex xl:hidden">
-          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
-            <div class="book-cover w-[70%] h-[85%] bg-[#8e44ad] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Cây Cam Ngọt</div>
-            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          </div>
-          <div class="flex flex-col flex-grow">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Văn Học</div>
-            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Cây Cam Ngọt Của Tôi</h3>
-            <div class="text-xs text-gray-500 font-medium mb-3">José Mauro de Vasconcelos</div>
-            <div class="mt-auto flex justify-between items-end">
-              <div><span class="text-brand-orange font-black text-lg">79.000đ</span></div>
-              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
-            </div>
-          </div>
-        </div>
+<!--        <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer hidden lg:flex xl:hidden">-->
+<!--          <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">-->
+<!--            <div class="book-cover w-[70%] h-[85%] bg-[#8e44ad] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase">Cây Cam Ngọt</div>-->
+<!--            <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col flex-grow">-->
+<!--            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Văn Học</div>-->
+<!--            <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">Cây Cam Ngọt Của Tôi</h3>-->
+<!--            <div class="text-xs text-gray-500 font-medium mb-3">José Mauro de Vasconcelos</div>-->
+<!--            <div class="mt-auto flex justify-between items-end">-->
+<!--              <div><span class="text-brand-orange font-black text-lg">79.000đ</span></div>-->
+<!--              <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+
+<!--      </div>-->
+      <div id="book-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-10">
 
       </div>
 
@@ -810,5 +815,68 @@
   </div>
 </footer>
 
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Hàm định dạng tiền tệ VNĐ
+    const formatVND = (price) => {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    };
+
+    // Hàm gọi API lấy danh sách sách
+    const fetchBooks = () => {
+      axios.get('http://localhost:8080/api/books')
+              .then(response => {
+                const books = response.data;
+                const bookGrid = document.getElementById('book-grid');
+
+                if (books.length === 0) {
+                  bookGrid.innerHTML = `<p class="col-span-full text-center text-gray-500 font-bold">Hiện chưa có sách nào trên kệ.</p>`;
+                  return;
+                }
+
+                let htmlContent = '';
+                books.forEach(book => {
+                  // Tạo mảng màu ngẫu nhiên cho bìa sách thêm sinh động
+                  const colors = ['#2c3e50', '#8e44ad', '#c0392b', '#16a085', '#2980b9', '#e67e22', '#f39c12'];
+                  const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+                  // Lấy chữ cái đầu của tên sách làm bìa tạm
+                  const shortTitle = book.title.split(' ').slice(0, 2).join(' ');
+
+                  // Dùng Template Literal để vẽ giao diện (Giữ nguyên class UI của anh)
+                  htmlContent += `
+                            <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
+                                <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
+                                    <div class="book-cover w-[70%] h-[85%] border-[3px] border-white shadow-md flex items-center justify-center p-2 text-center text-white font-bold text-xs uppercase" style="background-color: ${randomColor}">
+                                        ${shortTitle}
+                                    </div>
+                                    <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                    </button>
+                                </div>
+                                <div class="flex flex-col flex-grow">
+                                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">${book.category ? book.category.name : 'Sách Chọn Lọc'}</div>
+                                    <h3 class="text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">${book.title}</h3>
+                                    <div class="text-xs text-gray-500 font-medium mb-3">${book.author}</div>
+                                    <div class="mt-auto flex justify-between items-end">
+                                        <div><span class="text-brand-orange font-black text-lg">${formatVND(book.price)}</span></div>
+                                        <div class="text-yellow-400 text-[10px] tracking-tighter">★★★★★</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                });
+                bookGrid.innerHTML = htmlContent;
+              })
+              .catch(error => {
+                console.error("Lỗi tải sách:", error);
+                document.getElementById('book-grid').innerHTML = `<p class="col-span-full text-center text-red-500 font-bold">Lỗi kết nối máy chủ. Không thể tải sách!</p>`;
+              });
+    };
+
+    // Chạy hàm lấy sách ngay khi trang web mở
+    fetchBooks();
+  });
+</script>
 </body>
 </html>

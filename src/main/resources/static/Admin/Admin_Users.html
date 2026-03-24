@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKOM ADMIN - Quản Lý Người Dùng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-brown': '#cda27a',
+                        'admin-dark': '#0f172a',
+                        'brand-bg': '#f1f5f9',
+                        'brand-orange': '#ea580c',
+                        'brand-border': '#e2e8f0',
+                        'brand-meta': '#64748B',
+                    },
+                    fontFamily: { sans: ['Quicksand', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-bg font-sans text-slate-800 flex h-screen overflow-hidden">
+
+<aside class="w-64 bg-slate-900 text-slate-300 flex flex-col hidden md:flex h-full shadow-xl z-20">
+    <div class="h-24 flex items-center px-8 border-b border-slate-800 bg-slate-950">
+        <a href="Admin.html" class="text-3xl font-black text-white flex items-center gap-2">
+            BOOKOM <span class="bg-brand-orange text-white text-[10px] px-2 py-1 rounded tracking-widest uppercase align-top mt-1">Admin</span>
+        </a>
+    </div>
+    
+    <nav class="flex-1 overflow-y-auto p-6 space-y-2">
+        <p class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 mt-2">Hệ thống</p>
+        <a href="Admin.html" class="flex items-center gap-4 px-5 py-3.5 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition font-semibold">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+            <span class="text-base">Tổng quan sàn</span>
+        </a>
+        <a href="#" class="flex items-center gap-4 px-5 py-3.5 bg-brand-orange text-white rounded-lg font-bold shadow-lg shadow-orange-500/20 transition">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <span class="text-base">Người dùng</span>
+        </a>
+        <a href="Admin_Shops.html" class="flex items-center gap-4 px-5 py-3.5 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition font-semibold">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            <span class="text-base">Gian hàng</span>
+        </a>
+        <a href="Admin_Books.html" class="flex items-center gap-4 px-5 py-3.5 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition font-semibold">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span class="text-base">Kiểm duyệt Sách</span>
+        </a>
+    </nav>
+</aside>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <header class="h-24 bg-white border-b border-brand-border flex items-center justify-between px-10 z-10 shadow-sm">
+        <h1 class="text-2xl font-bold text-admin-dark">Quản lý Tài khoản (Users)</h1>
+        <div class="flex items-center gap-4 cursor-pointer group">
+            <div class="w-12 h-12 bg-admin-dark rounded-full flex items-center justify-center text-white font-black">AD</div>
+        </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-10 space-y-8">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-sm shadow-sm border border-brand-border gap-4">
+            <div class="flex flex-1 gap-4 w-full">
+                <div class="flex items-center bg-slate-50 border border-brand-border rounded-lg px-4 py-2 flex-1 max-w-md focus-within:border-brand-orange transition">
+                    <svg class="w-5 h-5 text-brand-meta mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input type="text" placeholder="Tìm tên, email, số điện thoại..." class="bg-transparent outline-none w-full text-admin-dark font-semibold">
+                </div>
+                <select class="border border-brand-border rounded-lg px-4 py-2 font-semibold text-admin-dark outline-none bg-white">
+                    <option>Tất cả vai trò</option>
+                    <option>Người mua (Buyer)</option>
+                    <option>Người bán (Seller)</option>
+                </select>
+                <select class="border border-brand-border rounded-lg px-4 py-2 font-semibold text-admin-dark outline-none bg-white">
+                    <option>Trạng thái: Tất cả</option>
+                    <option>Đang hoạt động</option>
+                    <option>Bị khóa (Banned)</option>
+                </select>
+            </div>
+            <button class="bg-brand-orange text-white px-6 py-2.5 rounded text-sm font-bold shadow-md hover:bg-orange-700 transition">Xuất File Excel</button>
+        </div>
+
+        <div class="bg-white border border-brand-border rounded-sm shadow-sm flex flex-col">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 border-b border-brand-border">
+                        <tr>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide">ID & Người Dùng</th>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide">Thông tin liên hệ</th>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide">Vai trò</th>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide">Ngày tham gia</th>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide">Trạng thái</th>
+                            <th class="px-7 py-5 text-sm font-bold text-brand-meta uppercase tracking-wide text-right">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-brand-border">
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-7 py-5">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-brand-brown text-white flex items-center justify-center font-bold">NS</div>
+                                    <div>
+                                        <p class="text-base font-bold text-admin-dark">Nhà Sách Tuổi Trẻ</p>
+                                        <p class="text-sm font-semibold text-brand-meta mt-1">#USR-10293</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-7 py-5">
+                                <p class="text-base font-semibold text-admin-dark">tuoitre@bookom.vn</p>
+                                <p class="text-sm font-semibold text-brand-meta mt-1">090xxxx123</p>
+                            </td>
+                            <td class="px-7 py-5">
+                                <span class="bg-purple-100 text-purple-600 px-3 py-1.5 rounded text-xs font-bold uppercase">Người Bán</span>
+                            </td>
+                            <td class="px-7 py-5 text-base font-semibold text-brand-meta">10/01/2026</td>
+                            <td class="px-7 py-5">
+                                <span class="flex items-center gap-1.5 text-sm font-bold text-green-600"><span class="w-2.5 h-2.5 rounded-full bg-green-500"></span> Hoạt động</span>
+                            </td>
+                            <td class="px-7 py-5 text-right">
+                                <button class="text-brand-orange font-bold text-sm hover:underline mr-3">Chi tiết</button>
+                                <button class="text-red-500 font-bold text-sm border border-red-500 px-3 py-1.5 rounded hover:bg-red-50 transition">Khóa</button>
+                            </td>
+                        </tr>
+
+                        <tr class="hover:bg-slate-50 transition bg-red-50/20">
+                            <td class="px-7 py-5">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-slate-300 text-slate-600 flex items-center justify-center font-bold">LV</div>
+                                    <div>
+                                        <p class="text-base font-bold text-admin-dark">Lê Văn Scam</p>
+                                        <p class="text-sm font-semibold text-brand-meta mt-1">#USR-20451</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-7 py-5">
+                                <p class="text-base font-semibold text-admin-dark">levan@gmail.com</p>
+                                <p class="text-sm font-semibold text-brand-meta mt-1">098xxxx999</p>
+                            </td>
+                            <td class="px-7 py-5">
+                                <span class="bg-slate-200 text-slate-600 px-3 py-1.5 rounded text-xs font-bold uppercase">Người Mua</span>
+                            </td>
+                            <td class="px-7 py-5 text-base font-semibold text-brand-meta">05/02/2026</td>
+                            <td class="px-7 py-5">
+                                <span class="flex items-center gap-1.5 text-sm font-bold text-red-600"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Bị khóa</span>
+                            </td>
+                            <td class="px-7 py-5 text-right">
+                                <button class="text-brand-meta font-bold text-sm hover:underline mr-3">Lịch sử</button>
+                                <button class="text-green-600 font-bold text-sm border border-green-600 px-3 py-1.5 rounded hover:bg-green-50 transition">Mở khóa</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-7 py-5 border-t border-brand-border flex justify-between items-center bg-slate-50">
+                <p class="text-sm font-semibold text-brand-meta">Hiển thị 1 - 10 trên tổng số 45,231 Users</p>
+                <div class="flex gap-2">
+                    <button class="px-4 py-2 border border-brand-border rounded font-bold text-brand-meta hover:bg-white transition">Trước</button>
+                    <button class="px-4 py-2 bg-brand-orange text-white rounded font-bold shadow">1</button>
+                    <button class="px-4 py-2 border border-brand-border rounded font-bold text-brand-meta hover:bg-white transition">2</button>
+                    <button class="px-4 py-2 border border-brand-border rounded font-bold text-brand-meta hover:bg-white transition">Sau</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

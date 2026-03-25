@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/panel_head :: head('BOOKOM ADMIN - Tong quan san', true)}"></head>
+<body class="font-sans bg-[#fbfaf8] text-brand-dark">
+<div class="flex min-h-screen">
+    <div th:replace="~{fragments/admin_layout :: sidebar(${activeMenu})}"></div>
+
+    <div class="flex-1 min-w-0">
+        <div th:replace="~{fragments/admin_layout :: header(${pageTitle}, ${pageSubtitle})}"></div>
+
+        <main class="p-4 md:p-8 space-y-6">
+            <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+                <article class="rounded-xl border border-brand-accent bg-white p-5">
+                    <p class="text-sm font-black text-brand-dark/70">GMV toan san</p>
+                    <p id="metric-gmv" class="mt-2 text-2xl md:text-3xl font-black">--</p>
+                </article>
+                <article class="rounded-xl border border-brand-accent bg-white p-5">
+                    <p class="text-sm font-black text-brand-dark/70">So sach hien co</p>
+                    <p id="metric-books" class="mt-2 text-2xl md:text-3xl font-black">--</p>
+                </article>
+                <article class="rounded-xl border border-brand-accent bg-white p-5">
+                    <p class="text-sm font-black text-brand-dark/70">Danh muc</p>
+                    <p id="metric-categories" class="mt-2 text-2xl md:text-3xl font-black">--</p>
+                </article>
+                <article class="rounded-xl border border-brand-accent bg-brand-cream p-5">
+                    <p class="text-sm font-black text-brand-dark/70">Gian hang</p>
+                    <p id="metric-shops" class="mt-2 text-2xl md:text-3xl font-black text-brand-orange">--</p>
+                </article>
+            </section>
+
+            <section class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <article class="rounded-xl border border-brand-accent bg-white p-5">
+                    <h2 class="text-lg font-black mb-4">Phan bo danh muc sach</h2>
+                    <canvas id="admin-category-chart" height="120"></canvas>
+                </article>
+                <article class="rounded-xl border border-brand-accent bg-white p-5">
+                    <h2 class="text-lg font-black mb-4">Tinh trang ton kho</h2>
+                    <canvas id="admin-stock-chart" height="120"></canvas>
+                </article>
+            </section>
+
+            <section class="rounded-xl border border-brand-accent bg-white overflow-hidden">
+                <div class="px-5 py-4 border-b border-brand-accent flex items-center justify-between">
+                    <h2 class="text-lg font-black">Shop duoc map tu du lieu sach</h2>
+                    <a th:href="@{/admin/shops}" class="text-sm font-black text-brand-orange hover:underline">Xem trang shops</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-brand-cream text-brand-dark/70">
+                        <tr>
+                            <th class="px-4 py-3 font-black">Ten shop</th>
+                            <th class="px-4 py-3 font-black">Ho so</th>
+                            <th class="px-4 py-3 font-black">Ngay tao</th>
+                            <th class="px-4 py-3 font-black text-right">Trang thai</th>
+                        </tr>
+                        </thead>
+                        <tbody id="admin-dashboard-shops" class="divide-y divide-brand-accent"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<script th:src="@{/js/panel-data.js}"></script>
+<script>
+    BookomPanelData.initAdminDashboard();
+</script>
+</body>
+</html>

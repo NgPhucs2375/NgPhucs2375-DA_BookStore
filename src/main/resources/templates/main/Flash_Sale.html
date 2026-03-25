@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKOM - Flash Sale Giờ Vàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-brown': '#cda27a',
+                        'brand-dark': '#4a3b32',
+                        'brand-bg': '#fbfaf8',
+                        'brand-orange': '#ea580c',
+                        'brand-red': '#dc2626', /* Màu đỏ đặc trưng cho Sale */
+                        'brand-border': '#eaddcf',
+                    },
+                    fontFamily: { sans: ['Quicksand', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Hiệu ứng chớp nháy cho icon sấm sét */
+        @keyframes flash {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); text-shadow: 0 0 10px rgba(250, 204, 21, 0.8); }
+        }
+        .animate-flash { animation: flash 1.5s infinite; }
+        
+        /* Gradient nền cho header Flash Sale */
+        .bg-flash-gradient {
+            background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
+        }
+    </style>
+</head>
+<body class="bg-brand-bg font-sans text-brand-dark min-h-screen">
+
+<header class="bg-white sticky top-0 z-50 shadow-sm border-b border-brand-border px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <a th:href="@{/}" class="text-2xl font-black tracking-tighter flex items-center gap-2">
+            <div class="bg-brand-brown text-white p-1 rounded-lg">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            </div>
+            BOOKOM
+        </a>
+        <div class="flex items-center gap-4">
+            <a th:href="@{/main/search}" class="text-brand-dark hover:text-brand-orange transition hidden md:block">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </a>
+            <a th:href="@{/main/cart}" class="relative text-brand-dark hover:text-brand-orange transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+            </a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section class="bg-flash-gradient text-white py-12 px-6 shadow-md relative overflow-hidden">
+        <svg class="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="a" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 40L40 0H20L0 20M40 40V20L20 40" fill="currentColor"/></pattern></defs><rect width="100%" height="100%" fill="url(#a)"/></svg>
+        
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between relative z-10 gap-8">
+            <div class="flex items-center gap-4">
+                <svg class="w-16 h-16 text-yellow-300 animate-flash" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path></svg>
+                <div>
+                    <h1 class="text-4xl md:text-5xl font-black italic tracking-wider uppercase drop-shadow-lg">Giờ Vàng Giá Sốc</h1>
+                    <p class="text-orange-100 font-medium mt-1">Săn ngay sách bản quyền giảm đến 70%</p>
+                </div>
+            </div>
+            
+            <div class="bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/30 text-center">
+                <p class="text-xs font-bold uppercase mb-2">Kết thúc trong</p>
+                <div class="flex gap-2">
+                    <div class="bg-brand-dark text-white w-12 h-14 rounded-lg flex flex-col items-center justify-center shadow-lg">
+                        <span class="text-xl font-black leading-none">02</span>
+                        <span class="text-[8px] uppercase">Giờ</span>
+                    </div>
+                    <div class="text-2xl font-black self-center pb-2">:</div>
+                    <div class="bg-brand-dark text-white w-12 h-14 rounded-lg flex flex-col items-center justify-center shadow-lg">
+                        <span class="text-xl font-black leading-none">45</span>
+                        <span class="text-[8px] uppercase">Phút</span>
+                    </div>
+                    <div class="text-2xl font-black self-center pb-2">:</div>
+                    <div class="bg-brand-orange text-white w-12 h-14 rounded-lg flex flex-col items-center justify-center shadow-lg">
+                        <span class="text-xl font-black leading-none">12</span>
+                        <span class="text-[8px] uppercase">Giây</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-white border-b border-brand-border sticky top-[72px] z-40">
+        <div class="max-w-7xl mx-auto flex overflow-x-auto hide-scroll-bar">
+            <button class="flex-1 min-w-[120px] py-3 flex flex-col items-center border-b-4 border-transparent text-gray-400 opacity-60">
+                <span class="text-xl font-black">09:00</span>
+                <span class="text-[10px] font-bold uppercase">Đã kết thúc</span>
+            </button>
+            <button class="flex-1 min-w-[120px] py-3 flex flex-col items-center border-b-4 border-brand-red text-brand-red bg-red-50">
+                <span class="text-xl font-black">12:00</span>
+                <span class="text-[10px] font-bold uppercase">Đang diễn ra</span>
+            </button>
+            <button class="flex-1 min-w-[120px] py-3 flex flex-col items-center border-b-4 border-transparent text-gray-500 hover:bg-gray-50 transition">
+                <span class="text-xl font-black">15:00</span>
+                <span class="text-[10px] font-bold uppercase">Sắp diễn ra</span>
+            </button>
+            <button class="flex-1 min-w-[120px] py-3 flex flex-col items-center border-b-4 border-transparent text-gray-500 hover:bg-gray-50 transition">
+                <span class="text-xl font-black">20:00</span>
+                <span class="text-[10px] font-bold uppercase">Sắp diễn ra</span>
+            </button>
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto px-6 py-10">
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+            
+            <div class="bg-white p-4 rounded-xl border border-brand-border hover:shadow-xl transition-all relative group flex flex-col">
+                <div class="absolute top-0 right-0 bg-brand-red text-white text-xs font-black px-3 py-1.5 rounded-tr-xl rounded-bl-xl z-10 flex flex-col items-center">
+                    <span>-50%</span>
+                </div>
+                
+                <div class="w-full aspect-[2/3] bg-[#2c3e50] border border-gray-100 flex items-center justify-center mb-4 group-hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+                    <span class="text-white text-[10px] font-bold">ĐẠI GIA GATSBY</span>
+                </div>
+                
+                <div class="flex-grow flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-brand-dark text-sm line-clamp-2 mb-1 group-hover:text-brand-orange transition">Đại Gia Gatsby (Bản Đặc Biệt)</h3>
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="font-black text-brand-red text-lg">50.000đ</span>
+                            <span class="text-xs text-gray-400 line-through">100.000đ</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="relative w-full h-4 bg-orange-100 rounded-full overflow-hidden mb-2">
+                            <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-brand-orange to-brand-red" style="width: 90%;"></div>
+                            <span class="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white z-10 drop-shadow-md uppercase tracking-wider">Đã bán 90</span>
+                        </div>
+                        <button class="w-full py-2.5 bg-brand-red text-white rounded-lg font-bold text-xs uppercase tracking-wide shadow-md hover:bg-red-700 transition">Mua Ngay</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-brand-border hover:shadow-xl transition-all relative group flex flex-col">
+                <div class="absolute top-0 right-0 bg-brand-red text-white text-xs font-black px-3 py-1.5 rounded-tr-xl rounded-bl-xl z-10 flex flex-col items-center">
+                    <span>-30%</span>
+                </div>
+                
+                <div class="w-full aspect-[2/3] bg-[#8e44ad] border border-gray-100 flex items-center justify-center mb-4 group-hover:-translate-y-1 transition-transform duration-300">
+                    <span class="text-white text-[10px] font-bold">TƯ DUY NHANH VÀ CHẬM</span>
+                </div>
+                
+                <div class="flex-grow flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-brand-dark text-sm line-clamp-2 mb-1 group-hover:text-brand-orange transition">Tư Duy Nhanh Và Chậm</h3>
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="font-black text-brand-red text-lg">126.000đ</span>
+                            <span class="text-xs text-gray-400 line-through">180.000đ</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="relative w-full h-4 bg-orange-100 rounded-full overflow-hidden mb-2">
+                            <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-brand-orange to-brand-red" style="width: 30%;"></div>
+                            <span class="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white z-10 drop-shadow-md uppercase tracking-wider">Đã bán 15</span>
+                        </div>
+                        <button class="w-full py-2.5 bg-brand-red text-white rounded-lg font-bold text-xs uppercase tracking-wide shadow-md hover:bg-red-700 transition">Mua Ngay</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-xl border border-brand-border relative group flex flex-col opacity-70 cursor-not-allowed">
+                <div class="absolute inset-0 bg-white/40 z-20 rounded-xl flex items-center justify-center">
+                    <div class="bg-brand-dark text-white px-4 py-2 rounded-full font-black text-sm uppercase transform -rotate-12">Hết Hàng</div>
+                </div>
+                
+                <div class="w-full aspect-[2/3] bg-gray-400 border border-gray-100 flex items-center justify-center mb-4">
+                    <span class="text-white text-[10px] font-bold">NHÀ GIẢ KIM</span>
+                </div>
+                
+                <div class="flex-grow flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-gray-500 text-sm line-clamp-2 mb-1">Nhà Giả Kim (Tái bản 2023)</h3>
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="font-black text-gray-500 text-lg">39.000đ</span>
+                            <span class="text-xs text-gray-400 line-through">79.000đ</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="relative w-full h-4 bg-gray-200 rounded-full overflow-hidden mb-2">
+                            <div class="absolute top-0 left-0 h-full bg-gray-400" style="width: 100%;"></div>
+                            <span class="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white z-10 uppercase tracking-wider">Đã bán hết</span>
+                        </div>
+                        <button disabled class="w-full py-2.5 bg-gray-300 text-gray-500 rounded-lg font-bold text-xs uppercase tracking-wide">Mua Ngay</button>
+                    </div>
+                </div>
+            </div>
+
+            </div>
+    </section>
+</main>
+
+<footer class="bg-brand-dark mt-10 py-8 border-t border-brand-border text-center">
+    <p class="text-brand-hero font-bold text-sm tracking-widest uppercase">© 2026 BOOKOM - Đồ án nhóm Bon chang linh ngu lam</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/panel_head :: head('BOOKOM SELLER - Kho hang', false)}"></head>
+<body class="font-sans bg-[#fbfaf8] text-brand-dark">
+<div class="flex min-h-screen">
+    <div th:replace="~{fragments/seller_layout :: sidebar(${activeMenu})}"></div>
+
+    <div class="flex-1 min-w-0">
+        <div th:replace="~{fragments/seller_layout :: header(${pageTitle}, ${pageSubtitle})}"></div>
+
+        <main class="p-4 md:p-8 space-y-6">
+            <section class="rounded-xl border border-brand-accent bg-white p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input id="inv-q" class="rounded-lg border border-brand-accent px-3 py-2 font-bold" placeholder="Tim ten sach/tac gia">
+                <select id="inv-category" class="rounded-lg border border-brand-accent px-3 py-2 font-bold">
+                    <option value="all">Tat ca danh muc</option>
+                </select>
+                <select id="inv-stock" class="rounded-lg border border-brand-accent px-3 py-2 font-bold">
+                    <option value="all">Tat ca ton kho</option>
+                    <option value="low">Low</option>
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                </select>
+            </section>
+
+            <section class="rounded-xl border border-brand-accent bg-white overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-brand-cream text-brand-dark/70">
+                        <tr>
+                            <th class="px-4 py-3 font-black">Ten sach</th>
+                            <th class="px-4 py-3 font-black">Tac gia</th>
+                            <th class="px-4 py-3 font-black">Gia</th>
+                            <th class="px-4 py-3 font-black">Ton kho</th>
+                            <th class="px-4 py-3 font-black">Canh bao</th>
+                            <th class="px-4 py-3 font-black text-right">Cap nhat</th>
+                        </tr>
+                        </thead>
+                        <tbody id="seller-inventory-body" class="divide-y divide-brand-accent"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<script th:src="@{/js/panel-data.js}"></script>
+<script>
+    BookomPanelData.initSellerInventory();
+</script>
+</body>
+</html>

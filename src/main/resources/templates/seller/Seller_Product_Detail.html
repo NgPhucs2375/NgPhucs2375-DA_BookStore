@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" class="scroll-smooth">
+<html lang="vi" class="scroll-smooth" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,7 +28,7 @@
 <main class="flex-1 flex flex-col h-full overflow-hidden">
     <header class="h-20 bg-white border-b border-brand-border flex items-center justify-between px-8 z-10 shadow-sm sticky top-0">
         <div class="flex items-center gap-4">
-            <a href="Inventory_Management.html" class="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition text-slate-600">
+            <a th:href="@{/seller/inventory}" class="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition text-slate-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             </a>
             <div>
@@ -37,7 +37,7 @@
             </div>
         </div>
         <div class="flex gap-3">
-            <a href="Inventory_Management.html" class="px-6 py-2.5 bg-white border border-brand-border text-slate-600 font-bold rounded-lg shadow-sm hover:bg-slate-50 transition">Hủy bỏ</a>
+            <a th:href="@{/seller/inventory}" class="px-6 py-2.5 bg-white border border-brand-border text-slate-600 font-bold rounded-lg shadow-sm hover:bg-slate-50 transition">Hủy bỏ</a>
             <button class="px-6 py-2.5 bg-brand-orange text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition hover:scale-105 active:scale-95">Lưu thay đổi</button>
         </div>
     </header>

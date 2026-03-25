@@ -30,6 +30,6 @@ public class PageController {
         model.addAttribute("book", book);
 
         // 4. Mở file BookDetail.html (Spring Boot tự động đi tìm file này trong thư mục templates)
-        return "Details_Produce";
+        return "main/Details_Produce";
     }
 }

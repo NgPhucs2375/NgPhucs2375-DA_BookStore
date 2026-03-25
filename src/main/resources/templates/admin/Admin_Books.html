@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/panel_head :: head('BOOKOM ADMIN - Kiem duyet sach', false)}"></head>
+<body class="font-sans bg-[#fbfaf8] text-[#5D4037]">
+<div class="flex min-h-screen">
+    <div th:replace="~{fragments/admin_layout :: sidebar(${activeMenu})}"></div>
+    <div class="flex-1 min-w-0">
+        <div th:replace="~{fragments/admin_layout :: header(${pageTitle}, ${pageSubtitle})}"></div>
+        <main class="p-4 md:p-8 space-y-6">
+            <section class="rounded-xl border border-[#E5CBB5] bg-white p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input id="books-q" class="rounded-lg border border-[#E5CBB5] px-3 py-2 font-bold" placeholder="Tim ten sach/tac gia">
+                <select id="books-category" class="rounded-lg border border-[#E5CBB5] px-3 py-2 font-bold"><option value="all">Tat ca danh muc</option></select>
+                <select id="books-stock" class="rounded-lg border border-[#E5CBB5] px-3 py-2 font-bold"><option value="all">Tat ca ton kho</option><option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option></select>
+            </section>
+            <section class="rounded-xl border border-[#E5CBB5] bg-white overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-[#FAF5E8] text-[#5D4037]/70"><tr><th class="px-4 py-3 font-black">Ten sach</th><th class="px-4 py-3 font-black">Tac gia</th><th class="px-4 py-3 font-black">Gia</th><th class="px-4 py-3 font-black">Danh muc</th><th class="px-4 py-3 font-black">Ton kho</th><th class="px-4 py-3 font-black text-right">Duyet</th></tr></thead>
+                        <tbody id="admin-books-body" class="divide-y divide-[#E5CBB5]"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+<script th:src="@{/js/panel-data.js}"></script>
+<script>BookomPanelData.initAdminBooks();</script>
+</body>
+</html>

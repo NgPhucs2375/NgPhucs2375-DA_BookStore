@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(pageTitle, includeChart)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">BOOKOM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <th:block th:if="${includeChart}">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </th:block>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-peach': '#F8D9C0',
+                        'brand-cream': '#FAF5E8',
+                        'brand-biscuit': '#D19C74',
+                        'brand-dark': '#5D4037',
+                        'brand-accent': '#E5CBB5',
+                        'brand-orange': '#ea580c'
+                    },
+                    fontFamily: {
+                        sans: ['Quicksand', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+</html>

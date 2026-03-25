@@ -1,5 +1,5 @@
 (function () {
-  var API_ROOT = "http://localhost:8080/api/panel";
+  var API_ROOT = "/api/panel";
   var charts = {};
 
   function esc(v) {
@@ -111,7 +111,7 @@
     var sEl = document.getElementById("books-stock");
 
     function loadCategories() {
-      return getJson("http://localhost:8080/api/categories").then(function (cats) {
+      return getJson("/api/categories").then(function (cats) {
         if (!cEl) return;
         var opts = ['<option value="all">Tat ca danh muc</option>']
           .concat((cats || []).map(function (c) {
@@ -302,7 +302,7 @@
     var sEl = document.getElementById("inv-stock");
 
     function loadCategories() {
-      return getJson("http://localhost:8080/api/categories").then(function (cats) {
+      return getJson("/api/categories").then(function (cats) {
         if (!cEl) return;
         var opts = ['<option value="all">Tat ca danh muc</option>']
           .concat((cats || []).map(function (c) { return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>'; }))

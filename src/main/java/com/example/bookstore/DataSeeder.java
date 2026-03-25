@@ -1,17 +1,21 @@
-// Class này : dùng để bơm dữ liệu từ csv vào System
-// Lưu ý : db hoàn toàn dùng từ file csv được lấy tưf dataset trên kaggle nên phần Price hoàn toàn là random dù tôi đã rất try tìm kiếm nhưng vẫn ko có giá sát thực tế được haizzz : ))
-
 package com.example.bookstore;
 
 import com.example.bookstore.model.Book;
 import com.example.bookstore.repository.BookRepository;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -19,64 +23,87 @@ public class DataSeeder implements CommandLineRunner {
     @Autowired
     private BookRepository bookRepository;
 
+    // ✨ Lấy Key từ application.properties
+    @Value("${google.gemini.api-key:MISSING_KEY}")
+    private String apiKey;
+
     @Override
     public void run(String... args) throws Exception {
         System.out.println("Dang don dep kho sach cu...");
         bookRepository.deleteAll();
 
-        System.out.println("Dang nap du lieu sach tu file CSV Kaggle...");
-
-        java.io.InputStream is = getClass().getResourceAsStream("/books_data.csv");
-        if (is == null) {
-            System.out.println("❌ BÁO ĐỘNG: Không tìm thấy file books_data.csv!");
-            return;
-        }
+        System.out.println("--- PHẦN 1: NẠP DỮ LIỆU TỪ CSV ---");
+        java.io.InputStream is = getClass().getResourceAsStream("/Books.csv");
+        if (is == null) { System.out.println("❌ Không thấy file Books.csv!"); return; }
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;
             boolean isFirstLine = true;
+            int count = 0;
 
             while ((line = br.readLine()) != null) {
-                if (isFirstLine) {
-                    isFirstLine = false;
-                    continue; // Bỏ qua dòng tiêu đề: ISBN,Book-Title,Book-Author...
-                }
-
-                // Tách cột bằng Regex (để không bị lỗi nếu trong tên sách có dấu phẩy)
+                if (isFirstLine) { isFirstLine = false; continue; }
                 String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
 
-                // File Kaggle có 8 cột, nên phải >= 8 mới lấy được Image-URL-L (cột số 7)
                 if (data.length >= 8) {
                     try {
                         Book book = new Book();
-                        book.setTitle(data[1].replace("\"", "").trim()); // Cột 1: Tên sách
-                        book.setAuthor(data[2].replace("\"", "").trim()); // Cột 2: Tác giả
-
-                        // Ghép Nhà xuất bản (Cột 6) và Năm (Cột 3) làm mô tả
-                        String desc = "NXB: " + data[6].replace("\"", "").trim() +
-                                " - Năm: " + data[3].replace("\"", "").trim();
-                        if(desc.length() > 250) desc = desc.substring(0, 250);
-                        book.setDescription(desc);
-
-                        // Lấy link ảnh xịn nhất (Cột 7: Image-URL-L)
+                        book.setTitle(data[1].replace("\"", "").trim());
+                        book.setAuthor(data[2].replace("\"", "").trim());
+                        book.setPublishYear(data[3].replace("\"", "").trim());
+                        book.setPublisher(data[6].replace("\"", "").trim());
                         book.setImageUrl(data[7].replace("\"", "").trim());
 
-                        // Phép thuật Random: Giá từ 50k đến 250k (làm tròn hàng ngàn cho đẹp)
                         double randomPrice = Math.round((Math.random() * 200000) + 50000) / 1000 * 1000;
                         book.setPrice(randomPrice);
-
-                        // Phép thuật Random: Tồn kho từ 10 đến 100
                         book.setStockQuantity((int)(Math.random() * 90) + 10);
 
                         bookRepository.save(book);
-                    } catch (Exception e) {
-                        // Kệ mấy dòng bị lỗi cấu trúc, skip luôn
-                    }
+                        count++;
+                        if (count >= 300) { break; }
+                    } catch (Exception e) {}
                 }
             }
-            System.out.println("✅ Nạp dữ liệu từ CSV Kaggle thành công rực rỡ! Anh mở web lên xem đi!");
-        } catch (Exception e) {
-            System.out.println("❌ Lỗi khi đọc file: " + e.getMessage());
+            System.out.println("✅ Nạp xong 300 cuốn sách!");
         }
+
+        System.out.println("\n--- PHẦN 2: DÙNG RESTCLIENT GỌI THẲNG GEMINI FLASH ---");
+        List<Book> booksNeedDesc = bookRepository.findAll().stream().limit(10).toList();
+
+        RestClient restClient = RestClient.create();
+        String geminiUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + apiKey;
+        for (Book book : booksNeedDesc) {
+            try {
+                System.out.println("Dang xin Gemini Flash viet mo ta cho: " + book.getTitle());
+
+                String prompt = "Viết một đoạn mô tả ngắn gọn, hấp dẫn bằng tiếng Việt (khoảng 2 câu) giới thiệu về cuốn sách '"
+                        + book.getTitle() + "' của tác giả " + book.getAuthor() + ". Không dùng markdown.";
+
+                // Đóng gói dữ liệu gửi đi
+                Map<String, Object> requestBody = Map.of(
+                        "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt))))
+                );
+
+                // Gọi API và lấy JSON trả về
+                JsonNode responseNode = restClient.post()
+                        .uri(geminiUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(requestBody)
+                        .retrieve()
+                        .body(JsonNode.class);
+
+                // Bóc tách câu trả lời của AI từ JSON
+                String aiDescription = responseNode.at("/candidates/0/content/parts/0/text").asText();
+
+                book.setDescription(aiDescription.trim() + " (Mô tả bởi AI)");
+                bookRepository.save(book);
+
+                Thread.sleep(1500); // Đợi 1.5s cho an toàn
+
+            } catch (Exception e) {
+                System.out.println("❌ Lỗi AI cuốn " + book.getTitle() + ": " + e.getMessage());
+            }
+        }
+        System.out.println("✅ HOÀN THÀNH DỰ ÁN AI SIÊU MƯỢT!");
     }
 }

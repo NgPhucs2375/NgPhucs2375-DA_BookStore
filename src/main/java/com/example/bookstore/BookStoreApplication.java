@@ -14,15 +14,5 @@ public class BookStoreApplication {
         SpringApplication.run(BookStoreApplication.class, args);
     }
 
-    @Bean
-    CommandLineRunner start(BookRepository bookRepository){
-        return args -> {
-            //Tao thu 1 cuon sach
-            Book book1 = new Book(null,"lap trinh Java Spring","Will","Sach hay cho dev",150000.0,50,null);
-            // Luu vao SQL Server
-            bookRepository.save(book1);
-            System.out.println("--- Da save cuon sach dau tien vao SSMS ! ---");
 
-        };
-    }
 }

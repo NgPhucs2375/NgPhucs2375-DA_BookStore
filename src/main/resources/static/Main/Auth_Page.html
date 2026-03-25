@@ -300,7 +300,7 @@
 <div class="fixed inset-0 bg-gradient-to-br from-brand-peach/30 via-transparent to-brand-biscuit/20 pointer-events-none z-0"></div>
 
 <div class="w-full max-w-[1200px] flex justify-between items-center py-6 px-4 z-10">
-    <a href="#" class="flex items-center gap-2 group">
+    <a href="index.html" class="flex items-center gap-2 group">
         <div class="bg-brand-biscuit text-white p-1.5 rounded-lg shadow-sm group-hover:bg-brand-dark transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         </div>
@@ -608,7 +608,7 @@
                     <div class="flex items-start gap-3 mt-2 mb-8 bg-brand-cream/50 p-4 rounded-xl border border-brand-accent">
                         <input type="checkbox" id="terms_agree" class="custom-checkbox mt-0.5" required>
                         <label for="terms_agree" class="text-xs font-medium text-brand-dark leading-relaxed cursor-pointer hover:text-brand-biscuit transition">
-                            Tôi đã đọc và đồng ý với <a href="#" class="text-brand-orange hover:underline font-bold">Điều khoản Dịch vụ</a> và <a href="#" class="text-brand-orange hover:underline font-bold">Chính sách Bảo mật</a> của nền tảng BOOKOM.
+                            Tôi đã đọc và đồng ý với <a href="Contact_us.html" class="text-brand-orange hover:underline font-bold">Điều khoản Dịch vụ</a> và <a href="Contact_us.html" class="text-brand-orange hover:underline font-bold">Chính sách Bảo mật</a> của nền tảng BOOKOM.
                         </label>
                     </div>
 
@@ -946,7 +946,7 @@
             axios.post(`${API_BASE_URL}/register`, {
                 username: email, // Trong User.java dùng username, tạm lấy email gán vào
                 passwordHash: password
-            })toan yeu phuc
+            })
                 .then(response => {
                     // Thành công thì cho phép chuyển qua view OTP (route-reg-3)
                     Swal.fire({ icon: 'success', title: 'Thành công!', text: 'Đăng ký thành công. Vui lòng kiểm tra OTP!', timer: 2000, showConfirmButton: false });

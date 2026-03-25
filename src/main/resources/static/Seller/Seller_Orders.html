@@ -1,99 +1,38 @@
 <!DOCTYPE html>
-<html lang="vi" class="scroll-smooth">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOOKOM SELLER HUB - Quản lý đơn hàng</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'brand-brown': '#cda27a',
-                        'brand-dark': '#4a3b32',
-                        'brand-bg': '#f1f5f9', // Nền xám nhạt TailAdmin
-                        'brand-orange': '#ea580c',
-                        'brand-border': '#e2e8f0',
-                    },
-                    fontFamily: { sans: ['Quicksand', 'sans-serif'] },
-                }
-            }
-        }
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOOKOM SELLER - Don hang</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: { extend: { colors: { "brand-peach": "#F8D9C0", "brand-cream": "#FAF5E8", "brand-biscuit": "#D19C74", "brand-dark": "#5D4037", "brand-accent": "#E5CBB5", "brand-orange": "#ea580c" }, fontFamily: { sans: ["Quicksand", "sans-serif"] } } } };
+  </script>
 </head>
-<body class="bg-brand-bg font-sans text-brand-dark flex h-screen overflow-hidden">
+<body class="font-sans bg-[#fbfaf8] text-brand-dark">
+  <div class="flex min-h-screen">
+    <div id="panel-sidebar"></div>
+    <div class="flex-1 min-w-0">
+      <div id="panel-header"></div>
+      <main class="p-4 md:p-8 space-y-6">
+        <section class="rounded-xl border border-brand-accent bg-white p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input id="orders-q" class="rounded-lg border border-brand-accent px-3 py-2 font-bold" placeholder="Tim ma don/khach/san pham">
+          <select id="orders-status" class="rounded-lg border border-brand-accent px-3 py-2 font-bold"><option value="all">Tat ca trang thai</option><option>Cho xac nhan</option><option>Dang giao</option><option>Hoan tat</option></select>
+        </section>
 
-<aside class="w-64 bg-white border-r border-brand-border flex flex-col hidden md:flex h-full shadow-sm z-20">
-    <div class="h-20 flex items-center px-6 border-b border-brand-border">
-        <a href="../Main/index.html" class="text-2xl font-black text-brand-dark">SELLER <span class="text-brand-orange">HUB</span></a>
+        <section class="rounded-xl border border-brand-accent bg-white overflow-hidden">
+          <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-brand-cream text-brand-dark/70"><tr><th class="px-4 py-3 font-black">Ma don</th><th class="px-4 py-3 font-black">Khach</th><th class="px-4 py-3 font-black">San pham</th><th class="px-4 py-3 font-black">Gia tri</th><th class="px-4 py-3 font-black">Trang thai</th><th class="px-4 py-3 font-black text-right">Chi tiet</th></tr></thead><tbody id="seller-orders-body" class="divide-y divide-brand-accent"></tbody></table></div>
+        </section>
+      </main>
     </div>
-    <nav class="flex-1 overflow-y-auto p-4 space-y-1">
-        <a href="Seller_Dashboard.html" class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-            Tổng quan
-        </a>
-        <a href="#" class="flex items-center gap-3 px-4 py-3 bg-brand-brown/10 text-brand-dark rounded-lg font-bold shadow-sm">
-            <svg class="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-            Đơn hàng mới
-        </a>
-        <a href="Inventory_Management.html" class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-            Kho hàng
-        </a>
-        <a href="Seller_Analytics.html" class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            Doanh thu
-        </a>
-    </nav>
-</aside>
+  </div>
 
-<main class="flex-1 flex flex-col overflow-hidden">
-    <header class="h-20 bg-white border-b border-brand-border flex items-center justify-between px-8 z-10 shadow-sm">
-        <h1 class="text-xl font-bold">Danh sách đơn hàng</h1>
-        <div class="flex items-center gap-4">
-            <span class="text-sm font-medium text-slate-500">Nhà sách Tuổi Trẻ</span>
-            <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-white font-black text-sm">NS</div>
-        </div>
-    </header>
-
-    <div class="flex-1 overflow-y-auto p-8 space-y-6">
-        <div class="flex gap-1 border-b border-brand-border">
-            <button class="px-5 py-3 border-b-2 border-brand-orange text-brand-orange font-bold text-sm">Chờ xác nhận (5)</button>
-            <button class="px-5 py-3 border-b-2 border-transparent text-slate-500 hover:text-brand-dark font-medium text-sm transition">Đang giao (12)</button>
-            <button class="px-5 py-3 border-b-2 border-transparent text-slate-500 hover:text-brand-dark font-medium text-sm transition">Đã hoàn thành</button>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden">
-            <table class="w-full text-left text-sm">
-                <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-b border-brand-border">
-                    <tr>
-                        <th class="px-6 py-5">Mã đơn</th>
-                        <th class="px-6 py-5">Khách hàng</th>
-                        <th class="px-6 py-5">Sản phẩm chính</th>
-                        <th class="px-6 py-5">Tổng tiền</th>
-                        <th class="px-6 py-5 text-right">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-brand-border">
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="px-6 py-5 font-bold text-brand-orange">#BK-2026-091</td>
-                        <td class="px-6 py-5">
-                            <p class="font-bold">Vũ Thiên Trường</p>
-                            <p class="text-xs text-slate-400">090xxxx123</p>
-                        </td>
-                        <td class="px-6 py-5 text-slate-600 font-medium italic">Tâm lý học đám đông (x1)</td>
-                        <td class="px-6 py-5 font-black text-lg">85.000đ</td>
-                        <td class="px-6 py-5 text-right space-x-2">
-                            <button class="bg-brand-orange text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:bg-orange-700 transition active:scale-95">Xác nhận</button>
-                            <button class="bg-white border border-brand-border text-slate-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-100 transition">Chi tiết</button>
-                        </td>
-                    </tr>
-                    </tbody>
-            </table>
-        </div>
-    </div>
-</main>
+  <script src="../Admin/admin-shell.js"></script>
+  <script src="../Admin/panel-data.js"></script>
+  <script>
+    BookomPanelShell.init({ role: "seller", page: "seller-orders", title: "Quan ly don hang", subtitle: "UC-SEL-02 + loc" });
+    BookomPanelData.initSellerOrders();
+  </script>
 </body>
 </html>

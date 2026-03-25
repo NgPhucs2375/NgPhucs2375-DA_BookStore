@@ -3,10 +3,13 @@ package com.example.bookstore.controller;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.example.bookstore.repository.BookRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @RestController // Bao cho SB biet class nay chuyen dung de tao API tra ve du lieu(thuong la dinh dang JSON) chu khong phai tra ve giao dien HTML
@@ -19,10 +22,19 @@ public class BookController {
     // (tuong tu nhu cach lam viec voi interface trong cac project .NET). Spring Boot se tu dong "tiem" BookService vao de dung ma khong can thiet phai viet
     //API lay danh sach toan bo sach
     private BookService bookService;
+
+    @Autowired
+    private BookRepository bookRepository;
+
+
+
     @GetMapping // Bao hieu rang ham getAllBooks() se duoc chay khi co ai do truy cap vao dia chi goc bang phuong thuc Get(nhu khi go link tren trinh duyet)
-    public List<Book> getAllBooks(){
-        return bookService.getAllBook();
-        // ham findAll() : duoc Spring Boot tu dong cung cap
+    public Page<Book> getBooks(
+            @RequestParam(defaultValue = "0") int page, // Trang số mấy (Mặc định trang 0)
+            @RequestParam(defaultValue = "20") int size // Lấy bao nhiêu cuốn (Mặc định 20)
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return bookRepository.findAll(pageable);
     }
 
     // --- API add new book ---

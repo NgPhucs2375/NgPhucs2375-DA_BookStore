@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi" class="scroll-smooth">
+<html lang="vi" class="scroll-smooth" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOOKOM - Chi Tiết Sản Phẩm (Premium Edition)</title>
+    <title th:text="${book.title} + ' - BOOKOM (Premium Edition)'">BOOKOM - Chi Tiết Sản Phẩm (Premium Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,7 +165,7 @@
                 <span class="mx-2 text-gray-400">/</span>
                 <a href="#" class="hover:text-brand-brown transition-colors">Văn Học Nước Ngoài</a>
                 <span class="mx-2 text-gray-400">/</span>
-                <span class="text-brand-dark font-bold truncate">Đại Gia Gatsby (The Great Gatsby) - Bản Đặc Biệt</span>
+                <span class="text-brand-dark font-bold truncate" th:text="${book.title}">Đại Gia Gatsby (The Great Gatsby) - Bản Đặc Biệt</span>
             </nav>
         </div>
     </div>
@@ -177,11 +177,8 @@
 
                 <div class="bg-brand-bg border border-brand-border rounded-xl p-4">
                     <div class="w-full aspect-square bg-brand-brown/10 rounded-lg border border-brand-brown/20 flex items-center justify-center overflow-hidden mb-4 img-zoom-container relative cursor-pointer">
-                        <div class="w-3/4 h-[85%] bg-[#2c3e50] border-8 border-white shadow-xl flex flex-col items-center justify-center text-white p-4 relative">
-                            <div class="absolute top-4 left-0 w-full text-center text-yellow-500 text-xs font-serif tracking-[0.2em] uppercase opacity-80">F. Scott Fitzgerald</div>
-                            <div class="text-3xl font-serif font-bold text-center mt-6 leading-tight text-yellow-400">ĐẠI GIA<br>GATSBY</div>
-                            <div class="mt-auto text-[10px] tracking-widest opacity-60">NHÃ NAM XUẤT BẢN</div>
-                        </div>
+                        <img th:src="${book.imageUrl}" onerror="this.src='https://via.placeholder.com/400x500?text=No+Cover'" class="w-3/4 h-[85%] object-cover border-8 border-white shadow-xl" alt="Book Cover">
+
                         <div class="absolute bottom-4 right-4 bg-white/80 p-2 rounded-full text-brand-dark shadow-sm backdrop-blur-sm">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
                         </div>
@@ -231,7 +228,7 @@
                         <span class="bg-brand-orange text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">Mall</span>
                         <span class="bg-green-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">Mới Xuất Bản</span>
                     </div>
-                    <h1 class="text-2xl md:text-3xl font-bold text-brand-dark leading-snug">
+                    <h1 class="text-2xl md:text-3xl font-bold text-brand-dark leading-snug" th:text="${book.title}">
                         Đại Gia Gatsby (The Great Gatsby) - Bản Đặc Biệt Bìa Cứng Kèm Bookmark
                     </h1>
                 </div>
@@ -255,8 +252,8 @@
                 <div class="bg-brand-bg rounded-xl p-6 mb-6 flex flex-col gap-2 border border-brand-border shadow-inner">
                     <div class="flex items-baseline gap-4">
                         <span class="text-brand-dark font-medium text-lg">Giá:</span>
-                        <span class="text-gray-400 text-lg line-through decoration-1">150.000đ</span>
-                        <span class="text-4xl font-extrabold text-brand-orange">100.000đ</span>
+                        <span class="text-gray-400 text-lg line-through decoration-1" th:text="${#numbers.formatDecimal(book.price * 1.5, 0, 'COMMA', 0, 'POINT')} + 'đ'">150.000đ</span>
+                        <span class="text-4xl font-extrabold text-brand-orange" th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + 'đ'">100.000đ</span>
                         <span class="bg-brand-orange text-white text-xs font-bold px-2 py-1 rounded-sm ml-2">-33% GIẢM</span>
                     </div>
                     <div class="flex items-center gap-2 mt-2 text-sm">
@@ -333,12 +330,12 @@
                         <button class="px-3 py-1.5 bg-brand-bg text-gray-600 hover:bg-gray-200 transition font-bold outline-none border-r border-brand-border flex items-center justify-center w-10">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
                         </button>
-                        <input type="number" value="1" min="1" max="99" class="w-14 text-center py-1.5 font-bold text-brand-dark outline-none appearance-none">
+                        <input type="number" value="1" min="1" th:max="${book.stockQuantity}" class="w-14 text-center py-1.5 font-bold text-brand-dark outline-none appearance-none">
                         <button class="px-3 py-1.5 bg-brand-bg text-gray-600 hover:bg-gray-200 transition font-bold outline-none border-l border-brand-border flex items-center justify-center w-10">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         </button>
                     </div>
-                    <span class="text-xs text-gray-400">146 sản phẩm có sẵn</span>
+                    <span class="text-xs text-gray-400" th:text="${book.stockQuantity} + ' sản phẩm có sẵn'">146 sản phẩm có sẵn</span>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-4 mt-auto">
@@ -437,11 +434,11 @@
                     </div>
                     <div class="flex border-b border-brand-border/50 pb-2">
                         <span class="text-gray-500 w-32 flex-shrink-0">Tác giả</span>
-                        <span class="text-brand-dark font-medium">F. Scott Fitzgerald</span>
+                        <span class="text-brand-dark font-medium" th:text="${book.author}">F. Scott Fitzgerald</span>
                     </div>
                     <div class="flex border-b border-brand-border/50 pb-2">
                         <span class="text-gray-500 w-32 flex-shrink-0">Nhà Xuất Bản</span>
-                        <span class="text-brand-dark font-medium">Nhà Xuất Bản Hội Nhà Văn</span>
+                        <span class="text-brand-dark font-medium" th:text="${book.publisher}">Nhà Xuất Bản Hội Nhà Văn</span>
                     </div>
                     <div class="flex border-b border-brand-border/50 pb-2">
                         <span class="text-gray-500 w-32 flex-shrink-0">Công Ty Phát Hành</span>
@@ -449,7 +446,7 @@
                     </div>
                     <div class="flex border-b border-brand-border/50 pb-2">
                         <span class="text-gray-500 w-32 flex-shrink-0">Năm Xuất Bản</span>
-                        <span class="text-brand-dark font-medium">2023</span>
+                        <span class="text-brand-dark font-medium" th:text="${book.publishYear}">2023</span>
                     </div>
                     <div class="flex border-b border-brand-border/50 pb-2">
                         <span class="text-gray-500 w-32 flex-shrink-0">Số Trang</span>
@@ -465,24 +462,12 @@
                     </div>
                 </div>
 
-                <h2 class="text-xl font-bold text-brand-dark bg-brand-bg px-4 py-3 border-l-4 border-brand-orange mb-6 uppercase tracking-wide">Mô Tả Sản Phẩm</h2>
+                <h2 class="text-xl font-bold text-brand-dark bg-brand-bg px-4 py-3 border-l-4 border-brand-orange mb-6 uppercase tracking-wide">Mô Tả Sản Phẩm (Do AI Viết)</h2>
 
                 <div class="prose max-w-none text-brand-dark text-sm leading-loose">
-                    <p class="mb-4">
-                        <strong>Đại Gia Gatsby</strong> (The Great Gatsby) là kiệt tác của nhà văn F. Scott Fitzgerald, được xuất bản lần đầu năm 1925. Câu chuyện diễn ra tại Long Island, New York, vào mùa hè năm 1922, được mệnh danh là "Thời đại Jazz" - một thời kỳ của sự phồn vinh vật chất chưa từng có nhưng lại rỗng tuếch về mặt tinh thần.
+                    <p class="mb-4 whitespace-pre-line" th:text="${book.description != null ? book.description : 'Đang cập nhật mô tả cho sản phẩm này...'}">
+                        <strong>Đại Gia Gatsby</strong> (The Great Gatsby) là kiệt tác của nhà văn F. Scott Fitzgerald...
                     </p>
-                    <p class="mb-4">
-                        Qua lời kể của nhân vật Nick Carraway, người đọc bước vào thế giới xa hoa, lộng lẫy của Jay Gatsby - một triệu phú trẻ tuổi đầy bí ẩn. Gatsby tổ chức những bữa tiệc thâu đêm suốt sáng tại dinh thự nguy nga của mình, thu hút hàng trăm vị khách không mời mà đến. Tuy nhiên, đằng sau sự hào nhoáng đó, Gatsby là một con người cô đơn, khao khát cháy bỏng một thứ duy nhất: tình yêu của Daisy Buchanan, người phụ nữ anh từng đánh mất trong quá khứ.
-                    </p>
-                    <p class="mb-4">
-                        Bằng ngòi bút tài hoa, F. Scott Fitzgerald không chỉ khắc họa một câu chuyện tình yêu lãng mạn mà còn vẽ nên một bức tranh châm biếm sâu sắc về "Giấc mơ Mỹ" (The American Dream). Tác phẩm cho thấy sự sụp đổ của những giá trị đạo đức truyền thống trước ma lực của đồng tiền, sự ảo tưởng và cái giá phải trả cho những khát vọng phù phiếm.
-                    </p>
-                    <ul class="list-disc pl-5 mb-4 space-y-2">
-                        <li>Bản dịch đặc biệt, trau chuốt từng câu chữ bởi dịch giả uy tín.</li>
-                        <li>Hình thức bìa cứng sang trọng, giấy bọc (jacket) in dập nổi kim loại cực kỳ bắt mắt.</li>
-                        <li>Tặng kèm Bookmark thiết kế độc quyền chỉ có trong đợt in đầu tiên.</li>
-                    </ul>
-                    <p class="font-bold text-brand-orange">Lưu ý: Sản phẩm là bản in giới hạn, số lượng có hạn.</p>
                 </div>
             </div>
 

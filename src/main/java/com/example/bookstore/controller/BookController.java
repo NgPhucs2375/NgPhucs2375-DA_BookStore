@@ -1,6 +1,7 @@
 package com.example.bookstore.controller;
 
 import com.example.bookstore.model.Book;
+import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.bookstore.repository.BookRepository;
@@ -10,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 
 @RestController // Bao cho SB biet class nay chuyen dung de tao API tra ve du lieu(thuong la dinh dang JSON) chu khong phai tra ve giao dien HTML
 @CrossOrigin("*") // thẻ VIP để có thể ra vào dữ liệu
@@ -35,6 +35,18 @@ public class BookController {
     ) {
         Pageable pageable = PageRequest.of(page, size);
         return bookRepository.findAll(pageable);
+    }
+
+    @GetMapping("/search")
+    public Page<Book> searchApprovedBooks(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        String keyword = (q == null || q.isBlank()) ? null : q.trim();
+        return bookRepository.searchApprovedBooks(keyword, categoryId, ApprovalStatus.APPROVED, pageable);
     }
 
     // --- API add new book ---

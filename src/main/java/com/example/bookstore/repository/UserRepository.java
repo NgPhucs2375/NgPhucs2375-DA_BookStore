@@ -1,8 +1,11 @@
 package com.example.bookstore.repository;
 
 import com.example.bookstore.model.User;
+import com.example.bookstore.model.enums.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository // Báo cho Spring Boot biết đây là Thợ mỏ đào dữ liệu
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -13,4 +16,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Tự động kiểm tra xem username đã có trong DB chưa
     boolean existsByUsername(String username);
+
+    List<User> findAllByRole(UserRole role);
 }

@@ -1,7 +1,11 @@
 package com.example.bookstore;
 
 import com.example.bookstore.model.Book;
+import com.example.bookstore.model.User;
+import com.example.bookstore.model.enums.ApprovalStatus;
+import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.repository.BookRepository;
+import com.example.bookstore.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,19 +13,23 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
 
     @Autowired
     private BookRepository bookRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // ✨ Lấy Key từ application.properties
     @Value("${google.gemini.api-key:MISSING_KEY}")
@@ -31,6 +39,31 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         System.out.println("Dang don dep kho sach cu...");
         bookRepository.deleteAll();
+        userRepository.deleteAll();
+
+        User admin = userRepository.save(User.builder()
+            .username("admin")
+            .passwordHash(BCrypt.hashpw("admin123", BCrypt.gensalt(10)))
+            .role(UserRole.ADMIN)
+            .build());
+
+        User sellerNhaNam = userRepository.save(User.builder()
+            .username("shop_nha_nam")
+            .passwordHash(BCrypt.hashpw("seller123", BCrypt.gensalt(10)))
+            .role(UserRole.SELLER)
+            .shopName("Nha Nam Official")
+            .shopAddress("Quang Trung Software Park, HCMC")
+            .build());
+
+        User sellerTre = userRepository.save(User.builder()
+            .username("shop_tre")
+            .passwordHash(BCrypt.hashpw("seller123", BCrypt.gensalt(10)))
+            .role(UserRole.SELLER)
+            .shopName("NXB Tre Official")
+            .shopAddress("District 3, HCMC")
+            .build());
+
+        System.out.println("✅ Da tao admin va 2 seller mac dinh: " + admin.getUsername());
 
         System.out.println("--- PHẦN 1: NẠP DỮ LIỆU TỪ CSV ---");
         java.io.InputStream is = getClass().getResourceAsStream("/Books.csv");
@@ -40,6 +73,7 @@ public class DataSeeder implements CommandLineRunner {
             String line;
             boolean isFirstLine = true;
             int count = 0;
+            Random random = new Random();
 
             while ((line = br.readLine()) != null) {
                 if (isFirstLine) { isFirstLine = false; continue; }
@@ -57,6 +91,9 @@ public class DataSeeder implements CommandLineRunner {
                         double randomPrice = Math.round((Math.random() * 200000) + 50000) / 1000 * 1000;
                         book.setPrice(randomPrice);
                         book.setStockQuantity((int)(Math.random() * 90) + 10);
+                        book.setApprovalStatus(ApprovalStatus.APPROVED);
+                        // Chia ngau nhien quyen so huu sach cho 2 seller
+                        book.setSeller(random.nextBoolean() ? sellerNhaNam : sellerTre);
 
                         bookRepository.save(book);
                         count++;

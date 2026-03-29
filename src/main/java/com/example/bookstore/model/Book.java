@@ -1,5 +1,6 @@
 package com.example.bookstore.model;
 
+import com.example.bookstore.model.enums.ApprovalStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,4 +34,19 @@ public class Book {
     @ManyToOne
     @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS
     private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id", nullable = false)
+    private User seller;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ApprovalStatus approvalStatus;
+
+    @PrePersist
+    public void onCreate() {
+        if (approvalStatus == null) {
+            approvalStatus = ApprovalStatus.PENDING;
+        }
+    }
 }

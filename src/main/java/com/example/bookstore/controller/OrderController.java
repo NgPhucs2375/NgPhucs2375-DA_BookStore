@@ -1,0 +1,61 @@
+package com.example.bookstore.controller;
+
+import com.example.bookstore.dto.CheckoutMeRequest;
+import com.example.bookstore.dto.CheckoutRequest;
+import com.example.bookstore.dto.CheckoutResponse;
+import com.example.bookstore.dto.SubOrderSummaryResponse;
+import com.example.bookstore.model.Order;
+import com.example.bookstore.model.enums.OrderStatus;
+import com.example.bookstore.service.OrderService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@CrossOrigin("*")
+@RequestMapping("/api/orders")
+@RequiredArgsConstructor
+public class OrderController {
+
+    private final OrderService orderService;
+
+    @PostMapping("/checkout")
+    public CheckoutResponse checkout(@Valid @RequestBody CheckoutRequest request) {
+        return orderService.checkoutFromCart(request);
+    }
+
+    @PostMapping("/me/checkout")
+    public CheckoutResponse checkoutForCurrentBuyer(
+            @RequestHeader("X-User-Id") Long buyerId,
+            @Valid @RequestBody CheckoutMeRequest request
+    ) {
+        // Transitional user context before JWT is integrated.
+        return orderService.checkoutFromCurrentBuyer(buyerId, request.getShippingAddress());
+    }
+
+    @GetMapping("/buyer/{buyerId}")
+    public List<Order> getBuyerOrders(@PathVariable Long buyerId) {
+        return orderService.getBuyerOrders(buyerId);
+    }
+
+    @GetMapping("/me")
+    public List<Order> getCurrentBuyerOrders(@RequestHeader("X-User-Id") Long buyerId) {
+        return orderService.getCurrentBuyerOrders(buyerId);
+    }
+
+    @GetMapping("/seller/{sellerId}/sub-orders")
+    public List<SubOrderSummaryResponse> getSellerSubOrders(@PathVariable Long sellerId) {
+        return orderService.getSellerSubOrders(sellerId);
+    }
+
+    @PatchMapping("/sub-orders/{subOrderId}/status")
+    public SubOrderSummaryResponse updateSubOrderStatus(
+            @RequestHeader("X-User-Id") Long sellerId,
+            @PathVariable Long subOrderId,
+            @RequestParam OrderStatus status
+    ) {
+        return orderService.updateSubOrderStatusForSeller(sellerId, subOrderId, status);
+    }
+}

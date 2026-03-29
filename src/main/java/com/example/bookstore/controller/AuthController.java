@@ -1,11 +1,16 @@
 package com.example.bookstore.controller;
 
+import com.example.bookstore.dto.UserProfileResponse;
+import com.example.bookstore.dto.UserProfileUpdateRequest;
 import com.example.bookstore.model.User;
+import com.example.bookstore.security.JwtTokenProvider;
 import com.example.bookstore.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController // Vẫn là báo cho Spring Boot biết đây là chỗ tạo API
 @CrossOrigin("*") // kiểu cấp thẻ VIP để auth được quyền trỏ vô data của SP vậy á
@@ -14,6 +19,9 @@ public class AuthController {
 
     @Autowired
     private AuthService authService; //Thêm bộ não xử lý
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
 
 //    API đăng ký
 //    đường dẫn là POST /api/auth/register
@@ -42,5 +50,34 @@ public class AuthController {
         else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Sai tên đăng nhập hoặc mật khẩu");
         }
+    }
+
+    @PostMapping("/login-jwt")
+    public ResponseEntity<?> loginJwt(@RequestBody User user) {
+        User authenticated = authService.authenticateUser(user.getUsername(), user.getPasswordHash());
+        if (authenticated == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Sai tên đăng nhập hoặc mật khẩu");
+        }
+
+        String token = jwtTokenProvider.createToken(authenticated.getId(), authenticated.getRole().name());
+        return ResponseEntity.ok(Map.of(
+            "tokenType", "Bearer",
+            "accessToken", token,
+            "userId", authenticated.getId(),
+            "role", authenticated.getRole().name()
+        ));
+    }
+
+    @GetMapping("/profile/{userId}")
+    public UserProfileResponse getProfile(@PathVariable Long userId) {
+        return authService.getProfile(userId);
+    }
+
+    @PutMapping("/profile/{userId}")
+    public UserProfileResponse updateProfile(
+        @PathVariable Long userId,
+        @RequestBody UserProfileUpdateRequest request
+    ) {
+        return authService.updateProfile(userId, request);
     }
 }

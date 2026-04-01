@@ -35,6 +35,14 @@ public class DataSeeder implements CommandLineRunner {
     @Value("${google.gemini.api-key:MISSING_KEY}")
     private String apiKey;
 
+    private String buildFallbackDescription(Book book) {
+        return String.format(
+            "%s la mot tua sach cua %s, phu hop cho ban doc muon mo rong kien thuc va trai nghiem doc sach chat luong. Phien ban hien tai dang duoc phan phoi boi he thong BOOKOM.",
+            book.getTitle(),
+            book.getAuthor()
+        );
+    }
+
     @Override
     public void run(String... args) throws Exception {
         System.out.println("Dang don dep kho sach cu...");
@@ -94,6 +102,8 @@ public class DataSeeder implements CommandLineRunner {
                         book.setApprovalStatus(ApprovalStatus.APPROVED);
                         // Chia ngau nhien quyen so huu sach cho 2 seller
                         book.setSeller(random.nextBoolean() ? sellerNhaNam : sellerTre);
+                        // Luon co mo ta co ban de UI khong bi trong khi AI gap loi
+                        book.setDescription(buildFallbackDescription(book));
 
                         bookRepository.save(book);
                         count++;
@@ -102,6 +112,12 @@ public class DataSeeder implements CommandLineRunner {
                 }
             }
             System.out.println("✅ Nạp xong 300 cuốn sách!");
+        }
+
+        boolean hasAiKey = apiKey != null && !apiKey.isBlank() && !"MISSING_KEY".equals(apiKey);
+        if (!hasAiKey) {
+            System.out.println("⚠️ Bo qua buoc AI mo ta vi chua cau hinh GOOGLE_AI_KEY.");
+            return;
         }
 
         System.out.println("\n--- PHẦN 2: DÙNG RESTCLIENT GỌI THẲNG GEMINI FLASH ---");
@@ -131,8 +147,9 @@ public class DataSeeder implements CommandLineRunner {
 
                 // Bóc tách câu trả lời của AI từ JSON
                 String aiDescription = responseNode.at("/candidates/0/content/parts/0/text").asText();
-
-                book.setDescription(aiDescription.trim() + " (Mô tả bởi AI)");
+                if (aiDescription != null && !aiDescription.isBlank()) {
+                    book.setDescription(aiDescription.trim() + " (Mo ta boi AI)");
+                }
                 bookRepository.save(book);
 
                 Thread.sleep(1500); // Đợi 1.5s cho an toàn

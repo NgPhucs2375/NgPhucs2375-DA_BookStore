@@ -1,6 +1,6 @@
 # BOOKSTORE MULTI-VENDOR - NOTEBOOKLM PROJECT DOSSIER
 
-Cap nhat: 2026-03-29
+Cap nhat: 2026-04-01
 Muc tieu tai lieu: 1 file tong hop day du de dua vao NotebookLM cho viec hoc, bao cao do an, Q&A, va review tien do.
 
 ---
@@ -16,10 +16,12 @@ Day la he thong Spring Boot duoc nang cap tu mo hinh ban hang don le sang mo hin
 - Da co API checkout backend tach don theo seller.
 - Da co migration script bang Flyway cho schema multi-vendor.
 - Da co bo UC feasibility de danh gia kha nang trien khai theo tung nhom nguoi dung.
+- Da bo sung input validation cho auth (regex + do dai) va global validation handler.
+- Da bind frontend trang chu/discovery voi API books va click sang trang chi tiet theo /book/{id}.
 
 ### Tinh trang tong quan
 - Muc do san sang hien tai: backend foundation((n): nền móng)  da co, chua full end-to-end production.
-- Danh gia nhanh: ~70% cho phase foundation.
+- Danh gia nhanh: ~78% cho phase foundation + buyer storefront.
 
 ---
 
@@ -188,7 +190,7 @@ Base: /api/auth
   - Tra ve accessToken Bearer token
 
 Trang thai:
-- Co xu ly co ban.
+- Co xu ly co ban + validation dau vao (regex, do dai, thong bao loi validation ro rang).
 - Da co endpoint cap token va bo loc JwtAuthenticationFilter o muc co ban.
 
 ## 7.2 Books
@@ -309,8 +311,9 @@ Canh bao van hanh:
 - Chua co SellerBookController ownership-safe.
 
 ## 11.3 Frontend integration
-- Template dang o muc giao dien manh, nhung chua bind full API moi.
-- Checkout UI chua submit dung payload checkout backend theo session user.
+- Da bind API /api/books cho trang main/index va main/discovery.
+- Da chay luong click card sach -> /book/{id} -> render Details_Produce theo sach thuc te.
+- Checkout UI va mot so luong nghiep vu cart/order nang cao van can dong bo them voi user context/JWT.
 
 ## 11.4 Testing
 - Da co test controller-level cho B04/B05/B06 (CartControllerTest, OrderControllerTest).
@@ -507,7 +510,7 @@ Kich ban de demo trong 10-15 phut:
 
 ## 14) Risk Register
 
-- R1: Chua co auth role runtime -> nguy co truy cap trai phep endpoint.
+- R1: Security runtime da co cho carts/orders, nhung coverage chua full tat ca endpoint seller/admin/books.
 - R2: baseline flyway tren DB co du lieu -> co the skip migration khong mong muon.
 - R3: Seeder ghi de du lieu -> anh huong moi truong test chia se.
 - R4: Frontend va backend chua dong bo payload/auth.
@@ -573,3 +576,18 @@ Tai lieu nay duoc viet de dung truc tiep trong NotebookLM cho cac tac vu:
 - Tong hop bao cao
 - Lap ke hoach sprint
 - Chuan bi demo va bao ve do an
+
+---
+
+## 18) Latest Delta 2026-04-01
+
+- Auth:
+  - Da tach request DTO cho /api/auth/register, /api/auth/login, /api/auth/login-jwt.
+  - Da them regex email/password va gioi han do dai de giam input xau.
+  - Da them GlobalValidationExceptionHandler de tra loi 400 de doc cho client.
+- Frontend storefront:
+  - main/index da goi API books bang axios va render card dong.
+  - main/discovery da goi API books bang axios va card co link chi tiet dung /book/{id}.
+  - Luong xem chi tiet da thong: index/discovery -> /book/{id} -> Details_Produce (server-render).
+- Verification:
+  - Compile/test nhanh sau thay doi khong phat hien loi bien dich.

@@ -1,10 +1,13 @@
 package com.example.bookstore.controller;
 
+import com.example.bookstore.dto.AuthLoginRequest;
+import com.example.bookstore.dto.AuthRegisterRequest;
 import com.example.bookstore.dto.UserProfileResponse;
 import com.example.bookstore.dto.UserProfileUpdateRequest;
 import com.example.bookstore.model.User;
 import com.example.bookstore.security.JwtTokenProvider;
 import com.example.bookstore.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +29,8 @@ public class AuthController {
 //    API đăng ký
 //    đường dẫn là POST /api/auth/register
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User user){
-        boolean isSuccess = authService.register(user.getUsername(), user.getPasswordHash());
+    public ResponseEntity<String> register(@Valid @RequestBody AuthRegisterRequest request){
+        boolean isSuccess = authService.register(request.getUsername(), request.getPassword());
         if (isSuccess){
 //            tra ve 200
             return ResponseEntity.ok("Đăng kí thành công");
@@ -41,8 +44,8 @@ public class AuthController {
 //    API đăng nhập
 //    /api/auth/login
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user){
-        boolean isValid = authService.login(user.getUsername(), user.getPasswordHash());
+    public ResponseEntity<String> login(@Valid @RequestBody AuthLoginRequest request){
+        boolean isValid = authService.login(request.getUsername(), request.getPassword());
 
         if(isValid){
             return ResponseEntity.ok("Đăng nhập thành công");
@@ -53,8 +56,8 @@ public class AuthController {
     }
 
     @PostMapping("/login-jwt")
-    public ResponseEntity<?> loginJwt(@RequestBody User user) {
-        User authenticated = authService.authenticateUser(user.getUsername(), user.getPasswordHash());
+    public ResponseEntity<?> loginJwt(@Valid @RequestBody AuthLoginRequest request) {
+        User authenticated = authService.authenticateUser(request.getUsername(), request.getPassword());
         if (authenticated == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Sai tên đăng nhập hoặc mật khẩu");
         }
@@ -76,7 +79,7 @@ public class AuthController {
     @PutMapping("/profile/{userId}")
     public UserProfileResponse updateProfile(
         @PathVariable Long userId,
-        @RequestBody UserProfileUpdateRequest request
+        @Valid @RequestBody UserProfileUpdateRequest request
     ) {
         return authService.updateProfile(userId, request);
     }

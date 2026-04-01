@@ -494,7 +494,7 @@
 
     const fetchBooks = (page) => {
       // Gọi API có kèm số trang
-      axios.get(`http://localhost:8080/api/books?page=${page}&size=${pageSize}`)
+      axios.get(`/api/books?page=${page}&size=${pageSize}`)
               .then(response => {
                 // Backend trả về dạng Page, nên sách nằm trong response.data.content
                 const books = response.data.content;
@@ -510,8 +510,8 @@
                 books.forEach(book => {
                   const coverUrl = book.imageUrl ? book.imageUrl : 'https://via.placeholder.com/150x200?text=No+Cover';
 
-                  htmlContent += `
-              <div class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
+                    htmlContent += `
+                  <a href="/book/${book.id}" class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
                   <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
                       <img src="${coverUrl}" alt="${book.title}" class="book-cover w-full h-full object-cover shadow-md transition-transform duration-500" onerror="this.src='https://via.placeholder.com/150x200?text=Error'"/>
                       <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors">
@@ -525,7 +525,7 @@
                           <div><span class="text-brand-orange font-black text-lg">${formatVND(book.price)}</span></div>
                       </div>
                   </div>
-              </div>
+                  </a>
             `;
                 });
                 bookGrid.innerHTML = htmlContent;

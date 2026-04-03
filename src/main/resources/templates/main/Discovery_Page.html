@@ -485,6 +485,38 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    const getAuthContext = () => {
+      const userId = localStorage.getItem('userId');
+      const token = localStorage.getItem('accessToken');
+      const role = localStorage.getItem('userRole');
+      return { userId, token, role };
+    };
+
+    const addToCart = async (bookId, quantity = 1) => {
+      const { userId, token, role } = getAuthContext();
+      if (!userId || role !== 'BUYER') {
+        alert('Vui long dang nhap tai khoan BUYER de them vao gio hang.');
+        window.location.href = '/main/auth';
+        return;
+      }
+
+      const headers = { 'X-User-Id': userId };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      try {
+        await axios.post(`/api/carts/buyer/${userId}/items`, {
+          bookId: Number(bookId),
+          quantity
+        }, { headers });
+        alert('Da them san pham vao gio hang.');
+      } catch (error) {
+        const message = error?.response?.data || 'Them vao gio hang that bai.';
+        alert(typeof message === 'string' ? message : 'Them vao gio hang that bai.');
+      }
+    };
+
     const formatVND = (price) => {
       return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
     };
@@ -514,7 +546,7 @@
                   <a href="/book/${book.id}" class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
                   <div class="relative w-full aspect-[3/4] bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
                       <img src="${coverUrl}" alt="${book.title}" class="book-cover w-full h-full object-cover shadow-md transition-transform duration-500" onerror="this.src='https://via.placeholder.com/150x200?text=Error'"/>
-                      <button class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors">
+                        <button type="button" data-add-to-cart="true" data-book-id="${book.id}" class="cart-btn-hover absolute bottom-3 w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors">
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                       </button>
                   </div>
@@ -529,6 +561,17 @@
             `;
                 });
                 bookGrid.innerHTML = htmlContent;
+
+                bookGrid.querySelectorAll('button[data-add-to-cart="true"]').forEach((button) => {
+                  button.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const bookId = button.getAttribute('data-book-id');
+                    if (bookId) {
+                      addToCart(bookId, 1);
+                    }
+                  });
+                });
 
                 // Vẽ nút phân trang
                 renderPagination(page, totalPages);

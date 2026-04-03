@@ -49,9 +49,9 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-black uppercase tracking-wide">Chi tiết đơn hàng</h1>
-            <p class="text-sm text-gray-500 font-medium mt-1">Mã đơn: <span class="font-bold text-brand-dark">#BK-992015</span> • Đặt lúc 14:30, 15/03/2026</p>
+            <p id="details-order-meta" class="text-sm text-gray-500 font-medium mt-1">Mã đơn: <span class="font-bold text-brand-dark">#BK------</span> • Đặt lúc --:-- --/--/----</p>
         </div>
-        <button class="px-6 py-2 border-2 border-brand-border rounded-xl font-bold hover:bg-white transition text-sm flex items-center gap-2 w-max">
+        <button type="button" class="px-6 py-2 border-2 border-brand-border rounded-xl font-bold hover:bg-white transition text-sm flex items-center gap-2 w-max">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             Tải Hóa Đơn (PDF)
         </button>
@@ -100,10 +100,10 @@
             <div class="bg-white rounded-2xl shadow-sm border border-brand-border overflow-hidden">
                 <div class="p-6 border-b border-brand-border flex items-center gap-3 bg-gray-50/50">
                     <div class="w-8 h-8 rounded-full bg-brand-brown text-white flex items-center justify-center font-bold text-xs">NN</div>
-                    <span class="font-bold">Được bán bởi Nhã Nam Official</span>
+                    <span id="details-seller-hint" class="font-bold">Được bán bởi nhiều nhà bán</span>
                 </div>
                 
-                <div class="p-6 space-y-6">
+                <div id="details-items-list" class="p-6 space-y-6">
                     <div class="flex gap-4">
                         <div class="w-20 h-28 bg-[#2c3e50] border-2 border-gray-100 shadow-sm flex-shrink-0 flex items-center justify-center text-white text-[8px] font-bold text-center">
                             ĐẠI GIA GATSBY
@@ -140,20 +140,20 @@
             
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-brand-border space-y-3">
                 <div class="flex justify-between text-sm text-gray-500">
-                    <span>Tạm tính (2 sản phẩm)</span>
-                    <span class="font-medium text-brand-dark">310.000đ</span>
+                    <span id="details-subtotal-label">Tạm tính (0 sản phẩm)</span>
+                    <span id="details-subtotal" class="font-medium text-brand-dark">0đ</span>
                 </div>
                 <div class="flex justify-between text-sm text-gray-500">
                     <span>Phí vận chuyển</span>
-                    <span class="font-medium text-brand-dark">25.000đ</span>
+                    <span id="details-shipping" class="font-medium text-brand-dark">0đ</span>
                 </div>
                 <div class="flex justify-between text-sm font-bold text-green-600">
                     <span>Mã giảm giá (Freeship)</span>
-                    <span>-25.000đ</span>
+                    <span id="details-shipping-discount">-0đ</span>
                 </div>
                 <div class="border-t border-brand-border pt-4 flex justify-between items-end mt-2">
                     <span class="font-bold uppercase tracking-wider text-sm">Tổng cộng</span>
-                    <span class="text-3xl font-black text-brand-orange">310.000đ</span>
+                    <span id="details-total" class="text-3xl font-black text-brand-orange">0đ</span>
                 </div>
                 <p class="text-right text-xs text-gray-400 mt-1">Đã thanh toán qua Ví MoMo</p>
             </div>
@@ -167,10 +167,10 @@
                     <svg class="w-5 h-5 text-brand-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     Địa chỉ nhận hàng
                 </h3>
-                <div class="space-y-1">
-                    <p class="font-bold text-brand-dark">Vũ Thiên Trường</p>
-                    <p class="text-sm text-gray-500">0901 234 567</p>
-                    <p class="text-sm text-gray-500 leading-relaxed mt-2">Ký túc xá Đại học ABC, Phường Tân Phú, Quận 9, TP. Hồ Chí Minh</p>
+                <div id="details-shipping-card" class="space-y-1">
+                    <p class="font-bold text-brand-dark">Nguoi mua</p>
+                    <p class="text-sm text-gray-500">--</p>
+                    <p class="text-sm text-gray-500 leading-relaxed mt-2">Dang tai dia chi giao hang...</p>
                 </div>
             </div>
 
@@ -192,6 +192,122 @@
 
     </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    (function () {
+        const formatVnd = (value) => new Intl.NumberFormat('vi-VN').format(Math.max(0, Number(value) || 0)) + 'đ';
+        const formatDate = (iso) => {
+            if (!iso) return '--';
+            const d = new Date(iso);
+            return d.toLocaleString('vi-VN');
+        };
+
+        const getHeaders = () => {
+            const userId = localStorage.getItem('userId');
+            const token = localStorage.getItem('accessToken');
+            const headers = { 'X-User-Id': userId || '' };
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+            return headers;
+        };
+
+        const getOrderId = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const queryOrderId = params.get('orderId');
+            if (queryOrderId) {
+                return Number(queryOrderId);
+            }
+
+            const stored = localStorage.getItem('lastOrderId');
+            if (stored) {
+                return Number(stored);
+            }
+
+            const response = await axios.get('/api/orders/me', { headers: getHeaders() });
+            const orders = Array.isArray(response.data) ? response.data : [];
+            return orders.length > 0 ? Number(orders[0].id) : null;
+        };
+
+        const bindPage = async () => {
+            const orderId = await getOrderId();
+            if (!orderId) {
+                return;
+            }
+
+            const response = await axios.get(`/api/orders/me/${orderId}`, { headers: getHeaders() });
+            const order = response.data || {};
+            const items = Array.isArray(order.items) ? order.items : [];
+            const totalItems = Number(order.totalItems || 0);
+            const subtotal = Number(order.totalAmount || 0);
+            const shipping = totalItems > 0 ? 35000 : 0;
+            const shippingDiscount = subtotal >= 250000 ? 15000 : 0;
+            const total = Math.max(0, subtotal + shipping - shippingDiscount);
+
+            const metaEl = document.getElementById('details-order-meta');
+            if (metaEl) {
+                metaEl.innerHTML = `Ma don: <span class="font-bold text-brand-dark">#BKO-${String(orderId).padStart(6, '0')}</span> • Dat luc ${formatDate(order.createdAt)}`;
+            }
+
+            const shippingCard = document.getElementById('details-shipping-card');
+            if (shippingCard) {
+                shippingCard.innerHTML = `
+                    <p class="font-bold text-brand-dark">${order.buyerUsername || 'Nguoi mua'}</p>
+                    <p class="text-sm text-gray-500">ID: ${order.buyerId || '--'}</p>
+                    <p class="text-sm text-gray-500 leading-relaxed mt-2">${order.shippingAddress || 'Chua co dia chi giao hang'}</p>
+                `;
+            }
+
+            const subtotalLabel = document.getElementById('details-subtotal-label');
+            const subtotalEl = document.getElementById('details-subtotal');
+            const shippingEl = document.getElementById('details-shipping');
+            const shippingDiscountEl = document.getElementById('details-shipping-discount');
+            const totalEl = document.getElementById('details-total');
+            if (subtotalLabel) subtotalLabel.textContent = `Tam tinh (${totalItems} san pham)`;
+            if (subtotalEl) subtotalEl.textContent = formatVnd(subtotal);
+            if (shippingEl) shippingEl.textContent = formatVnd(shipping);
+            if (shippingDiscountEl) shippingDiscountEl.textContent = `-${formatVnd(shippingDiscount)}`;
+            if (totalEl) totalEl.textContent = formatVnd(total);
+
+            const sellerHint = document.getElementById('details-seller-hint');
+            const uniqueSellers = [...new Set(items.map((i) => i.sellerName).filter(Boolean))];
+            if (sellerHint) {
+                sellerHint.textContent = uniqueSellers.length <= 1
+                    ? `Duoc ban boi ${uniqueSellers[0] || 'Nha sach'}`
+                    : `Don hang tu ${uniqueSellers.length} nha ban`;
+            }
+
+            const listEl = document.getElementById('details-items-list');
+            if (listEl) {
+                if (items.length === 0) {
+                    listEl.innerHTML = '<div class="text-sm text-gray-500 font-semibold">Don hang khong co san pham.</div>';
+                } else {
+                    listEl.innerHTML = items.map((item) => `
+                        <div class="flex gap-4">
+                            <div class="w-20 h-28 bg-[#2c3e50] border-2 border-gray-100 shadow-sm flex-shrink-0 flex items-center justify-center text-white text-[8px] font-bold text-center">BOOK</div>
+                            <div class="flex-grow flex flex-col justify-between py-1">
+                                <div>
+                                    <h3 class="font-bold text-brand-dark text-lg leading-tight">${item.title || 'Khong co ten sach'}</h3>
+                                    <p class="text-sm text-gray-500 mt-1">Tac gia: ${item.author || 'Dang cap nhat'} • So luong: ${item.quantity || 0}</p>
+                                    <p class="text-xs text-gray-500 mt-1">Shop: ${item.sellerName || 'Nha sach'}</p>
+                                </div>
+                                <span class="font-black text-brand-orange">${formatVnd(item.lineTotal || 0)}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <a href="/book/${item.bookId || ''}" class="text-sm font-bold text-brand-brown hover:underline px-4 py-2 border border-brand-border rounded-lg">Xem sach</a>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        };
+
+        bindPage().catch((error) => {
+            console.error('Bind order details failed:', error);
+        });
+    })();
+</script>
 
 </body>
 </html>

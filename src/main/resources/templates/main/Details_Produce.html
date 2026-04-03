@@ -330,7 +330,7 @@
                         <button class="px-3 py-1.5 bg-brand-bg text-gray-600 hover:bg-gray-200 transition font-bold outline-none border-r border-brand-border flex items-center justify-center w-10">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
                         </button>
-                        <input type="number" value="1" min="1" th:max="${book.stockQuantity}" class="w-14 text-center py-1.5 font-bold text-brand-dark outline-none appearance-none">
+                        <input id="detail-qty-input" type="number" value="1" min="1" th:max="${book.stockQuantity}" class="w-14 text-center py-1.5 font-bold text-brand-dark outline-none appearance-none">
                         <button class="px-3 py-1.5 bg-brand-bg text-gray-600 hover:bg-gray-200 transition font-bold outline-none border-l border-brand-border flex items-center justify-center w-10">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         </button>
@@ -339,10 +339,15 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-4 mt-auto">
-                    <a th:href="@{/main/cart}" class="flex-1 bg-brand-orange-light border border-brand-orange text-brand-orange text-lg font-bold py-3.5 px-6 rounded-lg hover:bg-orange-100 transition shadow-sm flex items-center justify-center gap-2 group">
+                    <button
+                        id="detail-add-to-cart-btn"
+                        type="button"
+                        th:attr="data-book-id=${book.id}"
+                        class="flex-1 bg-brand-orange-light border border-brand-orange text-brand-orange text-lg font-bold py-3.5 px-6 rounded-lg hover:bg-orange-100 transition shadow-sm flex items-center justify-center gap-2 group"
+                    >
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         Thêm Vào Giỏ Hàng
-                    </a>
+                    </button>
                     <a th:href="@{/main/checkout}" class="flex-1 bg-brand-orange text-white text-lg font-bold py-3.5 px-6 rounded-lg hover:bg-orange-700 transition shadow-md shadow-brand-orange/30">
                         Mua Ngay
                     </a>
@@ -808,6 +813,51 @@
         </div>
     </div>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    (function () {
+        const addButton = document.getElementById('detail-add-to-cart-btn');
+        const qtyInput = document.getElementById('detail-qty-input');
+        if (!addButton || !qtyInput) {
+            return;
+        }
+
+        const getAuthContext = () => {
+            const userId = localStorage.getItem('userId');
+            const token = localStorage.getItem('accessToken');
+            const role = localStorage.getItem('userRole');
+            return { userId, token, role };
+        };
+
+        addButton.addEventListener('click', async () => {
+            const { userId, token, role } = getAuthContext();
+            if (!userId || role !== 'BUYER') {
+                alert('Vui long dang nhap tai khoan BUYER de them vao gio hang.');
+                window.location.href = '/main/auth';
+                return;
+            }
+
+            const bookId = Number(addButton.getAttribute('data-book-id'));
+            const quantity = Math.max(1, Number(qtyInput.value || 1));
+            const headers = { 'X-User-Id': userId };
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+
+            try {
+                await axios.post(`/api/carts/buyer/${userId}/items`, {
+                    bookId,
+                    quantity
+                }, { headers });
+                alert('Da them san pham vao gio hang.');
+            } catch (error) {
+                const message = error?.response?.data || 'Them vao gio hang that bai.';
+                alert(typeof message === 'string' ? message : 'Them vao gio hang that bai.');
+            }
+        });
+    })();
+</script>
 
 </body>
 </html>

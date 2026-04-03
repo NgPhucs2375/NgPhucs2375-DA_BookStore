@@ -2,8 +2,10 @@ package com.example.bookstore.service;
 
 import com.example.bookstore.dto.UserProfileResponse;
 import com.example.bookstore.dto.UserProfileUpdateRequest;
+import com.example.bookstore.model.Category;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.UserRole;
+import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.UserRepository;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,14 +13,29 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Service // BẮT BUỘC PHẢI CÓ để Lễ tân AuthController gọi được
 public class AuthService {
 
     @Autowired
     private UserRepository userRepository; //Nhờ lính đánh thuê để tìm dữ liệu
 
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private AuthOtpService authOtpService;
+
     //    Register
-    public boolean register(String username, String rawPassword){
+    public boolean register(String username, String rawPassword, String avatarUrl, List<Long> favoriteCategoryIds){
+        if (!authOtpService.consumeVerifiedEmail(username)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email chua xac thuc OTP");
+        }
+
         if (userRepository.existsByUsername(username)) {
             System.out.println("Tên đăng nhập đã tồn tại");
             return false;
@@ -31,6 +48,8 @@ public class AuthService {
             .username(username)
             .passwordHash(hashedPassword)
             .role(UserRole.BUYER)
+            .avatarUrl(normalizeAvatar(avatarUrl))
+            .favoriteCategories(resolveFavoriteCategories(favoriteCategoryIds))
             .build();
         userRepository.save(newUser);
 
@@ -81,6 +100,14 @@ public class AuthService {
             user.setUsername(request.getUsername().trim());
         }
 
+        if (request.getAvatarUrl() != null) {
+            user.setAvatarUrl(normalizeAvatar(request.getAvatarUrl()));
+        }
+
+        if (request.getFavoriteCategoryIds() != null) {
+            user.setFavoriteCategories(resolveFavoriteCategories(request.getFavoriteCategoryIds()));
+        }
+
         // Shop info is only meaningful for seller/admin storefront management.
         if (user.getRole() == UserRole.SELLER || user.getRole() == UserRole.ADMIN) {
             if (request.getShopName() != null) {
@@ -102,6 +129,38 @@ public class AuthService {
             .role(user.getRole())
             .shopName(user.getShopName())
             .shopAddress(user.getShopAddress())
+            .avatarUrl(user.getAvatarUrl())
+            .favoriteCategoryIds(user.getFavoriteCategories().stream().map(Category::getId).toList())
             .build();
+    }
+
+    private Set<Category> resolveFavoriteCategories(List<Long> categoryIds) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return new LinkedHashSet<>();
+        }
+
+        List<Long> normalizedIds = categoryIds.stream()
+            .filter(id -> id != null && id > 0)
+            .distinct()
+            .collect(Collectors.toList());
+
+        if (normalizedIds.isEmpty()) {
+            return new LinkedHashSet<>();
+        }
+
+        List<Category> categories = categoryRepository.findAllById(normalizedIds);
+        if (categories.size() != normalizedIds.size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Co the loai yeu thich khong ton tai");
+        }
+
+        return new LinkedHashSet<>(categories);
+    }
+
+    private String normalizeAvatar(String avatarUrl) {
+        if (avatarUrl == null) {
+            return null;
+        }
+        String trimmed = avatarUrl.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

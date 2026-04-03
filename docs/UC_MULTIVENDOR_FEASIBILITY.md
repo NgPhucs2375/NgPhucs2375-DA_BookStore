@@ -1,101 +1,73 @@
 # UC Feasibility Note - Multi-vendor BookStore
 
-Cap nhat ngay: 2026-03-29
+Cập nhật ngày: 2026-04-03
 
-## Ghi chu quyet dinh
-- File PROJECT_SUMMARY.md da duoc xoa co chu dich boi owner du an.
-- Tai lieu nay thay the vai tro note danh gia UC va huong trien khai tiep theo.
+## Ghi chú quyết định
+- Tài liệu này dùng để đánh giá mức khả thi UC theo trạng thái code hiện tại.
+- `PROJECT_SUMMARY.md` đã được loại bỏ có chủ đích; file này là nguồn tổng hợp thay thế.
 
-## Muc do truong thanh hien tai
-- Tong quan: Project dang o muc "Nen tang backend da co, chua hoan thien nghiep vu end-to-end".
-- Danh gia nhanh: ~70% cho phase Backend Multi-vendor Foundation.
+## Mức độ trưởng thành hiện tại
+- Tổng quan: backend foundation tốt, buyer flow chính đã chạy end-to-end.
+- Đánh giá nhanh: khoảng 86% cho phase backend foundation + buyer storefront/order flow.
 
-Da co:
-- Entity/Enum cho multi-vendor (role, seller, approval, cart/order/suborder).
-- API checkout tach don theo seller.
-- Seeder tao admin + seller mau + sach approved.
-- Flyway migration script khoi tao schema moi.
+Đã có:
+- Multi-vendor domain model đầy đủ (role, cart, order, sub-order).
+- Checkout tách đơn theo seller.
+- Security nền tảng cho carts/orders (JWT filter + role guard theo route chính).
+- OTP SMTP cho auth.
+- Lưu avatar + favorite categories vào DB.
+- Frontend bind API cho index/discovery/details/cart/checkout/order pages.
 
-Chua day du:
-- Chua co Spring Security/JWT va phan quyen runtime.
-- Chua co API day du cho cart CRUD buyer.
-- Chua co quy trinh duyet sach admin hoan chinh.
-- Chua co luong khoa/mo tai khoan user.
-- Chua co dashboard doanh thu thuc su dua tren du lieu don hang da thanh toan.
-- Frontend template chua ket noi day du API moi.
+Chưa đầy đủ:
+- Security coverage chưa full cho mọi endpoint admin/seller/books.
+- Chưa có admin moderation đầy đủ (approve/reject flow hoàn chỉnh).
+- Chưa có lock/unlock user đầy đủ.
+- Chưa có E2E automation toàn luồng.
 
-## Ma tran UC va kha nang trien khai tren project hien tai
+## Ma trận UC và khả năng triển khai
 
-### Nhom BUYER
-
-| UC | Co the trien khai bang project hien tai? | Hien trang | Ket luan |
+### BUYER
+| UC | Khả năng hiện tại | Trạng thái | Kết luận |
 |---|---|---|---|
-| B01 Dang ky/Dang nhap/Quan ly ho so | Mot phan | Co API dang ky, dang nhap co ban; chua co profile API update, chua co auth token | Kha thi cao, can bo sung security + profile API |
-| B02 Tim kiem/Loc sach | Mot phan | Co list sach, paging; chua co filter backend theo ten/tac gia/danh muc dung nghia UC | Kha thi cao, can them query/filter endpoint |
-| B03 Xem chi tiet sach & mo ta AI | Co | Co trang detail + du lieu description da duoc seeder bo sung AI cho mot phan sach | Co the trien khai ngay |
-| B04 Quan ly gio hang | Chua day du | Da co entity Cart/CartItem, chua co cart controller CRUD day du | Kha thi cao, can bo sung API |
-| B05 Dat hang & thanh toan tach don theo seller | Co mot phan lon | Da co checkout tach SubOrder theo seller; chua co cong thanh toan that | Co the demo backend ngay, thanh toan that can them |
-| B06 Theo doi trang thai don ca nhan | Co mot phan | Da co endpoint lay don buyer; chua co policy phan quyen va UI day du | Kha thi cao |
+| B01 Đăng ký/Đăng nhập/Hồ sơ | Cao | Có validation + OTP SMTP + profile update | Khả thi cao |
+| B02 Tìm kiếm/Lọc sách | Cao | Có search/filter + approved-only | Khả thi cao |
+| B03 Xem chi tiết sách | Cao | Có route chi tiết theo `/book/{id}` | Khả thi cao |
+| B04 Quản lý giỏ hàng | Cao | API + UI bind đầy đủ thao tác chính | Khả thi cao |
+| B05 Đặt hàng tách seller | Cao | Checkout API + checkout UI bind | Khả thi cao |
+| B06 Theo dõi đơn cá nhân | Cao | `/api/orders/me` + `/api/orders/me/{orderId}` + UI bind | Khả thi cao |
 
-### Nhom SELLER
-
-| UC | Co the trien khai bang project hien tai? | Hien trang | Ket luan |
+### SELLER
+| UC | Khả năng hiện tại | Trạng thái | Kết luận |
 |---|---|---|---|
-| S01 Dang ky/Cap nhat Shop Profile | Mot phan | Model User da co shopName/shopAddress; chua co API cap nhat profile seller | Kha thi cao |
-| S02 Dang ban sach moi cho duyet | Mot phan | Book da co approvalStatus PENDING; chua rang buoc endpoint cho seller role | Kha thi cao |
-| S03 Quan ly kho sach | Mot phan | Co endpoint update Book chung; chua tach ownership theo seller va hide/show | Kha thi trung binh-cao |
-| S04 Xu ly don hang | Co mot phan lon | Co API update status SubOrder; chua kiem tra seller so huu suborder | Kha thi cao sau khi bo sung auth |
-| S05 Dashboard doanh thu shop | Mot phan | Hien co panel API thong ke mang tinh tong hop/mau, chua chuan theo doanh thu thuc cua SubOrder COMPLETED | Kha thi cao |
+| S01 Hồ sơ shop | Trung bình-Cao | Có nền tảng qua user profile | Cần UX/API riêng |
+| S02 Đăng bán sách chờ duyệt | Trung bình | Có model approvalStatus | Cần moderation flow hoàn chỉnh |
+| S03 Quản lý kho | Trung bình | Có update cơ bản | Cần ownership-safe đầy đủ |
+| S04 Xử lý đơn | Cao | Có update status sub-order + ownership guard | Khả thi cao |
+| S05 Dashboard doanh thu | Trung bình | Có panel nền tảng | Cần KPI business chuẩn |
 
-### Nhom ADMIN
-
-| UC | Co the trien khai bang project hien tai? | Hien trang | Ket luan |
+### ADMIN
+| UC | Khả năng hiện tại | Trạng thái | Kết luận |
 |---|---|---|---|
-| A01 Dashboard tong quan san | Mot phan | Co panel summary; nhieu chi so dang tinh tu books, chua from order lifecycle that | Kha thi cao |
-| A02 Quan ly user khoa/mo | Chua | Chua co field lock/active va API khoa/mo tai khoan | Kha thi cao (can mo rong User) |
-| A03 Kiem duyet noi dung sach | Mot phan | Da co approvalStatus; chua co API approve/reject va ly do tu choi | Kha thi cao |
-| A04 Xem toan bo don hang | Chua day du | Co Order/SubOrder model va repository; chua co admin endpoint tong hop don he thong | Kha thi cao |
+| A01 Dashboard tổng quan | Trung bình-Cao | Có panel cơ bản | Cần hoàn thiện KPI |
+| A02 Khóa/mở user | Thấp | Chưa có đầy đủ field/API | Cần ưu tiên |
+| A03 Kiểm duyệt sách | Trung bình | Có status model | Cần API moderation đầy đủ |
+| A04 Xem toàn bộ đơn | Trung bình | Có model/repo | Cần admin endpoint + filter |
 
-## De xuat lo trinh tiep theo (uu tien cao -> thap)
+## Đề xuất ưu tiên triển khai
+1. Security hardening toàn tuyến.
+2. Hoàn thiện buyer experience (lỗi/trạng thái/UX).
+3. Hoàn thiện seller ownership-safe operations.
+4. Hoàn thiện admin moderation + user management.
+5. Thiết lập quality gate với integration + E2E tests.
 
-1. Security truoc
-- Them Spring Security + JWT.
-- Rang buoc role cho endpoint:
-  - BUYER: cart, checkout, order cua chinh minh.
-  - SELLER: suborder cua chinh seller.
-  - ADMIN: duyet sach, quan ly user, xem tong don.
+## Delta mới nhất (2026-04-03)
+- Auth: thêm OTP SMTP, register yêu cầu verify OTP.
+- Profile: lưu avatar + favorite categories.
+- Cart/Checkout: đã bind API thật và đặt hàng qua `/api/orders/me/checkout`.
+- Orders: thêm API chi tiết đơn `GET /api/orders/me/{orderId}`.
+- UI: Order_Success và Order_Details bind theo orderId.
+- Kiểm chứng: compile và regression tests hiện có đều pass.
 
-2. Hoan thien BUYER flow
-- Bo sung CartController: add/update/remove/list.
-- Bo sung Book filter API theo title/author/category + approved only.
-- Ket noi Checkout_Page va Cart_Page vao API that.
-
-3. Hoan thien SELLER flow
-- SellerBookController:
-  - tao sach moi => PENDING,
-  - cap nhat gia/ton kho,
-  - an/hien sach (them field isVisible).
-- SellerOrderController:
-  - list suborder theo seller,
-  - cap nhat status voi validate transition.
-
-4. Hoan thien ADMIN flow
-- AdminModerationController:
-  - list sach PENDING,
-  - approve/reject + reason.
-- AdminUserController:
-  - lock/unlock user (them field active va lockedReason).
-- AdminOrderController:
-  - xem all order/suborder + filter status/date.
-
-5. Bao dam du lieu va van hanh
-- Chuan hoa Flyway strategy cho moi truong da co schema.
-- Viet integration test cho:
-  - checkout tach seller,
-  - seller update status,
-  - admin approve/reject.
-
-## Ket luan tong hop
-- Tat ca UC ban liet ke deu co the trien khai duoc tren nen project hien tai.
-- Muc do san sang cao nhat hien nay la B03, B05 (backend), S04 (backend).
-- Cac UC con lai can bo sung security, API chuyen biet theo role, va ket noi frontend.
+## Kết luận
+- Các UC BUYER trọng tâm đã khả thi ở mức end-to-end cho demo.
+- SELLER/ADMIN cần thêm một vòng hoàn thiện authorization, moderation và reporting để đạt production-ready.

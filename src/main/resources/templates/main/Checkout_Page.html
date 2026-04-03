@@ -487,10 +487,10 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         Tóm Tắt Đơn Hàng
                     </h2>
-                    <span class="bg-white text-brand-dark text-xs font-bold px-2 py-1 rounded-full">3 Sản Phẩm</span>
+                    <span id="checkout-items-badge" class="bg-white text-brand-dark text-xs font-bold px-2 py-1 rounded-full">0 Sản Phẩm</span>
                 </div>
 
-                <div class="p-6 max-h-[35vh] overflow-y-auto border-b border-brand-accent sidebar-scroll">
+                <div id="checkout-cart-items" class="p-6 max-h-[35vh] overflow-y-auto border-b border-brand-accent sidebar-scroll">
 
                     <div class="flex gap-4 mb-5">
                         <div class="relative w-16 aspect-[3/4] bg-[#2c3e50] border border-gray-200 rounded shadow-sm flex-shrink-0 flex items-center justify-center">
@@ -551,20 +551,20 @@
 
                 <div class="p-6 flex flex-col gap-4 text-sm text-brand-dark font-medium">
                     <div class="flex justify-between items-center">
-                        <span class="text-gray-500">Tạm tính (4 sản phẩm)</span>
-                        <span class="font-bold text-base">521.000đ</span>
+                        <span id="checkout-subtotal-label" class="text-gray-500">Tạm tính (0 sản phẩm)</span>
+                        <span id="checkout-subtotal" class="font-bold text-base">0đ</span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-gray-500">Phí vận chuyển tiêu chuẩn</span>
-                        <span class="font-bold text-base">35.000đ</span>
+                        <span id="checkout-shipping-fee" class="font-bold text-base">35.000đ</span>
                     </div>
                     <div class="flex justify-between items-center text-brand-orange">
                         <span>Giảm giá từ Shop (Combo)</span>
-                        <span class="font-bold text-base">-25.000đ</span>
+                        <span id="checkout-shop-discount" class="font-bold text-base">-0đ</span>
                     </div>
                     <div class="flex justify-between items-center text-brand-orange">
                         <span>Voucher BOOKOM</span>
-                        <span class="font-bold text-base">-15.000đ</span>
+                        <span id="checkout-voucher-discount" class="font-bold text-base">-0đ</span>
                     </div>
 
                     <hr class="border-brand-accent my-2">
@@ -572,15 +572,15 @@
                     <div class="flex flex-col gap-1">
                         <div class="flex justify-between items-end">
                             <span class="text-base font-bold uppercase">Tổng thanh toán</span>
-                            <span class="text-3xl lg:text-4xl font-black text-brand-orange">516.000đ</span>
+                            <span id="checkout-total" class="text-3xl lg:text-4xl font-black text-brand-orange">0đ</span>
                         </div>
                         <div class="text-right text-[10px] text-gray-400 font-bold">(Đã bao gồm VAT nếu có)</div>
                     </div>
 
-                    <a th:href="@{/main/order-success}" class="block w-full bg-brand-orange text-white text-xl font-black py-4 lg:py-5 rounded-xl shadow-[0_10px_20px_rgba(234,88,12,0.3)] hover:bg-orange-700 transition-all transform hover:-translate-y-1 mt-4 uppercase tracking-widest text-center flex items-center justify-center gap-3 group">
+                    <button id="checkout-place-order-btn" type="button" class="block w-full bg-brand-orange text-white text-xl font-black py-4 lg:py-5 rounded-xl shadow-[0_10px_20px_rgba(234,88,12,0.3)] hover:bg-orange-700 transition-all transform hover:-translate-y-1 mt-4 uppercase tracking-widest text-center flex items-center justify-center gap-3 group">
                         Đặt Hàng Ngay
                         <svg class="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </a>
+                    </button>
 
                     <p class="text-center text-[10px] text-gray-500 mt-2 leading-relaxed">
                         Nhấn "Đặt Hàng Ngay" đồng nghĩa với việc bạn đồng ý tuân theo <br>
@@ -617,6 +617,171 @@
 
     </div>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    (function () {
+        const badgeEl = document.getElementById('checkout-items-badge');
+        const itemsEl = document.getElementById('checkout-cart-items');
+        const subtotalLabelEl = document.getElementById('checkout-subtotal-label');
+        const subtotalEl = document.getElementById('checkout-subtotal');
+        const shippingFeeEl = document.getElementById('checkout-shipping-fee');
+        const shopDiscountEl = document.getElementById('checkout-shop-discount');
+        const voucherDiscountEl = document.getElementById('checkout-voucher-discount');
+        const totalEl = document.getElementById('checkout-total');
+        const placeOrderBtn = document.getElementById('checkout-place-order-btn');
+
+        let currentCart = null;
+
+        const formatVnd = (value) => new Intl.NumberFormat('vi-VN').format(Math.max(0, Number(value) || 0)) + 'đ';
+
+        const getAuth = () => {
+            const userId = localStorage.getItem('userId');
+            const token = localStorage.getItem('accessToken');
+            const role = localStorage.getItem('userRole');
+            return { userId, token, role };
+        };
+
+        const getHeaders = () => {
+            const { userId, token } = getAuth();
+            const headers = { 'X-User-Id': userId };
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+            return headers;
+        };
+
+        const getShippingFee = () => {
+            const expressChecked = document.getElementById('ship_express')?.checked;
+            return expressChecked ? 50000 : 35000;
+        };
+
+        const renderItems = (cart) => {
+            const items = Array.isArray(cart?.items) ? cart.items : [];
+            if (!itemsEl) {
+                return;
+            }
+
+            if (items.length === 0) {
+                itemsEl.innerHTML = `
+                    <div class="text-center text-gray-500 font-semibold py-6">
+                        Gio hang rong. Vui long quay lai trang gio hang de them san pham.
+                    </div>
+                `;
+                return;
+            }
+
+            itemsEl.innerHTML = items.map((item) => `
+                <div class="flex gap-4 mb-5">
+                    <div class="relative w-16 aspect-[3/4] bg-[#2c3e50] border border-gray-200 rounded shadow-sm flex-shrink-0 flex items-center justify-center">
+                        <span class="text-white font-bold text-[7px] text-center px-1">BOOK</span>
+                        <span class="absolute -top-2 -right-2 bg-brand-orange text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">x${item.quantity}</span>
+                    </div>
+                    <div class="flex flex-col flex-grow justify-center">
+                        <h4 class="font-bold text-brand-dark text-xs leading-snug mb-1 line-clamp-2">${item.title || 'Khong co ten'}</h4>
+                        <p class="text-[10px] text-gray-500 font-medium mb-1">Tac gia: ${item.author || 'Dang cap nhat'}</p>
+                        <div class="font-bold text-brand-dark text-sm">${formatVnd(item.lineTotal)}</div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        const updateSummary = (cart) => {
+            const totalItems = Number(cart?.totalItems || 0);
+            const subtotal = Number(cart?.totalAmount || 0);
+            const shippingFee = totalItems > 0 ? getShippingFee() : 0;
+            const shopDiscount = 0;
+            const voucherDiscount = 0;
+            const total = Math.max(0, subtotal + shippingFee - shopDiscount - voucherDiscount);
+
+            if (badgeEl) badgeEl.textContent = `${totalItems} San Pham`;
+            if (subtotalLabelEl) subtotalLabelEl.textContent = `Tam tinh (${totalItems} san pham)`;
+            if (subtotalEl) subtotalEl.textContent = formatVnd(subtotal);
+            if (shippingFeeEl) shippingFeeEl.textContent = formatVnd(shippingFee);
+            if (shopDiscountEl) shopDiscountEl.textContent = `-${formatVnd(shopDiscount)}`;
+            if (voucherDiscountEl) voucherDiscountEl.textContent = `-${formatVnd(voucherDiscount)}`;
+            if (totalEl) totalEl.textContent = formatVnd(total);
+            if (placeOrderBtn) {
+                placeOrderBtn.disabled = totalItems === 0;
+                placeOrderBtn.classList.toggle('opacity-60', totalItems === 0);
+                placeOrderBtn.classList.toggle('cursor-not-allowed', totalItems === 0);
+            }
+        };
+
+        const deriveAddress = () => {
+            const manual = (document.getElementById('address_detail')?.value || '').trim();
+            if (manual) {
+                return manual;
+            }
+
+            const selected = document.querySelector('input[name="address"]:checked');
+            if (!selected) {
+                return '';
+            }
+
+            const label = document.querySelector(`label[for="${selected.id}"]`);
+            const textNode = label?.querySelector('.text-sm.text-gray-600.font-medium.leading-relaxed');
+            return (textNode?.textContent || '').replace(/\s+/g, ' ').trim();
+        };
+
+        const fetchCart = async () => {
+            const { userId, role } = getAuth();
+            if (!userId || role !== 'BUYER') {
+                throw new Error('Vui long dang nhap tai khoan BUYER de thanh toan.');
+            }
+
+            const response = await axios.get(`/api/carts/buyer/${userId}`, {
+                headers: getHeaders()
+            });
+            currentCart = response.data;
+            renderItems(currentCart);
+            updateSummary(currentCart);
+        };
+
+        document.querySelectorAll('input[name="shipping"]').forEach((radio) => {
+            radio.addEventListener('change', () => {
+                if (currentCart) {
+                    updateSummary(currentCart);
+                }
+            });
+        });
+
+        placeOrderBtn?.addEventListener('click', async () => {
+            try {
+                const shippingAddress = deriveAddress();
+                if (!shippingAddress) {
+                    alert('Vui long nhap hoac chon dia chi giao hang.');
+                    return;
+                }
+
+                const { userId } = getAuth();
+                const response = await axios.post('/api/orders/me/checkout', {
+                    shippingAddress
+                }, {
+                    headers: getHeaders()
+                });
+
+                const orderId = response?.data?.orderId;
+                localStorage.setItem('lastOrderId', String(orderId || ''));
+                window.location.href = orderId ? `/main/order-success?orderId=${orderId}` : '/main/order-success';
+            } catch (error) {
+                const apiMessage = error?.response?.data;
+                const fallback = error?.message || 'Dat hang that bai.';
+                alert(typeof apiMessage === 'string' ? apiMessage : fallback);
+            }
+        });
+
+        fetchCart().catch((error) => {
+            const message = error?.response?.data || error?.message || 'Khong the tai du lieu thanh toan.';
+            if (itemsEl) {
+                itemsEl.innerHTML = `
+                    <div class="text-center text-red-600 font-semibold py-6">${typeof message === 'string' ? message : 'Khong the tai du lieu thanh toan.'}</div>
+                `;
+            }
+            updateSummary({ totalItems: 0, totalAmount: 0 });
+        });
+    })();
+</script>
 
 </body>
 </html>

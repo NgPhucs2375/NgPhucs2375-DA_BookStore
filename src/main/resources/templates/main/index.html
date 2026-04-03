@@ -159,8 +159,8 @@
         </nav>
 
         <div class="flex items-center gap-6">
-            <form class="hidden md:flex items-center bg-white rounded shadow-sm overflow-hidden border border-transparent focus-within:border-brand-dark transition-colors">
-                <input type="text" class="px-4 py-2 w-64 outline-none text-sm text-brand-dark" placeholder="Tìm kiếm sách, tác giả...">
+            <form id="index-search-form" class="hidden md:flex items-center bg-white rounded shadow-sm overflow-hidden border border-transparent focus-within:border-brand-dark transition-colors">
+                <input id="index-search-input" type="text" class="px-4 py-2 w-64 outline-none text-sm text-brand-dark" placeholder="Tìm kiếm sách, tác giả...">
                 <button type="submit" class="bg-brand-dark text-white px-5 py-2 text-sm font-bold hover:bg-opacity-90 transition">
                     Tìm
                 </button>
@@ -203,7 +203,7 @@
         <div class="max-w-[1400px] mx-auto px-6">
             <h2 class="text-3xl font-bold text-center mb-12 text-brand-dark">Danh mục</h2>
 
-            <div class="flex flex-wrap justify-center gap-6 md:gap-10">
+            <div id="home-category-grid" class="flex flex-wrap justify-center gap-6 md:gap-10">
                 <a href="#" class="w-36 h-36 bg-brand-bg border-2 border-brand-brown rounded-lg flex flex-col items-center justify-center text-brand-dark hover:bg-brand-brown hover:text-white transition-colors duration-300 shadow-sm group">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-brand-brown group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                     <span class="font-bold text-sm">Tiểu thuyết</span>
@@ -244,7 +244,7 @@
 
                 <div class="mb-8">
                     <h3 class="font-bold text-brand-dark mb-4 uppercase text-sm tracking-wider">Danh mục sản phẩm</h3>
-                    <ul class="space-y-3 text-sm font-medium text-brand-dark sidebar-scroll max-h-56 overflow-y-auto pr-3">
+                    <ul id="sidebar-category-list" class="space-y-3 text-sm font-medium text-brand-dark sidebar-scroll max-h-56 overflow-y-auto pr-3">
                         <li>
                             <a href="#" class="flex items-center justify-between group">
                                 <span class="group-hover:text-brand-brown transition-colors">Văn học - Tiểu thuyết</span>
@@ -289,11 +289,11 @@
                 <div class="mb-8">
                     <h3 class="font-bold text-brand-dark mb-4 uppercase text-sm tracking-wider">Khoảng Giá</h3>
                     <div class="flex items-center gap-2 mb-4">
-                        <input type="number" placeholder="Từ đ" class="w-full border border-brand-border rounded-md px-3 py-2 text-sm outline-none focus:border-brand-brown focus:ring-1 focus:ring-brand-brown transition-all bg-brand-bg">
+                        <input id="price-min-input" type="number" placeholder="Từ đ" class="w-full border border-brand-border rounded-md px-3 py-2 text-sm outline-none focus:border-brand-brown focus:ring-1 focus:ring-brand-brown transition-all bg-brand-bg">
                         <span class="text-gray-400 font-bold">-</span>
-                        <input type="number" placeholder="Đến đ" class="w-full border border-brand-border rounded-md px-3 py-2 text-sm outline-none focus:border-brand-brown focus:ring-1 focus:ring-brand-brown transition-all bg-brand-bg">
+                        <input id="price-max-input" type="number" placeholder="Đến đ" class="w-full border border-brand-border rounded-md px-3 py-2 text-sm outline-none focus:border-brand-brown focus:ring-1 focus:ring-brand-brown transition-all bg-brand-bg">
                     </div>
-                    <button class="w-full bg-brand-brown text-white font-bold text-sm py-2.5 rounded-md hover:bg-brand-dark transition-colors shadow-sm">ÁP DỤNG LỌC GIÁ</button>
+                    <button id="apply-price-filter-btn" type="button" class="w-full bg-brand-brown text-white font-bold text-sm py-2.5 rounded-md hover:bg-brand-dark transition-colors shadow-sm">ÁP DỤNG LỌC GIÁ</button>
                 </div>
 
                 <hr class="border-brand-border mb-6">
@@ -377,16 +377,16 @@
 
                 <div class="flex items-center gap-3 mt-4 sm:mt-0">
                     <span class="text-sm font-bold text-brand-dark">Sắp xếp:</span>
-                    <select class="border border-brand-border rounded-md px-4 py-2 text-sm font-medium outline-none focus:border-brand-brown bg-brand-bg cursor-pointer text-brand-dark">
-                        <option>Hàng mới nhất</option>
-                        <option>Bán chạy tuần này</option>
-                        <option>Giá: Thấp đến Cao</option>
-                        <option>Giá: Cao đến Thấp</option>
+                    <select id="sort-select" class="border border-brand-border rounded-md px-4 py-2 text-sm font-medium outline-none focus:border-brand-brown bg-brand-bg cursor-pointer text-brand-dark">
+                        <option value="latest">Hàng mới nhất</option>
+                        <option value="priceAsc">Giá: Thấp đến Cao</option>
+                        <option value="priceDesc">Giá: Cao đến Thấp</option>
+                        <option value="titleAsc">Tên: A-Z</option>
                     </select>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+            <div id="books-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
 
                 <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
                     <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
@@ -704,7 +704,7 @@
             </div>
 
             <div class="flex justify-center mt-6 mb-10">
-                <nav class="inline-flex rounded-md shadow-sm bg-white border border-brand-border p-1" aria-label="Pagination">
+                <nav id="books-pagination" class="inline-flex rounded-md shadow-sm bg-white border border-brand-border p-1" aria-label="Pagination">
                     <a href="#" class="relative inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-500 hover:bg-brand-bg transition-colors">
                         <span class="sr-only">Previous</span>
                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
@@ -819,6 +819,315 @@
         </div>
     </div>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    (function () {
+        const booksGrid = document.getElementById('books-grid');
+        const homeCategoryGrid = document.getElementById('home-category-grid');
+        const sidebarCategoryList = document.getElementById('sidebar-category-list');
+        const paginationNav = document.getElementById('books-pagination');
+        const searchForm = document.getElementById('index-search-form');
+        const searchInput = document.getElementById('index-search-input');
+        const sortSelect = document.getElementById('sort-select');
+        const priceMinInput = document.getElementById('price-min-input');
+        const priceMaxInput = document.getElementById('price-max-input');
+        const applyPriceFilterBtn = document.getElementById('apply-price-filter-btn');
+        if (!booksGrid) {
+            return;
+        }
+
+        const state = {
+            page: 0,
+            size: 12,
+            q: '',
+            categoryId: null,
+            minPrice: null,
+            maxPrice: null,
+            sort: 'latest'
+        };
+
+        const formatPriceVnd = (value) => {
+            if (value === null || value === undefined || Number.isNaN(Number(value))) {
+                return 'Liên hệ';
+            }
+            return new Intl.NumberFormat('vi-VN').format(Number(value)) + ' đ';
+        };
+
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text ?? '';
+            return div.innerHTML;
+        };
+
+        const applySort = (books) => {
+            const sorted = [...books];
+            if (state.sort === 'priceAsc') {
+                sorted.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+            } else if (state.sort === 'priceDesc') {
+                sorted.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+            } else if (state.sort === 'titleAsc') {
+                sorted.sort((a, b) => String(a.title ?? '').localeCompare(String(b.title ?? '')));
+            }
+            return sorted;
+        };
+
+        const applyPriceFilter = (books) => {
+            return books.filter((book) => {
+                const price = Number(book.price ?? 0);
+                if (state.minPrice !== null && price < state.minPrice) {
+                    return false;
+                }
+                if (state.maxPrice !== null && price > state.maxPrice) {
+                    return false;
+                }
+                return true;
+            });
+        };
+
+        const setCategory = (categoryId) => {
+            state.categoryId = categoryId;
+            state.page = 0;
+            loadBooks();
+        };
+
+        const renderCategories = (categories) => {
+            if (homeCategoryGrid) {
+                homeCategoryGrid.innerHTML = categories.map((category) => `
+                    <button type="button" data-category-id="${category.id}" class="home-category-btn w-36 h-36 bg-brand-bg border-2 border-brand-brown rounded-lg flex flex-col items-center justify-center text-brand-dark hover:bg-brand-brown hover:text-white transition-colors duration-300 shadow-sm group">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-brand-brown group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                        <span class="font-bold text-sm">${escapeHtml(category.name)}</span>
+                    </button>
+                `).join('');
+            }
+
+            if (sidebarCategoryList) {
+                sidebarCategoryList.innerHTML = categories.map((category) => `
+                    <li>
+                        <button type="button" data-category-id="${category.id}" class="sidebar-category-btn w-full text-left flex items-center justify-between group">
+                            <span class="group-hover:text-brand-brown transition-colors">${escapeHtml(category.name)}</span>
+                        </button>
+                    </li>
+                `).join('');
+            }
+        };
+
+        const bindCategoryEvents = () => {
+            document.querySelectorAll('.home-category-btn, .sidebar-category-btn').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const categoryId = Number(btn.getAttribute('data-category-id'));
+                    if (!Number.isNaN(categoryId)) {
+                        setCategory(categoryId);
+                    }
+                });
+            });
+        };
+
+        const loadCategories = async () => {
+            try {
+                const response = await axios.get('/api/categories');
+                const categories = Array.isArray(response.data) ? response.data : [];
+                if (categories.length > 0) {
+                    renderCategories(categories);
+                    bindCategoryEvents();
+                }
+            } catch (error) {
+                console.error('Load categories failed:', error);
+            }
+        };
+
+        const buildCard = (book) => {
+            const title = escapeHtml(book.title || 'Chua co ten sach');
+            const author = escapeHtml(book.author || 'Chua co tac gia');
+            const categoryName = escapeHtml(book.category?.name || 'Sach');
+            const imageUrl = book.imageUrl ? escapeHtml(book.imageUrl) : '';
+            const detailUrl = '/book/' + book.id;
+            const price = formatPriceVnd(book.price);
+
+            const coverHtml = imageUrl
+                ? `<img src="${imageUrl}" alt="${title}" class="book-cover w-full h-full object-cover" loading="lazy">`
+                : `<div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3 leading-snug">${title}</div>`;
+
+            return `
+                <a href="${detailUrl}" class="product-card group cursor-pointer h-full">
+                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
+                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                            ${coverHtml}
+                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
+                                <button type="button" title="Them vao gio" data-add-to-cart="true" data-book-id="${book.id}" class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-grow flex flex-col">
+                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">${categoryName}</div>
+                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">${title}</h3>
+                            <div class="text-sm text-gray-600 mb-3">${author}</div>
+                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
+                                <div class="text-brand-dark font-medium">Gia: <span class="text-brand-orange text-xl font-bold">${price}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            `;
+        };
+
+        const showError = () => {
+            booksGrid.innerHTML = `
+                <div class="col-span-full bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 font-semibold">
+                    Khong tai duoc danh sach sach. Vui long thu lai sau.
+                </div>
+            `;
+        };
+
+        const getAuthContext = () => {
+            const userId = localStorage.getItem('userId');
+            const token = localStorage.getItem('accessToken');
+            const role = localStorage.getItem('userRole');
+            return { userId, token, role };
+        };
+
+        const addToCart = async (bookId, quantity = 1) => {
+            const { userId, token, role } = getAuthContext();
+            if (!userId || role !== 'BUYER') {
+                alert('Vui long dang nhap tai khoan BUYER de them vao gio hang.');
+                window.location.href = '/main/auth';
+                return;
+            }
+
+            const headers = { 'X-User-Id': userId };
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+
+            try {
+                await axios.post(`/api/carts/buyer/${userId}/items`, {
+                    bookId: Number(bookId),
+                    quantity
+                }, { headers });
+                alert('Da them san pham vao gio hang.');
+            } catch (error) {
+                const message = error?.response?.data || 'Them vao gio hang that bai.';
+                alert(typeof message === 'string' ? message : 'Them vao gio hang that bai.');
+            }
+        };
+
+        const renderPagination = (currentPage, totalPages) => {
+            if (!paginationNav) {
+                return;
+            }
+
+            if (!totalPages || totalPages <= 1) {
+                paginationNav.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            html += `<button type="button" data-page="${Math.max(0, currentPage - 1)}" class="page-btn relative inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-500 hover:bg-brand-bg transition-colors ${currentPage === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPage === 0 ? 'disabled' : ''}>Prev</button>`;
+
+            const start = Math.max(0, currentPage - 2);
+            const end = Math.min(totalPages - 1, currentPage + 2);
+            for (let i = start; i <= end; i++) {
+                const active = i === currentPage;
+                html += `<button type="button" data-page="${i}" class="page-btn relative inline-flex items-center px-4 py-2 rounded-md text-sm mx-1 ${active ? 'font-bold bg-brand-brown text-white' : 'font-medium text-brand-dark hover:bg-brand-bg transition-colors'}">${i + 1}</button>`;
+            }
+
+            html += `<button type="button" data-page="${Math.min(totalPages - 1, currentPage + 1)}" class="page-btn relative inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-500 hover:bg-brand-bg transition-colors ${currentPage >= totalPages - 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>Next</button>`;
+            paginationNav.innerHTML = html;
+
+            paginationNav.querySelectorAll('.page-btn').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const nextPage = Number(btn.getAttribute('data-page'));
+                    if (!Number.isNaN(nextPage) && nextPage !== state.page) {
+                        state.page = nextPage;
+                        loadBooks();
+                    }
+                });
+            });
+        };
+
+        const loadBooks = async () => {
+            booksGrid.innerHTML = `
+                <div class="col-span-full bg-white border border-brand-border text-brand-dark rounded-xl px-4 py-3 font-semibold">
+                    Dang tai danh sach sach...
+                </div>
+            `;
+
+            try {
+                const params = {
+                    page: state.page,
+                    size: state.size
+                };
+                if (state.q) {
+                    params.q = state.q;
+                }
+                if (state.categoryId) {
+                    params.categoryId = state.categoryId;
+                }
+
+                const response = await axios.get('/api/books/search', {
+                    params
+                });
+
+                const serverBooks = Array.isArray(response?.data?.content) ? response.data.content : [];
+                const books = applySort(applyPriceFilter(serverBooks));
+
+                if (books.length === 0) {
+                    booksGrid.innerHTML = `
+                        <div class="col-span-full bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl px-4 py-3 font-semibold">
+                            Chua co sach de hien thi.
+                        </div>
+                    `;
+                    renderPagination(0, 0);
+                    return;
+                }
+
+                booksGrid.innerHTML = books.map(buildCard).join('');
+                renderPagination(response?.data?.number ?? state.page, response?.data?.totalPages ?? 0);
+            } catch (error) {
+                showError();
+                console.error('Load books failed:', error);
+            }
+        };
+
+        booksGrid.addEventListener('click', (event) => {
+            const targetButton = event.target.closest('button[data-add-to-cart="true"]');
+            if (!targetButton) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            const bookId = targetButton.getAttribute('data-book-id');
+            if (bookId) {
+                addToCart(bookId, 1);
+            }
+        });
+
+        searchForm?.addEventListener('submit', (event) => {
+            event.preventDefault();
+            state.q = (searchInput?.value || '').trim();
+            state.page = 0;
+            loadBooks();
+        });
+
+        sortSelect?.addEventListener('change', () => {
+            state.sort = sortSelect.value;
+            loadBooks();
+        });
+
+        applyPriceFilterBtn?.addEventListener('click', () => {
+            const min = Number(priceMinInput?.value);
+            const max = Number(priceMaxInput?.value);
+            state.minPrice = Number.isNaN(min) || min < 0 ? null : min;
+            state.maxPrice = Number.isNaN(max) || max < 0 ? null : max;
+            state.page = 0;
+            loadBooks();
+        });
+
+        loadCategories();
+        loadBooks();
+    })();
+</script>
 
 </body>
 </html>

@@ -18,6 +18,9 @@ public interface BookRepository extends JpaRepository<Book, Long>{
 
     List<Book> findBySeller(User seller);
 
+    // S02: Lấy sách theo trạng thái (Có phân trang cho Admin)
+    Page<Book> findByApprovalStatus(ApprovalStatus approvalStatus, Pageable pageable);
+
     List<Book> findByApprovalStatus(ApprovalStatus approvalStatus);
 
         @Query("""

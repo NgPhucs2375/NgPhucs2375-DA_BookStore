@@ -11,6 +11,8 @@ import com.example.bookstore.security.JwtTokenProvider;
 import com.example.bookstore.service.AuthOtpService;
 import com.example.bookstore.service.AuthService;
 import jakarta.validation.Valid;
+import lombok.val;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,9 @@ public class AuthController {
 
     @Autowired
     private AuthOtpService authOtpService;
+
+    @Autowired
+    private com.example.bookstore.security.SecurityUtils securityUtils;
 
     @PostMapping("/otp/request")
     public ResponseEntity<String> requestRegisterOtp(@Valid @RequestBody EmailOtpRequest request) {
@@ -96,10 +101,35 @@ public class AuthController {
             "role", authenticated.getRole().name()
         ));
     }
-
     @GetMapping("/profile/{userId}")
     public UserProfileResponse getProfile(@PathVariable Long userId) {
         return authService.getProfile(userId);
+    }
+
+    @PutMapping("/profile/{userId}")
+    public ResponseEntity<?> updateProfile(
+        @PathVariable Long userId,
+        @Valid @RequestBody UserProfileUpdateRequest request,
+        jakarta.servlet.http.HttpServletRequest httpRequest // Lấy request để check Token
+    ) {
+        // 1 Chống vượt quyền (IDOR) 
+        // So sánh ID trong token với ID userId trên URL, nếu khác nhau thì từ chối
+        Long currentUserId = (Long) httpRequest.getAttribute("CURRENT_USER_ID");
+        if (currentUserId == null || !currentUserId.equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Bạn không có quyền truy cập hồ sơ của người khác!");
+        }
+
+        // 2 Chống thêm các thể html 
+        if (request.getShopName() != null) {
+            request.setShopName(request.getShopName().replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
+        }
+        // 3. Đẩy xuống Service xử lý
+        try {
+            UserProfileResponse response = authService.updateProfile(userId, request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/profile/{userId}")

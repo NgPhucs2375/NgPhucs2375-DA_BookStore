@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import com.example.bookstore.utils.SecurityUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile; 
 
 @RestController // Bao cho SB biet class nay chuyen dung de tao API tra ve du lieu(thuong la dinh dang JSON) chu khong phai tra ve giao dien HTML
 @CrossOrigin("*") // thẻ VIP để có thể ra vào dữ liệu
@@ -26,7 +31,8 @@ public class BookController {
     @Autowired
     private BookRepository bookRepository;
 
-
+    @Autowired
+    private SecurityUtils securityUtils;
 
     @GetMapping // Bao hieu rang ham getAllBooks() se duoc chay khi co ai do truy cap vao dia chi goc bang phuong thuc Get(nhu khi go link tren trinh duyet)
     public Page<Book> getBooks(
@@ -73,4 +79,74 @@ public class BookController {
     public Book updateBook(@PathVariable Long id, @RequestBody Book bookDetails) {
         return bookService.updateBook(id, bookDetails);
     }
+
+    // API add new book cho Seller (S03)
+    @PostMapping("/seller")
+    public ResponseEntity<?> createBookForSeller(
+        @RequestBody Book book,
+        HttpServletRequest request // Lấy request để đọc ID đã decode
+    ){
+        //1 lấy ID người bán từ request (đã được decode trong filter)
+        Long sellerId = (long) request.getAttribute("CURRENT_USER_ID");
+        if(sellerId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bạn cần đăng nhập để thực hiện hành động này");
+        }
+
+        //2 chặn 1 số thẻ HTML nguy hiểm bằng replace từ thư viện StringEscapeUtils
+        book.setTitle(book.getTitle().replaceAll("<", "&lt;").replaceAll(">", "&gt;")); //&lt; = <, &gt; = >
+        book.setDescription(securityUtils.sanitizeHtml(book.getDescription())); // Chỉ cho phép một số thẻ HTML cơ bản, chặn <script> và các thẻ nguy hiểm khác
+
+        // 3 đẩy dữ liệu vào service để xử lý logic thêm sách mới
+        try {
+            Book createdBook = bookService.addBookForSeller(book, sellerId);
+            return ResponseEntity.ok(createdBook);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    // API Update book cho Seller (S03)
+    @PutMapping("/seller/{id}")
+    public ResponseEntity<?> updateBookForSeller(
+        @PathVariable Long id,
+        @RequestBody Book bookDetails,
+        HttpServletRequest request
+    ){
+        Long sellerId = (long) request.getAttribute("CURRENT_USER_ID");
+        if(sellerId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (bookDetails.getTitle() != null) {
+            bookDetails.setTitle(bookDetails.getTitle().replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
+        }
+        if (bookDetails.getDescription() != null) {
+            bookDetails.setDescription(securityUtils.sanitizeHtml(bookDetails.getDescription()));
+        }
+
+        try {
+            Book updatedBook = bookService.updateBookForSeller(id, bookDetails, sellerId);
+            return ResponseEntity.ok(updatedBook);
+        } catch (RuntimeException e) {
+             // Bắt lỗi IDOR từ Service ném lên (IDOR: như việc vượt quyền từ user mà nhảy dc vào seller căng lắm là admin để sửa hoặc thêm sách )
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+        // API upload ảnh cho sách (S03)
+        @PostMapping("/seller/{id}/upload-cover")
+        public ResponseEntity<?> upLoadBookCover(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request
+        ){
+            Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
+            if(sellerId == null){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            try{
+                // Check file có phải là ảnh ko bằng file signature 
+                String imageUrl = bookService.uploadAndVerifyCoverImage(id, file, sellerId);
+                return ResponseEntity.ok(imageUrl);
+            } catch (RuntimeException e){
+                return ResponseEntity.badRequest().body("Upload thất bại: " + e.getMessage());
+            }
+        }
 }

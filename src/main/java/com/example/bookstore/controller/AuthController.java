@@ -132,11 +132,4 @@ public class AuthController {
         }
     }
 
-    @PutMapping("/profile/{userId}")
-    public UserProfileResponse updateProfile(
-        @PathVariable Long userId,
-        @Valid @RequestBody UserProfileUpdateRequest request
-    ) {
-        return authService.updateProfile(userId, request);
-    }
 }

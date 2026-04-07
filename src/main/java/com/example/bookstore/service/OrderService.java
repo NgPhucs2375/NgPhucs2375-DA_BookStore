@@ -2,6 +2,8 @@ package com.example.bookstore.service;
 
 import com.example.bookstore.dto.CheckoutRequest;
 import com.example.bookstore.dto.CheckoutResponse;
+import com.example.bookstore.dto.OrderDetailResponse;
+import com.example.bookstore.dto.OrderItemDetailResponse;
 import com.example.bookstore.dto.SubOrderSummaryResponse;
 import com.example.bookstore.model.*;
 import com.example.bookstore.model.enums.ApprovalStatus;
@@ -151,6 +153,70 @@ public class OrderService {
 
     public List<Order> getCurrentBuyerOrders(Long buyerId) {
         return getBuyerOrders(buyerId);
+    }
+
+    @Transactional
+    public OrderDetailResponse getCurrentBuyerOrderDetail(Long buyerId, Long orderId) {
+        User buyer = userRepository.findById(buyerId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
+
+        if (buyer.getRole() != UserRole.BUYER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a buyer");
+        }
+
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+
+        if (order.getBuyer() == null || !buyerId.equals(order.getBuyer().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Buyer cannot access this order");
+        }
+
+        List<OrderItemDetailResponse> items = new ArrayList<>();
+        int totalItems = 0;
+
+        if (order.getSubOrders() != null) {
+            for (SubOrder subOrder : order.getSubOrders()) {
+                User seller = subOrder.getSeller();
+                String sellerName = seller == null
+                    ? null
+                    : (seller.getShopName() == null ? seller.getUsername() : seller.getShopName());
+
+                if (subOrder.getItems() != null) {
+                    for (OrderItem orderItem : subOrder.getItems()) {
+                        Book book = orderItem.getBook();
+                        int qty = orderItem.getQuantity() == null ? 0 : orderItem.getQuantity();
+                        double unitPrice = orderItem.getUnitPrice() == null ? 0.0 : orderItem.getUnitPrice();
+                        double lineTotal = unitPrice * qty;
+                        totalItems += qty;
+
+                        items.add(OrderItemDetailResponse.builder()
+                            .subOrderId(subOrder.getId())
+                            .subOrderStatus(subOrder.getStatus())
+                            .sellerId(seller == null ? null : seller.getId())
+                            .sellerName(sellerName)
+                            .bookId(book == null ? null : book.getId())
+                            .title(book == null ? null : book.getTitle())
+                            .author(book == null ? null : book.getAuthor())
+                            .unitPrice(unitPrice)
+                            .quantity(qty)
+                            .lineTotal(lineTotal)
+                            .build());
+                    }
+                }
+            }
+        }
+
+        return OrderDetailResponse.builder()
+            .orderId(order.getId())
+            .buyerId(buyer.getId())
+            .buyerUsername(buyer.getUsername())
+            .shippingAddress(order.getShippingAddress())
+            .totalAmount(order.getTotalAmount())
+            .createdAt(order.getCreatedAt())
+            .subOrderCount(order.getSubOrders() == null ? 0 : order.getSubOrders().size())
+            .totalItems(totalItems)
+            .items(items)
+            .build();
     }
 
     public List<SubOrderSummaryResponse> getSellerSubOrders(Long sellerId) {

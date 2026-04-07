@@ -1,0 +1,54 @@
+services:
+  # Load Balancer Nginx
+  nginx-lb:
+    image: nginx:latest
+    container_name: bookom-nginx-lb
+    ports:
+      - "80:80"
+    volumes:
+      # Nginx CHỈ CẦN file cấu hình này thôi
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - bookom-app-1
+      - bookom-app-2
+      - bookom-app-3
+    networks:
+      - bookom-network
+
+  # Bản sao Spring Boot số 1
+  bookom-app-1:
+    image: eclipse-temurin:17-jdk-alpine
+    container_name: bookom-app-1
+    volumes:
+      # TRỎ ĐÚNG FILE JAR CHO APP JAVA
+      - ./target/BookStore-0.0.1-SNAPSHOT.jar:/app/bookom.jar
+    command: ["java", "-jar", "/app/bookom.jar"]
+    networks:
+      - bookom-network
+
+  # Bản sao Spring Boot số 2
+  bookom-app-2:
+    image: eclipse-temurin:17-jdk-alpine
+    container_name: bookom-app-2
+    volumes:
+      # TRỎ ĐÚNG FILE JAR CHO APP JAVA
+      - ./target/BookStore-0.0.1-SNAPSHOT.jar:/app/bookom.jar
+    command: ["java", "-jar", "/app/bookom.jar"]
+    networks:
+      - bookom-network
+
+  # Bản sao Spring Boot số 3
+  bookom-app-3:
+    image: eclipse-temurin:17-jdk-alpine
+    container_name: bookom-app-3
+    volumes:
+      # TRỎ ĐÚNG FILE JAR CHO APP JAVA
+      - ./target/BookStore-0.0.1-SNAPSHOT.jar:/app/bookom.jar
+    command: ["java", "-jar", "/app/bookom.jar"]
+    networks:
+      - bookom-network
+
+# Tạo mạng nội bộ để các container tự nói chuyện với nhau
+networks:
+  bookom-network:
+    driver: bridge

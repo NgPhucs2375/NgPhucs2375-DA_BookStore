@@ -9,7 +9,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity // Đánh dấu đây là 1 bảng trong DB
 @Table(name="users") // Tên bảng dưới Database sẽ là 'users'
@@ -38,6 +40,19 @@ public class User {
 
     @Column(length = 500)
     private String shopAddress;
+
+    @Lob
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
+    @ManyToMany
+    @JoinTable(
+        name = "user_favorite_categories",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    @Builder.Default
+    private Set<Category> favoriteCategories = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "seller")
     @JsonIgnore

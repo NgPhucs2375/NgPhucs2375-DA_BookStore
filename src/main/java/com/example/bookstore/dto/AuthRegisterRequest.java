@@ -1,10 +1,13 @@
 package com.example.bookstore.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class AuthRegisterRequest {
@@ -25,4 +28,14 @@ public class AuthRegisterRequest {
     )
     @JsonAlias({"passwordHash", "password"})
     private String password;
+
+    @Size(max = 3000000, message = "Avatar qua lon")
+    @Pattern(
+        regexp = "^$|^data:image/(png|jpeg|jpg|gif|webp);base64,[A-Za-z0-9+/=\\r\\n]+$",
+        message = "Avatar phai la data URL hinh anh hop le"
+    )
+    private String avatarUrl;
+
+    @Size(max = 20, message = "Toi da 20 the loai yeu thich")
+    private List<@Min(value = 1, message = "ID the loai khong hop le") Long> favoriteCategoryIds;
 }

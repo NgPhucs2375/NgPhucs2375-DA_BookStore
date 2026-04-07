@@ -3,6 +3,7 @@ package com.example.bookstore.controller;
 import com.example.bookstore.dto.CheckoutMeRequest;
 import com.example.bookstore.dto.CheckoutRequest;
 import com.example.bookstore.dto.CheckoutResponse;
+import com.example.bookstore.dto.OrderDetailResponse;
 import com.example.bookstore.dto.SubOrderSummaryResponse;
 import com.example.bookstore.model.Order;
 import com.example.bookstore.model.enums.OrderStatus;
@@ -43,6 +44,14 @@ public class OrderController {
     @GetMapping("/me")
     public List<Order> getCurrentBuyerOrders(@RequestHeader("X-User-Id") Long buyerId) {
         return orderService.getCurrentBuyerOrders(buyerId);
+    }
+
+    @GetMapping("/me/{orderId}")
+    public OrderDetailResponse getCurrentBuyerOrderDetail(
+            @RequestHeader("X-User-Id") Long buyerId,
+            @PathVariable Long orderId
+    ) {
+        return orderService.getCurrentBuyerOrderDetail(buyerId, orderId);
     }
 
     @GetMapping("/seller/{sellerId}/sub-orders")

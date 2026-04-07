@@ -12,7 +12,7 @@ public class AuthLoginRequest {
     @NotBlank(message = "Email dang nhap khong duoc de trong")
     @Size(max = 100, message = "Email dang nhap toi da 100 ky tu")
     @Pattern(
-        regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}$",
+        regexp = "^[A-Za-z0-9._%+-]+@(gmail|mail|email|outlook)\\\\.(com|vn|edu\\.vn|net)$",
         message = "Email dang nhap khong dung dinh dang"
     )
     private String username;

@@ -28,6 +28,11 @@
             <span class="h-2 w-2 rounded-full" th:classappend="${activeMenu == 'seller-analytics'} ? ' bg-white' : ' bg-[#FAF5E8]/50'"></span>
             Doanh thu
         </a>
+        <a th:href="@{/seller/shop}" class="flex items-center gap-3 rounded-xl px-4 py-3 transition"
+           th:classappend="${activeMenu == 'seller-shop'} ? ' bg-[#D19C74] text-white shadow-md' : ' text-[#FAF5E8]/90 hover:bg-white/10 hover:text-white'">
+            <span class="h-2 w-2 rounded-full" th:classappend="${activeMenu == 'seller-shop'} ? ' bg-white' : ' bg-[#FAF5E8]/50'"></span>
+            Ho so shop
+        </a>
     </nav>
 </aside>
 

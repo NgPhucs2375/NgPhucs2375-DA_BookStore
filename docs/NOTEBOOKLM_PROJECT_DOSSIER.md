@@ -21,7 +21,7 @@ Giá trị đã đạt được:
 Đánh giá hiện tại:
 - Backend foundation: tốt.
 - Buyer flow chính (cart -> checkout -> order pages): chạy end-to-end ở mức nghiệp vụ.
-- Mức sẵn sàng tương đối: ~86% cho foundation + buyer storefront/order flow.
+- Mức sẵn sàng tương đối: ~86% cho foundation + buyer storefront`/order flow.
 
 ---
 

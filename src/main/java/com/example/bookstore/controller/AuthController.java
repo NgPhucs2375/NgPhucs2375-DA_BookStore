@@ -11,7 +11,6 @@ import com.example.bookstore.security.JwtTokenProvider;
 import com.example.bookstore.service.AuthOtpService;
 import com.example.bookstore.service.AuthService;
 import jakarta.validation.Valid;
-import lombok.val;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -33,9 +32,6 @@ public class AuthController {
 
     @Autowired
     private AuthOtpService authOtpService;
-
-    @Autowired
-    private com.example.bookstore.security.SecurityUtils securityUtils;
 
     @PostMapping("/otp/request")
     public ResponseEntity<String> requestRegisterOtp(@Valid @RequestBody EmailOtpRequest request) {

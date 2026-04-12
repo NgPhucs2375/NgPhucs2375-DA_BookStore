@@ -18,7 +18,7 @@ public class SellerShopUpsertRequest {
     private String shopName;
 
     @NotBlank(message = "Slug không được để trống")
-    @Pattern(regexp = "^[a-z0-9-]+$",message = "Slug chỉ được chứa chữ thường, số và dấu gạch ngang")
+    @Pattern(regexp = "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",message = "Slug chỉ được chứa chữ thường, số và dấu gạch ngang")
     private String slug;
     private String description;
     private String logoUrl;

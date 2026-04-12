@@ -17,6 +17,15 @@
     </div>
 </div>
 <script th:src="@{/js/panel-data.js}"></script>
-<script>BookomPanelData.initSellerDashboard();</script>
+<script th:src="@{/js/api-service.js}"></script>
+<script th:src="@{/js/seller-dashboard-integration.js}"></script>
+<script>
+// Load seller dashboard with new API integration
+if (typeof loadSellerDashboard === 'function') {
+    loadSellerDashboard();
+} else {
+    BookomPanelData.initSellerDashboard();
+}
+</script>
 </body>
 </html>

@@ -4,6 +4,8 @@ import com.example.bookstore.model.Book;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.enums.UserRole;
+import com.example.bookstore.model.Category;
+import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,6 +33,9 @@ public class DataSeeder implements CommandLineRunner {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private CategoryRepository categoryRepository;
+
     // ✨ Lấy Key từ application.properties
     @Value("${google.gemini.api-key:MISSING_KEY}")
     private String apiKey;
@@ -45,18 +50,44 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        System.out.println("Dang don dep kho sach cu...");
+        // ⚠️ KIỂM TRA CHẶT CHẼ: Nếu cả User + Category + Book đều có dữ liệu 
+        // thì Seeder đã chạy từ trước, không chạy lại
+        long userCount = userRepository.count();
+        long categoryCount = categoryRepository.count();
+        long bookCount = bookRepository.count();
+        
+        if (userCount > 0 && categoryCount > 0 && bookCount > 0) {
+            System.out.println("✅ Du lieu da co? nguoi dung: " + userCount + ", danh muc: " + categoryCount + ", sach: " + bookCount);
+            System.out.println("✅ DataSeeder da chay, bo qua tao du lieu moi...");
+            return;
+        }
+        
+        System.out.println("⚡ Dung canh bao: Du lieu khong day du (User: " + userCount + ", Category: " + categoryCount + ", Book: " + bookCount + ")");
+        System.out.println("Dang don dep kho sach cu va tao du lieu moi...");
         bookRepository.deleteAll();
+        categoryRepository.deleteAll();
         userRepository.deleteAll();
 
+        Category cat1 = categoryRepository.save(new Category(null, "Tiểu thuyết - Văn học", "Tác phẩm văn học trong và ngoài nước", null));
+        Category cat2 = categoryRepository.save(new Category(null, "Tâm lý - Kỹ năng sống", "Sách phát triển bản thân", null));
+        Category cat3 = categoryRepository.save(new Category(null, "Kinh tế - Quản lý", "Kiến thức kinh doanh và tài chính", null));
+        Category cat4 = categoryRepository.save(new Category(null, "Sách Thiếu nhi", "Truyện cổ tích, truyện tranh", null));
+        Category cat5 = categoryRepository.save(new Category(null, "Lịch sử - Địa lý", "Tìm hiểu về thế giới và nhân loại", null));
+        Category cat6 = categoryRepository.save(new Category(null, "Khoa học - Viễn tưởng", "Sách về khoa học khám phá", null));
+        Category cat7 = categoryRepository.save(new Category(null, "Truyện tranh (Manga/Comic)", "Các bộ truyện tranh nổi tiếng", null));
+        Category cat8 = categoryRepository.save(new Category(null, "Ngoại ngữ", "Tài liệu học tiếng Anh, Nhật, Hàn", null));
+        
+        // Random assign category to book later
+        Category[] categories = {cat1, cat2, cat3, cat4, cat5, cat6, cat7, cat8};
+
         User admin = userRepository.save(User.builder()
-            .username("admin")
+            .username("admin@gmail.com")
             .passwordHash(BCrypt.hashpw("admin123", BCrypt.gensalt(10)))
             .role(UserRole.ADMIN)
             .build());
 
         User sellerNhaNam = userRepository.save(User.builder()
-            .username("shop_nha_nam")
+            .username("shop_nha_nam@gmail.com")
             .passwordHash(BCrypt.hashpw("seller123", BCrypt.gensalt(10)))
             .role(UserRole.SELLER)
             .shopName("Nha Nam Official")
@@ -64,7 +95,7 @@ public class DataSeeder implements CommandLineRunner {
             .build());
 
         User sellerTre = userRepository.save(User.builder()
-            .username("shop_tre")
+            .username("shop_tre@gmail.com")
             .passwordHash(BCrypt.hashpw("seller123", BCrypt.gensalt(10)))
             .role(UserRole.SELLER)
             .shopName("NXB Tre Official")
@@ -102,6 +133,8 @@ public class DataSeeder implements CommandLineRunner {
                         book.setApprovalStatus(ApprovalStatus.APPROVED);
                         // Chia ngau nhien quyen so huu sach cho 2 seller
                         book.setSeller(random.nextBoolean() ? sellerNhaNam : sellerTre);
+                        // Gan danh muc ngau nhien 
+                        book.setCategory(categories[random.nextInt(categories.length)]);
                         // Luon co mo ta co ban de UI khong bi trong khi AI gap loi
                         book.setDescription(buildFallbackDescription(book));
 

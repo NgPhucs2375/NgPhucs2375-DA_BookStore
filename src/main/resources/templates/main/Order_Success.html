@@ -780,54 +780,7 @@
 
 </main>
 
-<footer class="bg-white border-t-[6px] border-brand-biscuit pt-16 pb-8 z-10 relative">
-    <div class="max-w-[1400px] mx-auto px-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-            <div>
-                <div class="text-3xl font-extrabold tracking-wider mb-6 flex items-center gap-2 text-brand-dark">
-                    <div class="bg-brand-biscuit text-white p-1 rounded-md">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                    </div>
-                    BOOKOM
-                </div>
-                <p class="font-medium text-sm leading-relaxed mb-6 text-gray-600">Mua sắm trực tuyến sách, văn phòng phẩm, quà tặng... với giá ưu đãi và chất lượng dịch vụ tuyệt vời nhất.</p>
-            </div>
-            <div>
-                <h4 class="text-base font-bold uppercase mb-6 text-brand-dark">Dịch Vụ Khách Hàng</h4>
-                <ul class="space-y-3 font-semibold text-sm text-gray-500">
-                    <li><a href="#" class="hover:text-brand-biscuit transition-colors">Trung tâm hỗ trợ</a></li>
-                    <li><a href="#" class="hover:text-brand-biscuit transition-colors">Hướng dẫn mua hàng</a></li>
-                    <li><a href="#" class="hover:text-brand-biscuit transition-colors">Chính sách thanh toán</a></li>
-                    <li><a href="#" class="hover:text-brand-biscuit transition-colors">Chính sách vận chuyển</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="text-base font-bold uppercase mb-6 text-brand-dark">Về BOOKOM</h4>
-                <ul class="space-y-3 font-semibold text-sm text-gray-500">
-                    <li><a href="#" class="hover:text-brand-biscuit transition-colors">Giới thiệu về BOOKOM</a></li>
-                    <li><a href="#" class="hover:text-brand-biscuit transition-colors">Tuyển dụng</a></li>
-                    <li><a href="#" class="hover:text-brand-biscuit transition-colors">Điều khoản hệ thống</a></li>
-                    <li><a href="#" class="hover:text-brand-biscuit transition-colors">Chính sách bảo mật</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="text-base font-bold uppercase mb-6 text-brand-dark">Tải Ứng Dụng</h4>
-                <div class="flex flex-col gap-3">
-                    <div class="w-36 h-10 border border-brand-dark rounded-lg flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-brand-dark hover:text-white transition">App Store</div>
-                    <div class="w-36 h-10 border border-brand-dark rounded-lg flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-brand-dark hover:text-white transition">Google Play</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="border-t border-brand-accent pt-6 flex flex-col md:flex-row items-center justify-between text-xs font-bold text-gray-500">
-            <div>© 2026 BOOKOM. Đồ án nhóm: Bon chang linh ngu lam.</div>
-            <div class="mt-4 md:mt-0 flex gap-6">
-                <span class="flex items-center gap-1"><svg class="w-4 h-4 text-brand-biscuit" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg> Thanh toán an toàn</span>
-                <span class="flex items-center gap-1"><svg class="w-4 h-4 text-brand-biscuit" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg> Dữ liệu mã hóa 100%</span>
-            </div>
-        </div>
-    </div>
-</footer>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>

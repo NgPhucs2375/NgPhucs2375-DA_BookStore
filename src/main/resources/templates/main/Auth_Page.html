@@ -767,13 +767,7 @@
     </div>
 </main>
 
-<footer class="w-full max-w-[1200px] text-center py-6 mt-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest z-10 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-brand-accent/50">
-    <div>© 2026 BOOKOM E-Commerce. Nhóm: Bon chang linh ngu lam.</div>
-    <div class="flex items-center gap-2 text-brand-green">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-        Dữ liệu được mã hóa SSL 256-bit an toàn
-    </div>
-</footer>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
@@ -979,8 +973,14 @@
 
                     Swal.fire({ icon: 'success', title: 'Tuyệt vời!', text: 'Đăng nhập thành công!', timer: 1500, showConfirmButton: false })
                         .then(() => {
-                            // Chuyển sang trang người mua sau khi popup tắt
-                            window.location.href = "Discovery_Page.html";
+                            // Chuyển hướng trang tùy theo role
+                            if (data.role === 'ADMIN') {
+                                window.location.href = "/admin";
+                            } else if (data.role === 'SELLER') {
+                                window.location.href = "/seller/dashboard";
+                            } else {
+                                window.location.href = "Discovery_Page.html";
+                            }
                         });
                 })
                 .catch(error => {
@@ -1003,9 +1003,12 @@
                 return;
             }
 
-            if (favoriteCategoryIds.length === 0) {
-                Swal.fire({ icon: 'warning', title: 'Thieu thong tin', text: 'Vui long chon it nhat 1 the loai yeu thich.' });
-                return;
+            // Chỉ xác thực yêu cầu chọn thể loại nếu hệ thống thực sự có thể loại
+            if (favoriteCategoriesGrid && favoriteCategoriesGrid.innerHTML.trim() !== '') {
+                if (favoriteCategoryIds.length === 0) {
+                    Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Vui lòng chọn ít nhất 1 thể loại bạn yêu thích để chúng tôi gợi ý sách tốt hơn.' });
+                    return;
+                }
             }
 
             try {

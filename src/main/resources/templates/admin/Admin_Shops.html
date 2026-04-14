@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/panel_head :: head('BOOKOM ADMIN - Gian hang', false)}"></head>
+<head th:replace="~{fragments/panel_head :: head(${pageTitle}, false)}"></head>
 <body class="font-sans bg-[#fbfaf8] text-[#5D4037]">
 <div class="flex min-h-screen">
     <div th:replace="~{fragments/admin_layout :: sidebar(${activeMenu})}"></div>

@@ -18,6 +18,15 @@
     </div>
 </div>
 <script th:src="@{/js/panel-data.js}"></script>
-<script>BookomPanelData.initSellerOrders();</script>
+<script th:src="@{/js/api-service.js}"></script>
+<script th:src="@{/js/order-details-integration.js}"></script>
+<script>
+// Load seller orders with new API integration
+if (typeof loadSellerOrders === 'function') {
+    loadSellerOrders();
+} else {
+    BookomPanelData.initSellerOrders();
+}
+</script>
 </body>
 </html>

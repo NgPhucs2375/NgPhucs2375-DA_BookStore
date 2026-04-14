@@ -980,7 +980,13 @@
                     Swal.fire({ icon: 'success', title: 'Tuyệt vời!', text: 'Đăng nhập thành công!', timer: 1500, showConfirmButton: false })
                         .then(() => {
                             // Chuyển sang trang người mua sau khi popup tắt
-                            window.location.href = "Discovery_Page.html";
+                            if (data.role === 'ADMIN') {
+                                window.location.href = "/admin";
+                            } else if (data.role === 'SELLER') {
+                                window.location.href = "/seller/dashboard";
+                            } else {
+                                window.location.href = "Discovery_Page.html";
+                            }
                         });
                 })
                 .catch(error => {

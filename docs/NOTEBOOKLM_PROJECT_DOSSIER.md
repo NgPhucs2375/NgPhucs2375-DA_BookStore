@@ -1,6 +1,6 @@
 # BOOKSTORE MULTI-VENDOR - NOTEBOOKLM PROJECT DOSSIER
 
-Cập nhật: 2026-04-03
+Cập nhật: 2026-04-15
 Mục tiêu tài liệu: tệp tổng hợp để dùng trong NotebookLM cho Q&A kỹ thuật, báo cáo đồ án và theo dõi tiến độ.
 
 ---
@@ -201,7 +201,7 @@ Cần ưu tiên:
 
 ---
 
-## 13) Delta mới nhất (2026-04-03)
+## 13) Delta mới nhất (2026-04-15)
 
 - Thêm OTP qua SMTP cho auth
 - Register yêu cầu email đã verify OTP
@@ -210,6 +210,7 @@ Cần ưu tiên:
 - Bind Checkout_Page với API cart và `/api/orders/me/checkout`
 - Thêm API `GET /api/orders/me/{orderId}`
 - Bind Order_Success và Order_Details theo orderId
+- Cập nhật tài liệu UC feasibility (nhánh `origin/Scu` đã hợp nhất)
 - Compile và regression tests hiện có đều pass
 
 ---

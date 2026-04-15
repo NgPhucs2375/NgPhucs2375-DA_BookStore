@@ -1,6 +1,6 @@
 # UC Feasibility Note - Multi-vendor BookStore
 
-Cập nhật ngày: 2026-04-03
+Cập nhật ngày: 2026-04-15
 
 ## Ghi chú quyết định
 - Tài liệu này dùng để đánh giá mức khả thi UC theo trạng thái code hiện tại.
@@ -60,12 +60,13 @@ Chưa đầy đủ:
 4. Hoàn thiện admin moderation + user management.
 5. Thiết lập quality gate với integration + E2E tests.
 
-## Delta mới nhất (2026-04-03)
+## Delta mới nhất (2026-04-15)
 - Auth: thêm OTP SMTP, register yêu cầu verify OTP.
 - Profile: lưu avatar + favorite categories.
 - Cart/Checkout: đã bind API thật và đặt hàng qua `/api/orders/me/checkout`.
 - Orders: thêm API chi tiết đơn `GET /api/orders/me/{orderId}`.
 - UI: Order_Success và Order_Details bind theo orderId.
+- Doc: cập nhật ghi chú feasibility sau merge nhánh `origin/Scu`.
 - Kiểm chứng: compile và regression tests hiện có đều pass.
 
 ## Kết luận

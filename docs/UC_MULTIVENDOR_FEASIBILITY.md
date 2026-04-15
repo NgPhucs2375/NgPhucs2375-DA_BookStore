@@ -48,7 +48,7 @@ Chưa đầy đủ:
 ### ADMIN
 | UC | Khả năng hiện tại | Trạng thái | Kết luận |
 |---|---|---|---|
-| A01 Dashboard tổng quan | Trung bình-Cao | Có panel cơ bản | Cần hoàn thiện KPI |
+| A01 Dashboard tổng quan | Trung bình-Cao | Có panel + loader/refresh + toast | Cần hoàn thiện KPI |
 | A02 Khóa/mở user | Thấp | Chưa có đầy đủ field/API | Cần ưu tiên |
 | A03 Kiểm duyệt sách | Trung bình | Có status model | Cần API moderation đầy đủ |
 | A04 Xem toàn bộ đơn | Trung bình | Có model/repo | Cần admin endpoint + filter |
@@ -67,6 +67,9 @@ Chưa đầy đủ:
 - Orders: thêm API chi tiết đơn `GET /api/orders/me/{orderId}`.
 - UI: Order_Success và Order_Details bind theo orderId.
 - Doc: cập nhật ghi chú feasibility sau merge nhánh `origin/Scu`.
+- Admin: chuẩn hóa layout/head theo `pageTitle`, thêm loader + nút refresh và toast.
+- Admin: sidebar TailAdmin có thu gọn/mở rộng, dùng CSS riêng.
+- Admin: fetch có auth header + xử lý chuyển về login khi 401/403.
 - Kiểm chứng: compile và regression tests hiện có đều pass.
 
 ## Kết luận

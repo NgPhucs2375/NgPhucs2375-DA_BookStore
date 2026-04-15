@@ -211,6 +211,8 @@ Cần ưu tiên:
 - Thêm API `GET /api/orders/me/{orderId}`
 - Bind Order_Success và Order_Details theo orderId
 - Cập nhật tài liệu UC feasibility (nhánh `origin/Scu` đã hợp nhất)
+- Admin: chuẩn hóa layout/head theo `pageTitle`, thêm loader + nút refresh, toast thông báo, và xử lý auth header cho API admin
+- Admin: giao diện sidebar TailAdmin có thu gọn/mở rộng, theme CSS riêng
 - Compile và regression tests hiện có đều pass
 
 ---

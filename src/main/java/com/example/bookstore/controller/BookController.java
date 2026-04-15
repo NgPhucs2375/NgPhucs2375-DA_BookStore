@@ -55,6 +55,33 @@ public class BookController {
         return bookRepository.searchApprovedBooks(keyword, categoryId, ApprovalStatus.APPROVED, pageable);
     }
 
+    /**
+     * API lấy danh sách sách của seller (bao gồm PENDING, APPROVED, REJECTED)
+     * Dùng cho trang quản lý kho (S03)
+     */
+    @GetMapping("/seller/me")
+    public Page<Book> getSellerBooks(
+            @RequestHeader(value = "X-User-Id", required = false) Long sellerId,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        // 1. Kiểm tra ID - Nếu NULL thì trả về trang trống ngay
+        if (sellerId == null) {
+            return Page.empty();
+        }
+
+        // 2. Xử lý keyword (Trim để tránh lỗi SQL khi nhập khoảng trắng)
+        String keyword = (q == null || q.trim().isEmpty()) ? null : q.trim();
+
+        // 3. Khai báo Pageable
+        Pageable pageable = PageRequest.of(page, size);
+
+        // 4. Trả về kết quả từ Repo
+        return bookRepository.findBySellerIdAndKeywordAndCategory(sellerId, keyword, categoryId, pageable);
+    }
+
     // --- API add new book ---
     // @RequestBody : khi gui 1 cuc dl Json chua thong tin sach SB auto "nan" JSON
     // do thanh 1 Doi tuong "Object" Book in Java tinh nang nay same [FromBody]

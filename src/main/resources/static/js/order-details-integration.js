@@ -14,7 +14,7 @@
 
     if (!ApiService.isAuthenticated()) {
         alert('Vui lòng đăng nhập');
-        window.location.href = '/main/index';
+        window.location.href = '/';
         return;
     }
 
@@ -27,7 +27,7 @@
 
     if (!orderId) {
         alert('❌ Không tìm thấy mã đơn hàng');
-        window.location.href = '/main/index';
+        window.location.href = '/seller/orders';
         return;
     }
 

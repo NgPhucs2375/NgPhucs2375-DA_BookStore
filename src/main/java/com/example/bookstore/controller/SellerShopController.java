@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 @RestController
 @RequestMapping("/api")
@@ -22,29 +23,36 @@ public class SellerShopController {
     // ==========================================
 
     @GetMapping("/seller/me/shop")
-    public ResponseEntity<SellerShopResponse> getMyShop() {
-        Long sellerId = getCurrentSellerId();
+    public ResponseEntity<SellerShopResponse> getMyShop(
+            @RequestHeader("X-User-Id") Long sellerId
+    ) {
         SellerShopResponse response = shopService.getMyShop(sellerId);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/seller/me/shop")
-    public ResponseEntity<SellerShopResponse> createMyShop(@Valid @RequestBody SellerShopUpsertRequest request) {
-        Long sellerId = getCurrentSellerId();
+    public ResponseEntity<SellerShopResponse> createMyShop(
+            @RequestHeader("X-User-Id") Long sellerId,
+            @Valid @RequestBody SellerShopUpsertRequest request
+    ) {
         SellerShopResponse response = shopService.createMyShop(sellerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/seller/me/shop")
-    public ResponseEntity<SellerShopResponse> updateMyShop(@Valid @RequestBody SellerShopUpsertRequest request) {
-        Long sellerId = getCurrentSellerId();
+    public ResponseEntity<SellerShopResponse> updateMyShop(
+            @RequestHeader("X-User-Id") Long sellerId,
+            @Valid @RequestBody SellerShopUpsertRequest request
+    ) {
         SellerShopResponse response = shopService.updateMyShop(sellerId, request);
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/seller/me/shop/status")
-    public ResponseEntity<SellerShopResponse> changeStatus(@RequestParam ApprovalStatus status) {
-        Long sellerId = getCurrentSellerId();
+    public ResponseEntity<SellerShopResponse> changeStatus(
+            @RequestHeader("X-User-Id") Long sellerId,
+            @RequestParam ApprovalStatus status
+    ) {
         SellerShopResponse response = shopService.changeStatus(sellerId, status);
         return ResponseEntity.ok(response);
     }
@@ -64,15 +72,8 @@ public class SellerShopController {
     // ==========================================
 
     /**
-     * Hàm giả lập để lấy ID của Seller đang đăng nhập.
-     * TODO: Thay thế bằng logic thực tế từ Spring Security (VD: SecurityContextHolder hoặc @AuthenticationPrincipal)
+     * Seller ID được truyền từ X-User-Id header (được set bởi JwtAuthenticationFilter)
+     * Không cần lấy từ SecurityContext vì đã được xác thực ở filter level
      */
-    private Long getCurrentSellerId() {
-        // Ví dụ nếu dùng Spring Security:
-        // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        // return userDetails.getId();
-        
-        return 1L; // Tạm thời trả về 1L để code không bị lỗi khi test
-    }
+
 }

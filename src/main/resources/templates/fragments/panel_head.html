@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:fragment="head(pageTitle, includeChart)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">BOOKOM</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link th:href="@{/tailadmin-style.css}" rel="stylesheet" />
     <th:block th:if="${includeChart}">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </th:block>
@@ -29,4 +28,3 @@
         };
     </script>
 </head>
-</html>

@@ -19,8 +19,24 @@
     }).format(v || 0);
   }
 
+  function authHeaders() {
+    var token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    var headers = {};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    if (!token && window.BookomDevUserId) headers['X-User-Id'] = String(window.BookomDevUserId);
+    return headers;
+  }
+
   function getJson(url) {
-    return fetch(url).then(function (res) {
+    return fetch(url, { headers: authHeaders() }).then(function (res) {
+      if (res.status === 401 || res.status === 403) {
+        // Redirect to a login page or show auth modal for admin
+        try { localStorage.removeItem('access_token'); sessionStorage.removeItem('access_token'); } catch(e){}
+        if (window.location.pathname !== '/login' && window.location.pathname.indexOf('/admin') !== -1) {
+          window.location.href = '/login';
+        }
+        throw new Error("Unauthorized: " + res.status);
+      }
       if (!res.ok) throw new Error("HTTP " + res.status);
       return res.json();
     });
@@ -530,6 +546,43 @@
       );
     });
   }
+
+  // Simple toast utility using Tailwind classes
+  function ensureToastContainer(){
+    var container = document.getElementById('bookom-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'bookom-toast-container';
+      container.className = 'fixed top-4 right-4 flex flex-col gap-2 z-50';
+      document.body.appendChild(container);
+    }
+    return container;
+  }
+
+  function createToast(type, message, ttl){
+    ttl = ttl || 4000;
+    var container = ensureToastContainer();
+    var bg = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-rose-500' : 'bg-slate-700';
+    var ico = type === 'success' ? '✓' : type === 'error' ? '!' : 'i';
+    var el = document.createElement('div');
+    el.className = 'max-w-sm w-auto text-white px-4 py-2 rounded shadow-lg flex items-center gap-3 ' + bg + ' opacity-0 translate-y-2 transition-all';
+    el.innerHTML = '<span class="font-bold">' + ico + '</span><div class="flex-1 text-sm">' + (message || '') + '</div>';
+    container.appendChild(el);
+    // enter
+    requestAnimationFrame(function(){ el.classList.remove('opacity-0'); el.classList.add('opacity-100'); el.style.transform = 'translateY(0)'; });
+    setTimeout(function(){
+      // leave
+      el.classList.add('opacity-0');
+      el.style.transform = 'translateY(-8px)';
+      setTimeout(function(){ container.removeChild(el); if(container.children.length===0) container.remove(); }, 300);
+    }, ttl);
+  }
+
+  window.BookomToast = {
+    success: function(msg, ttl){ createToast('success', msg, ttl); },
+    error: function(msg, ttl){ createToast('error', msg, ttl); },
+    info: function(msg, ttl){ createToast('info', msg, ttl); }
+  };
 
   window.BookomPanelData = {
     initAdminDashboard: initAdminDashboard,

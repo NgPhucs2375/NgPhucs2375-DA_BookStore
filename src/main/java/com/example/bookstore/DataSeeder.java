@@ -20,9 +20,14 @@ import org.mindrot.jbcrypt.BCrypt;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -48,65 +53,87 @@ public class DataSeeder implements CommandLineRunner {
         );
     }
 
+    private String normalizeKey(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String bookKey(String title, String author) {
+        return normalizeKey(title) + "::" + normalizeKey(author);
+    }
+
+    private User ensureUser(String username, UserRole role, String rawPassword, String shopName, String shopAddress) {
+        User existing = userRepository.findByUsername(username);
+        if (existing != null) {
+            return existing;
+        }
+
+        User.UserBuilder builder = User.builder()
+            .username(username)
+            .passwordHash(BCrypt.hashpw(rawPassword, BCrypt.gensalt(10)))
+            .role(role);
+
+        if (shopName != null) {
+            builder.shopName(shopName);
+        }
+        if (shopAddress != null) {
+            builder.shopAddress(shopAddress);
+        }
+
+        return userRepository.save(builder.build());
+    }
+
     @Override
     public void run(String... args) throws Exception {
-        // ⚠️ KIỂM TRA CHẶT CHẼ: Nếu cả User + Category + Book đều có dữ liệu 
-        // thì Seeder đã chạy từ trước, không chạy lại
         long userCount = userRepository.count();
         long categoryCount = categoryRepository.count();
         long bookCount = bookRepository.count();
-        
-        if (userCount > 0 && categoryCount > 0 && bookCount > 0) {
-            System.out.println("✅ Du lieu da co? nguoi dung: " + userCount + ", danh muc: " + categoryCount + ", sach: " + bookCount);
-            System.out.println("✅ DataSeeder da chay, bo qua tao du lieu moi...");
-            return;
+
+        System.out.println("⚡ Khoi dong DataSeeder (User: " + userCount + ", Category: " + categoryCount + ", Book: " + bookCount + ")");
+        System.out.println("✅ Chi bo sung du lieu chua co, KHONG xoa du lieu cu.");
+
+        Map<String, Category> categoryByKey = new HashMap<>();
+        for (Category existing : categoryRepository.findAll()) {
+            categoryByKey.put(normalizeKey(existing.getName()), existing);
         }
-        
-        System.out.println("⚡ Dung canh bao: Du lieu khong day du (User: " + userCount + ", Category: " + categoryCount + ", Book: " + bookCount + ")");
-        System.out.println("Dang don dep kho sach cu va tao du lieu moi...");
-        bookRepository.deleteAll();
-        categoryRepository.deleteAll();
-        userRepository.deleteAll();
 
-        Category cat1 = categoryRepository.save(new Category(null, "Tiểu thuyết - Văn học", "Tác phẩm văn học trong và ngoài nước", null));
-        Category cat2 = categoryRepository.save(new Category(null, "Tâm lý - Kỹ năng sống", "Sách phát triển bản thân", null));
-        Category cat3 = categoryRepository.save(new Category(null, "Kinh tế - Quản lý", "Kiến thức kinh doanh và tài chính", null));
-        Category cat4 = categoryRepository.save(new Category(null, "Sách Thiếu nhi", "Truyện cổ tích, truyện tranh", null));
-        Category cat5 = categoryRepository.save(new Category(null, "Lịch sử - Địa lý", "Tìm hiểu về thế giới và nhân loại", null));
-        Category cat6 = categoryRepository.save(new Category(null, "Khoa học - Viễn tưởng", "Sách về khoa học khám phá", null));
-        Category cat7 = categoryRepository.save(new Category(null, "Truyện tranh (Manga/Comic)", "Các bộ truyện tranh nổi tiếng", null));
-        Category cat8 = categoryRepository.save(new Category(null, "Ngoại ngữ", "Tài liệu học tiếng Anh, Nhật, Hàn", null));
-        
-        // Random assign category to book later
-        Category[] categories = {cat1, cat2, cat3, cat4, cat5, cat6, cat7, cat8};
+        List<Category> orderedCategories = new ArrayList<>();
+        List<Category> seededCategories = List.of(
+            new Category(null, "Tiểu thuyết - Văn học", "Tác phẩm văn học trong và ngoài nước", null),
+            new Category(null, "Tâm lý - Kỹ năng sống", "Sách phát triển bản thân", null),
+            new Category(null, "Kinh tế - Quản lý", "Kiến thức kinh doanh và tài chính", null),
+            new Category(null, "Sách Thiếu nhi", "Truyện cổ tích, truyện tranh", null),
+            new Category(null, "Lịch sử - Địa lý", "Tìm hiểu về thế giới và nhân loại", null),
+            new Category(null, "Khoa học - Viễn tưởng", "Sách về khoa học khám phá", null),
+            new Category(null, "Truyện tranh (Manga/Comic)", "Các bộ truyện tranh nổi tiếng", null),
+            new Category(null, "Ngoại ngữ", "Tài liệu học tiếng Anh, Nhật, Hàn", null)
+        );
 
-        User admin = userRepository.save(User.builder()
-            .username("admin@gmail.com")
-            .passwordHash(BCrypt.hashpw("admin123", BCrypt.gensalt(10)))
-            .role(UserRole.ADMIN)
-            .build());
+        for (Category seed : seededCategories) {
+            String key = normalizeKey(seed.getName());
+            Category existing = categoryByKey.get(key);
+            if (existing == null) {
+                existing = categoryRepository.save(seed);
+                categoryByKey.put(key, existing);
+            }
+            orderedCategories.add(existing);
+        }
 
-        User sellerNhaNam = userRepository.save(User.builder()
-            .username("shop_nha_nam@gmail.com")
-            .passwordHash(BCrypt.hashpw("seller123", BCrypt.gensalt(10)))
-            .role(UserRole.SELLER)
-            .shopName("Nha Nam Official")
-            .shopAddress("Quang Trung Software Park, HCMC")
-            .build());
+        Category[] categories = orderedCategories.toArray(new Category[0]);
 
-        User sellerTre = userRepository.save(User.builder()
-            .username("shop_tre@gmail.com")
-            .passwordHash(BCrypt.hashpw("seller123", BCrypt.gensalt(10)))
-            .role(UserRole.SELLER)
-            .shopName("NXB Tre Official")
-            .shopAddress("District 3, HCMC")
-            .build());
+        User admin = ensureUser("admin@gmail.com", UserRole.ADMIN, "admin123", null, null);
+        User sellerNhaNam = ensureUser("shop_nha_nam@gmail.com", UserRole.SELLER, "seller123", "Nha Nam Official", "Quang Trung Software Park, HCMC");
+        User sellerTre = ensureUser("shop_tre@gmail.com", UserRole.SELLER, "seller123", "NXB Tre Official", "District 3, HCMC");
 
         System.out.println("✅ Da tao admin va 2 seller mac dinh: " + admin.getUsername());
 
         System.out.println("--- PHẦN 1: NẠP DỮ LIỆU TỪ CSV ---");
         java.io.InputStream is = getClass().getResourceAsStream("/Books.csv");
         if (is == null) { System.out.println("❌ Không thấy file Books.csv!"); return; }
+
+        Set<String> existingBookKeys = new HashSet<>();
+        for (Book existing : bookRepository.findAll()) {
+            existingBookKeys.add(bookKey(existing.getTitle(), existing.getAuthor()));
+        }
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;
@@ -120,9 +147,16 @@ public class DataSeeder implements CommandLineRunner {
 
                 if (data.length >= 8) {
                     try {
+                        String title = data[1].replace("\"", "").trim();
+                        String author = data[2].replace("\"", "").trim();
+                        String uniqueKey = bookKey(title, author);
+                        if (existingBookKeys.contains(uniqueKey)) {
+                            continue;
+                        }
+
                         Book book = new Book();
-                        book.setTitle(data[1].replace("\"", "").trim());
-                        book.setAuthor(data[2].replace("\"", "").trim());
+                        book.setTitle(title);
+                        book.setAuthor(author);
                         book.setPublishYear(data[3].replace("\"", "").trim());
                         book.setPublisher(data[6].replace("\"", "").trim());
                         book.setImageUrl(data[7].replace("\"", "").trim());
@@ -139,12 +173,13 @@ public class DataSeeder implements CommandLineRunner {
                         book.setDescription(buildFallbackDescription(book));
 
                         bookRepository.save(book);
+                        existingBookKeys.add(uniqueKey);
                         count++;
                         if (count >= 300) { break; }
                     } catch (Exception e) {}
                 }
             }
-            System.out.println("✅ Nạp xong 300 cuốn sách!");
+            System.out.println("✅ Bo sung xong " + count + " cuon sach (khong trung lap)!");
         }
 
         boolean hasAiKey = apiKey != null && !apiKey.isBlank() && !"MISSING_KEY".equals(apiKey);
@@ -154,7 +189,10 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         System.out.println("\n--- PHẦN 2: DÙNG RESTCLIENT GỌI THẲNG GEMINI FLASH ---");
-        List<Book> booksNeedDesc = bookRepository.findAll().stream().limit(10).toList();
+        List<Book> booksNeedDesc = bookRepository.findAll().stream()
+            .filter(book -> book.getDescription() == null || book.getDescription().isBlank())
+            .limit(10)
+            .toList();
 
         RestClient restClient = RestClient.create();
         String geminiUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + apiKey;

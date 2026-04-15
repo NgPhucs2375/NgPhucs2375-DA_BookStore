@@ -71,3 +71,9 @@ Chưa đầy đủ:
 ## Kết luận
 - Các UC BUYER trọng tâm đã khả thi ở mức end-to-end cho demo.
 - SELLER/ADMIN cần thêm một vòng hoàn thiện authorization, moderation và reporting để đạt production-ready.
+
+acc test
+admin2@gmail.com
+admin123
+
+taskkill /F /IM java.exe

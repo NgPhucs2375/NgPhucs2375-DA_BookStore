@@ -9,6 +9,15 @@
         <div th:replace="~{fragments/seller_layout :: header(${pageTitle}, ${pageSubtitle})}"></div>
 
         <main class="p-4 md:p-8 space-y-6">
+
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-black text-brand-dark">Danh sách sản phẩm</h2>
+                <a th:href="@{/seller/book/form}"
+                   class="px-5 py-2.5 bg-brand-orange text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition hover:scale-105 active:scale-95 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Thêm sách mới
+                </a>
+            </div>
             <section class="rounded-xl border border-brand-accent bg-white p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
                 <input id="inv-q" class="rounded-lg border border-brand-accent px-3 py-2 font-bold" placeholder="Tim ten sach/tac gia">
                 <select id="inv-category" class="rounded-lg border border-brand-accent px-3 py-2 font-bold">
@@ -35,7 +44,7 @@
                             <th class="px-4 py-3 font-black text-right">Cap nhat</th>
                         </tr>
                         </thead>
-                        <tbody id="seller-inventory-body" class="divide-y divide-brand-accent"></tbody>
+                        <tbody id="inventory-books-table" class="divide-y divide-brand-accent"></tbody>
                     </table>
                 </div>
             </section>
@@ -46,13 +55,6 @@
 <script th:src="@{/js/panel-data.js}"></script>
 <script th:src="@{/js/api-service.js}"></script>
 <script th:src="@{/js/inventory-management-integration.js}"></script>
-<script>
-// Load inventory management with new API integration
-if (typeof loadInventoryManagement === 'function') {
-    loadInventoryManagement();
-} else {
-    BookomPanelData.initSellerInventory();
-}
-</script>
+
 </body>
 </html>

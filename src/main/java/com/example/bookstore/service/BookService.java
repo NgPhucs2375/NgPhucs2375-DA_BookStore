@@ -84,11 +84,35 @@ public class BookService {
     // --- BỔ SUNG CÁC HÀM BẢO MẬT DÀNH RIÊNG CHO SELLER (S03) ---
 
     public Book addBookForSeller(Book book, Long sellerId) {
+        // 1. Tìm Seller từ ID lấy từ Token (Cực kỳ an toàn, không lo ID ảo)
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new RuntimeException("Seller không tồn tại"));
 
+        // 2. TỰ ĐỘNG GÁN CHỦ SỞ HỮU (Dynamic)
+        // Dòng này giúp Seller 81 thêm sẽ có ID 81, 82 có ID 82
         book.setSeller(seller);
-        book.setApprovalStatus(ApprovalStatus.PENDING); // Sách mới auto PENDING chờ duyệt
+
+        // 3. GIÁP CHỐNG LỖI SQL SERVER (Chặn đứng NULL cho các cột NOT NULL)
+        // Tác giả
+        if (book.getAuthor() == null || book.getAuthor().trim().isEmpty()) {
+            book.setAuthor("Đang cập nhật");
+        }
+        // Nhà xuất bản (Tôi thấy trong ảnh DB của bro có cột này và nó đang có data)
+        if (book.getPublisher() == null || book.getPublisher().trim().isEmpty()) {
+            book.setPublisher("NXB Mới");
+        }
+        // Năm xuất bản
+        if (book.getPublishYear() == null) {
+            book.setPublishYear("2026");
+        }
+        // Giá và số lượng (Tránh NULL gây lỗi tính toán)
+        if (book.getPrice() == null) book.setPrice(0.0);
+        if (book.getStockQuantity() == null) book.setStockQuantity(0);
+
+        // 4. Trạng thái chờ duyệt
+        book.setApprovalStatus(ApprovalStatus.PENDING);
+
+        // 5. LƯU VÀO DATABASE
         return bookRepository.save(book);
     }
 
@@ -110,8 +134,16 @@ public class BookService {
             existingBook.setPrice(bookDetails.getPrice());
         if (bookDetails.getStockQuantity() != null)
             existingBook.setStockQuantity(bookDetails.getStockQuantity());
-        if (bookDetails.getAuthor() != null)
-            existingBook.setAuthor(bookDetails.getAuthor());
+
+        // --- GẮN GIÁP CHỐNG LỖI TÁC GIẢ (RỖNG) ---
+        if (bookDetails.getAuthor() != null) {
+            if (bookDetails.getAuthor().trim().isEmpty()) {
+                existingBook.setAuthor("Đang cập nhật"); // Xóa trắng thì tự động gắn chữ này
+            } else {
+                existingBook.setAuthor(bookDetails.getAuthor()); // Có chữ đàng hoàng thì update bình thường
+            }
+        }
+        // -----------------------------------------
 
         existingBook.setApprovalStatus(ApprovalStatus.PENDING); // Sửa xong bắt duyệt lại
 

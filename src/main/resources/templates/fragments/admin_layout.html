@@ -1,34 +1,115 @@
-<!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<body>
-<aside th:fragment="sidebar(activeMenu)" class="hidden md:flex md:w-72 md:flex-col bg-[#5D4037] border-r border-black/10">
-    <div class="h-20 px-6 flex items-center border-b border-white/10">
-        <a th:href="@{/admin}" class="text-2xl font-black tracking-tight text-white">
-            BOOKOM <span class="text-[#F8D9C0] text-sm align-middle">ADMIN</span>
+<style>
+    /* CSS Sidebar logic - Sửa đè vào phần style của bạn */
+    aside.sidebar {
+        width: 18rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Ghi đè Tailwind w-72 khi có class .collapsed */
+    aside.sidebar.collapsed {
+        width: 5rem !important;
+        px: 0.75rem !important; /* Thu nhỏ padding */
+    }
+
+    /* Ẩn chữ và label khi thu gọn */
+    aside.sidebar.collapsed .menu-label,
+    aside.sidebar.collapsed .logo-text-display {
+        display: none !important;
+    }
+
+    /* Căn giữa các icon khi thu gọn */
+    aside.sidebar.collapsed nav a {
+        justify-content: center !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* Xử lý padding header sidebar khi thu gọn */
+    aside.sidebar.collapsed .sidebar-header {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        justify-content: center !important;
+    }
+
+    aside.sidebar.collapsed #sidebarToggle {
+        margin-left: 0 !important;
+    }
+</style>
+
+<aside th:fragment="sidebar(activeMenu)" id="mainSidebar" class="sidebar fixed left-0 top-0 z-50 flex h-screen w-72 flex-col overflow-y-auto border-r bg-white px-5">
+    <div class="sidebar-header h-20 px-6 flex items-center border-b transition-all">
+        <a th:href="@{/admin}" class="flex items-center gap-2">
+            <img th:src="@{/tailadmin-logo.svg}" alt="BOOKOM Admin Logo" class="h-8 w-auto" />
+            <span class="logo-text-display font-bold text-gray-800">BOOKOM ADMIN</span>
         </a>
+        <button id="sidebarToggle" aria-label="Toggle sidebar" class="ml-auto p-2 text-gray-500 hover:text-gray-700 transition-all">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
     </div>
+
     <nav class="p-4 space-y-2 text-sm font-extrabold tracking-wide">
-        <a th:href="@{/admin}" class="flex items-center gap-3 rounded-xl px-4 py-3 transition"
-           th:classappend="${activeMenu == 'admin-dashboard'} ? ' bg-[#D19C74] text-white shadow-md' : ' text-[#FAF5E8]/90 hover:bg-white/10 hover:text-white'">
-            <span class="h-2 w-2 rounded-full" th:classappend="${activeMenu == 'admin-dashboard'} ? ' bg-white' : ' bg-[#FAF5E8]/50'"></span>
-            Tong quan san
+        <a th:href="@{/admin}" class="flex items-center gap-3 rounded-lg px-4 py-3 transition"
+           th:classappend="${activeMenu == 'admin-dashboard'} ? ' bg-brand-50 text-brand-500 shadow-sm' : ' text-gray-700 hover:bg-gray-100'">
+            <span class="h-2 w-2 rounded-full shrink-0" th:classappend="${activeMenu == 'admin-dashboard'} ? ' bg-brand-500' : ' bg-gray-300'"></span>
+            <span class="menu-label">Tong quan san</span>
         </a>
-        <a th:href="@{/admin/users}" class="flex items-center gap-3 rounded-xl px-4 py-3 transition"
-           th:classappend="${activeMenu == 'admin-users'} ? ' bg-[#D19C74] text-white shadow-md' : ' text-[#FAF5E8]/90 hover:bg-white/10 hover:text-white'">
-            <span class="h-2 w-2 rounded-full" th:classappend="${activeMenu == 'admin-users'} ? ' bg-white' : ' bg-[#FAF5E8]/50'"></span>
-            Nguoi dung
+
+        <a th:href="@{/admin/users}" class="flex items-center gap-3 rounded-lg px-4 py-3 transition"
+           th:classappend="${activeMenu == 'admin-users'} ? ' bg-brand-50 text-brand-500 shadow-sm' : ' text-gray-700 hover:bg-gray-100'">
+            <span class="h-2 w-2 rounded-full shrink-0" th:classappend="${activeMenu == 'admin-users'} ? ' bg-brand-500' : ' bg-gray-300'"></span>
+            <span class="menu-label">Nguoi dung</span>
         </a>
-        <a th:href="@{/admin/shops}" class="flex items-center gap-3 rounded-xl px-4 py-3 transition"
-           th:classappend="${activeMenu == 'admin-shops'} ? ' bg-[#D19C74] text-white shadow-md' : ' text-[#FAF5E8]/90 hover:bg-white/10 hover:text-white'">
-            <span class="h-2 w-2 rounded-full" th:classappend="${activeMenu == 'admin-shops'} ? ' bg-white' : ' bg-[#FAF5E8]/50'"></span>
-            Gian hang
+
+        <a th:href="@{/admin/shops}" class="flex items-center gap-3 rounded-lg px-4 py-3 transition"
+           th:classappend="${activeMenu == 'admin-shops'} ? ' bg-brand-50 text-brand-500 shadow-sm' : ' text-gray-700 hover:bg-gray-100'">
+            <span class="h-2 w-2 rounded-full shrink-0" th:classappend="${activeMenu == 'admin-shops'} ? ' bg-brand-500' : ' bg-gray-300'"></span>
+            <span class="menu-label">Gian hang</span>
         </a>
-        <a th:href="@{/admin/books}" class="flex items-center gap-3 rounded-xl px-4 py-3 transition"
-           th:classappend="${activeMenu == 'admin-books'} ? ' bg-[#D19C74] text-white shadow-md' : ' text-[#FAF5E8]/90 hover:bg-white/10 hover:text-white'">
-            <span class="h-2 w-2 rounded-full" th:classappend="${activeMenu == 'admin-books'} ? ' bg-white' : ' bg-[#FAF5E8]/50'"></span>
-            Kiem duyet sach
+
+        <a th:href="@{/admin/books}" class="flex items-center gap-3 rounded-lg px-4 py-3 transition"
+           th:classappend="${activeMenu == 'admin-books'} ? ' bg-brand-50 text-brand-500 shadow-sm' : ' text-gray-700 hover:bg-gray-100'">
+            <span class="h-2 w-2 rounded-full shrink-0" th:classappend="${activeMenu == 'admin-books'} ? ' bg-brand-500' : ' bg-gray-300'"></span>
+            <span class="menu-label">Kiem duyet sach</span>
         </a>
     </nav>
+
+    <div class="mt-auto p-4 text-center menu-label">
+        <p class="text-xs text-gray-500">TailAdmin - integrated</p>
+        <a href="https://tailadmin.com" target="_blank" class="inline-block mt-2 text-sm text-white bg-indigo-600 px-3 py-1 rounded">Learn more</a>
+    </div>
+
+    <script th:inline="javascript">
+        (function () {
+            function initSidebar() {
+                const btn = document.getElementById('sidebarToggle');
+                const sidebar = document.getElementById('mainSidebar');
+                const collapsedClass = 'collapsed';
+
+                if (!btn || !sidebar) return;
+
+                // Load trạng thái từ localStorage
+                const persisted = localStorage.getItem('sidebarCollapsed');
+                if (persisted === 'true') {
+                    sidebar.classList.add(collapsedClass);
+                }
+
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const isCollapsed = sidebar.classList.toggle(collapsedClass);
+                    // Lưu trạng thái
+                    localStorage.setItem('sidebarCollapsed', isCollapsed);
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initSidebar);
+            } else {
+                initSidebar();
+            }
+        })();
+    </script>
 </aside>
 
 <header th:fragment="header(pageTitle, pageSubtitle)" class="h-20 bg-white border-b border-[#E5CBB5] px-6 md:px-8 flex items-center justify-between">
@@ -41,5 +122,3 @@
         <div class="h-10 w-10 rounded-full bg-[#D19C74] text-white flex items-center justify-center text-xs font-black shadow-sm">AD</div>
     </div>
 </header>
-</body>
-</html>

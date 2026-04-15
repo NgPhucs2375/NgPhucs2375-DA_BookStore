@@ -987,6 +987,7 @@
                     <button id="shop-panel-save" type="submit" class="rounded-md bg-brand-brown text-white px-3 py-2 text-xs font-bold hover:bg-brand-brown-dark transition">Luu</button>
                     <button id="shop-panel-reset" type="button" class="rounded-md border border-brand-border px-3 py-2 text-xs font-bold hover:bg-brand-bg transition">Khoi phuc</button>
                     <button id="shop-panel-toggle" type="button" class="rounded-md border border-brand-brown text-brand-dark px-3 py-2 text-xs font-bold hover:bg-brand-hero transition" disabled>Doi trang thai</button>
+                    <button id="shop-panel-delete" type="button" class="rounded-md border border-red-300 text-red-600 px-3 py-2 text-xs font-bold hover:bg-red-50 transition" disabled>Xoa shop</button>
                 </div>
             </form>
         </div>
@@ -1002,6 +1003,7 @@
     const btnSave = document.getElementById('shop-panel-save');
     const btnReset = document.getElementById('shop-panel-reset');
     const btnToggle = document.getElementById('shop-panel-toggle');
+    const btnDelete = document.getElementById('shop-panel-delete');
     const statusChip = document.getElementById('shop-panel-status');
     const alertBox = document.getElementById('shop-panel-alert');
 
@@ -1061,6 +1063,7 @@
         btnSave.disabled = isLoading || !hasChanged() || !form.checkValidity();
         btnReset.disabled = isLoading || !hasChanged();
         btnToggle.disabled = isLoading || !currentShop;
+        btnDelete.disabled = isLoading || !currentShop;
     }
 
     function showAlert(type, message) {
@@ -1225,6 +1228,28 @@
         }
     }
 
+    async function deleteShop() {
+        if (!currentShop) {
+            return;
+        }
+        if (!window.confirm('Ban co chac chan muon xoa shop? Hanh dong nay khong the hoan tac.')) {
+            return;
+        }
+        clearAlert();
+        setLoading(true);
+        try {
+            await request(API_BASE, { method: 'DELETE' });
+            currentShop = null;
+            fillForm({});
+            updatePanelStatus(null);
+            showAlert('success', 'Da xoa shop.');
+        } catch (error) {
+            showAlert('error', error.message || 'Khong the xoa shop.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
     form.addEventListener('submit', saveShop);
     btnReset.addEventListener('click', () => {
         if (!initialState) {
@@ -1235,6 +1260,7 @@
         setLoading(false);
     });
     btnToggle.addEventListener('click', toggleStatus);
+    btnDelete.addEventListener('click', deleteShop);
 
     fields.forEach((field) => {
         const input = document.getElementById(field);

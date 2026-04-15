@@ -7,6 +7,7 @@ import com.example.bookstore.dto.EmailOtpVerifyRequest;
 import com.example.bookstore.dto.UserProfileResponse;
 import com.example.bookstore.dto.UserProfileUpdateRequest;
 import com.example.bookstore.model.User;
+import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.security.JwtTokenProvider;
 import com.example.bookstore.service.AuthOtpService;
 import com.example.bookstore.service.AuthService;
@@ -66,6 +67,38 @@ public class AuthController {
 //            Trả về 400 nếu trùng tên
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tên đăng nhập đã tồn tại vui lòng thử lại");
         }
+    }
+
+    @PostMapping("/register-seller")
+    public ResponseEntity<String> registerSeller(@Valid @RequestBody AuthRegisterRequest request) {
+        boolean isSuccess = authService.registerWithRole(
+            request.getUsername(),
+            request.getPassword(),
+            request.getAvatarUrl(),
+            request.getFavoriteCategoryIds(),
+            UserRole.SELLER
+        );
+
+        if (isSuccess){
+            return ResponseEntity.ok("Dang ky seller thanh cong");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Ten dang nhap da ton tai vui long thu lai");
+    }
+
+    @PostMapping("/register-admin")
+    public ResponseEntity<String> registerAdmin(@Valid @RequestBody AuthRegisterRequest request) {
+        boolean isSuccess = authService.registerWithRole(
+            request.getUsername(),
+            request.getPassword(),
+            request.getAvatarUrl(),
+            request.getFavoriteCategoryIds(),
+            UserRole.ADMIN
+        );
+
+        if (isSuccess){
+            return ResponseEntity.ok("Dang ky admin thanh cong");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Ten dang nhap da ton tai vui long thu lai");
     }
 
 //    API đăng nhập

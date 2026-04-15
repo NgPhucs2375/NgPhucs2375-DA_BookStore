@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/panel_head :: head('BOOKOM ADMIN - Tong quan san', true)}"></head>
+<head th:replace="~{fragments/panel_head :: head(${pageTitle}, true)}"></head>
 <body class="font-sans bg-[#fbfaf8] text-brand-dark">
 <div class="flex min-h-screen">
     <div th:replace="~{fragments/admin_layout :: sidebar(${activeMenu})}"></div>
@@ -9,6 +9,15 @@
         <div th:replace="~{fragments/admin_layout :: header(${pageTitle}, ${pageSubtitle})}"></div>
 
         <main class="p-4 md:p-8 space-y-6">
+            <div class="flex items-center justify-between mb-4">
+                <div id="admin-error" class="text-sm text-rose-600"></div>
+                <div class="flex items-center gap-2">
+                    <button id="btn-refresh" class="rounded-lg border border-brand-accent px-3 py-1 text-sm font-black">Refresh</button>
+                </div>
+            </div>
+            <div id="admin-loader" class="flex items-center justify-center mb-4" style="display:none">
+                <svg class="animate-spin h-6 w-6 text-brand-orange" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+            </div>
             <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                 <article class="rounded-xl border border-brand-accent bg-white p-5">
                     <p class="text-sm font-black text-brand-dark/70">GMV toan san</p>
@@ -64,7 +73,13 @@
 
 <script th:src="@{/js/panel-data.js}"></script>
 <script>
-    BookomPanelData.initAdminDashboard();
+  (function(){
+    function showLoading(v){ var el = document.getElementById('admin-loader'); if(el) el.style.display = v ? 'flex':'none'; }
+    function showError(msg){ var el = document.getElementById('admin-error'); if(el) el.textContent = msg || ''; }
+    function load(notify){ showError(''); showLoading(true); return BookomPanelData.initAdminDashboard().then(function(){ if(notify) window.BookomToast.success('Dashboard đã được cập nhật'); }).catch(function(e){ var msg = e && e.message ? e.message : 'Lỗi khi tải dữ liệu'; showError(msg); window.BookomToast.error(msg); throw e; }).finally(function(){ showLoading(false); }); }
+    document.getElementById('btn-refresh')?.addEventListener('click', function(){ load(true); });
+    load();
+  })();
 </script>
 </body>
 </html>

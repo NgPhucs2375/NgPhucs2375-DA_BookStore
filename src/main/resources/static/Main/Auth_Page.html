@@ -916,7 +916,7 @@
                 .then(response => {
                     Swal.fire({ icon: 'success', title: 'Tuyệt vời!', text: 'Đăng nhập thành công!', timer: 1500, showConfirmButton: false })
                         .then(() => {
-                            // Chuyển hướng trang tùy theo role
+                            // Chuyển hướng trang tùy theo role (mặc định buyer)
                             if (data.role === 'ADMIN') {
                                 window.location.href = "/admin";
                             } else if (data.role === 'SELLER') {

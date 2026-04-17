@@ -32,6 +32,21 @@ public class AuthService {
 
     //    Register
     public boolean register(String username, String rawPassword, String avatarUrl, List<Long> favoriteCategoryIds){
+        return registerWithRole(username, rawPassword, avatarUrl, favoriteCategoryIds, UserRole.BUYER);
+    }
+
+    public boolean registerWithRole(
+        String username,
+        String rawPassword,
+        String avatarUrl,
+        List<Long> favoriteCategoryIds,
+        UserRole role
+    ) {
+        UserRole normalizedRole = (role == null) ? UserRole.BUYER : role;
+        if (normalizedRole != UserRole.BUYER && normalizedRole != UserRole.SELLER && normalizedRole != UserRole.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role khong hop le");
+        }
+
         if (!authOtpService.consumeVerifiedEmail(username)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email chua xac thuc OTP");
         }
@@ -43,11 +58,10 @@ public class AuthService {
 
         //Băm mật khẩu với độ khó (work factor) là 12 để chống brute-force
         String hashedPassword = BCrypt.hashpw(rawPassword, BCrypt.gensalt(12));
-        // Tạo tài khoản Buyer mặc định cho luồng đăng ký thường
         User newUser = User.builder()
             .username(username)
             .passwordHash(hashedPassword)
-            .role(UserRole.BUYER)
+            .role(normalizedRole)
             .avatarUrl(normalizeAvatar(avatarUrl))
             .favoriteCategories(resolveFavoriteCategories(favoriteCategoryIds))
             .build();
@@ -55,7 +69,6 @@ public class AuthService {
 
         System.out.println("Đăng ký thành công");
         return true;
-
     }
 
 //    Login

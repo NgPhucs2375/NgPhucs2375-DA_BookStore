@@ -111,6 +111,16 @@ public class SellerShopService {
     }
 
     /**
+     * Xóa shop của chính Seller (hard delete)
+     */
+    @Transactional
+    public void deleteMyShop(Long sellerId) {
+        SellerShop shop = shopRepository.findBySellerId(sellerId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng của bạn."));
+        shopRepository.delete(shop);
+    }
+
+    /**
      * Lấy thông tin Shop Public qua Slug (Dành cho khách hàng xem)
      */
     public SellerShopResponse getPublicShopBySlug(String slug) {

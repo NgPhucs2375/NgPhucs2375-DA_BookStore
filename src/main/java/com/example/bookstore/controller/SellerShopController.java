@@ -60,6 +60,13 @@ public class SellerShopController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/seller/me/shop")
+    public ResponseEntity<Void> deleteMyShop(HttpServletRequest request) {
+        Long sellerId = getCurrentSellerId(request);
+        shopService.deleteMyShop(sellerId);
+        return ResponseEntity.noContent().build();
+    }
+
     // ==========================================
     // PUBLIC ENDPOINTS DÀNH CHO KHÁCH HÀNG
     // ==========================================

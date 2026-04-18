@@ -126,31 +126,20 @@ public class BookService {
         }
 
         // Cập nhật thông tin an toàn
-        if (bookDetails.getTitle() != null)
-            existingBook.setTitle(bookDetails.getTitle());
-        if (bookDetails.getDescription() != null)
-            existingBook.setDescription(bookDetails.getDescription());
-        if (bookDetails.getPrice() != null)
-            existingBook.setPrice(bookDetails.getPrice());
-        if (bookDetails.getStockQuantity() != null)
-            existingBook.setStockQuantity(bookDetails.getStockQuantity());
+        if (bookDetails.getTitle() != null) existingBook.setTitle(bookDetails.getTitle());
+        if (bookDetails.getDescription() != null) existingBook.setDescription(bookDetails.getDescription());
+        if (bookDetails.getPrice() != null) existingBook.setPrice(bookDetails.getPrice());
 
-        // --- GẮN GIÁP CHỐNG LỖI TÁC GIẢ (RỖNG) ---
-        if (bookDetails.getAuthor() != null) {
-            if (bookDetails.getAuthor().trim().isEmpty()) {
-                existingBook.setAuthor("Đang cập nhật"); // Xóa trắng thì tự động gắn chữ này
-            } else {
-                existingBook.setAuthor(bookDetails.getAuthor()); // Có chữ đàng hoàng thì update bình thường
-            }
-        }
-        // -----------------------------------------
+        // --- THÊM 2 DÒNG NÀY VÀO ĐỂ UPDATE TỒN KHO VÀ TÁC GIẢ ---
+        if (bookDetails.getStockQuantity() != null) existingBook.setStockQuantity(bookDetails.getStockQuantity());
+        if (bookDetails.getAuthor() != null) existingBook.setAuthor(bookDetails.getAuthor());
 
         existingBook.setApprovalStatus(ApprovalStatus.PENDING); // Sửa xong bắt duyệt lại
 
         return bookRepository.save(existingBook);
     }
 
-    public String uploadAndVerifyCoverImage(Long bookId, MultipartFile file, Long sellerId) throws IOException {
+    public String uploadAndVerifyCoverImage(Long bookId, MultipartFile file, Long sellerId) throws java.io.IOException {
         Book existingBook = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
 
@@ -159,8 +148,8 @@ public class BookService {
             throw new RuntimeException("Từ chối truy cập");
         }
 
-        // Chống RCE bằng check File Signature
-        Tika tika = new Tika();
+        // Chống RCE bằng cách check File Signature
+        org.apache.tika.Tika tika = new org.apache.tika.Tika();
         String mimeType = tika.detect(file.getInputStream());
         if (!mimeType.equals("image/jpeg") && !mimeType.equals("image/png") && !mimeType.equals("image/webp")) {
             throw new RuntimeException("File tải lên không phải là định dạng ảnh hợp lệ!");
@@ -172,14 +161,22 @@ public class BookService {
         if (originalFilename != null && originalFilename.contains(".")) {
             extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
-        String safeFileName = UUID.randomUUID().toString() + extension;
+        String safeFileName = java.util.UUID.randomUUID().toString() + extension;
 
-        // Lưu URL giả định
-        String fakeFileUrl = "/images/covers/" + safeFileName;
-        existingBook.setImageUrl(fakeFileUrl);
+        // --- ĐOẠN LƯU FILE THẬT VÀO Ổ CỨNG ---
+        java.nio.file.Path uploadPath = java.nio.file.Paths.get("src/main/resources/static/images/covers/");
+        if (!java.nio.file.Files.exists(uploadPath)) {
+            java.nio.file.Files.createDirectories(uploadPath);
+        }
+        java.nio.file.Path filePath = uploadPath.resolve(safeFileName);
+        java.nio.file.Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+        // Lưu URL thật vào DB
+        String realFileUrl = "/images/covers/" + safeFileName;
+        existingBook.setImageUrl(realFileUrl);
         bookRepository.save(existingBook);
 
-        return fakeFileUrl;
+        return realFileUrl;
     }
 
     public void deleteBookForSeller(Long bookId, Long sellerId) {

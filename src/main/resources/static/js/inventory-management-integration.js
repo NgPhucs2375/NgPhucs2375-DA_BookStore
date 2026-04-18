@@ -165,8 +165,8 @@
                     ${formatCurrency(book.price || 0)}
                 </td>
                 <td class="px-4 py-3 text-center">
-                    <div class="font-bold text-lg text-brand-dark">${book.stock || 0}</div>
-                    <div class="text-xs">${getStockStatus(book.stock)}</div>
+                    <div class="font-bold text-lg text-brand-dark">${book.stockQuantity || 0}</div>
+                    <div class="text-xs">${getStockStatus(book.stockQuantity)}</div>
                 </td>
                 <td class="px-4 py-3">
                     ${getStatusBadge(book.approvalStatus)}

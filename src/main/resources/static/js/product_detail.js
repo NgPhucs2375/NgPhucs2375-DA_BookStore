@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 el.title.value = book.title || '';
                 el.author.value = book.author || '';
                 el.price.value = book.price || 0;
-                el.stock.value = book.stock || 0;
+                el.stock.value = book.stockQuantity || 0;
                 el.categoryId.value = book.categoryId || '';
                 el.description.value = book.description || '';
 
@@ -84,68 +84,80 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 4. Sự kiện Lưu bằng FormData
-    if (el.saveBtn) {
-        el.saveBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
+    // 4. Sự kiện Lưu bằng JSON (Tạo sách) + FormData (Up ảnh)
+        if (el.saveBtn) {
+            el.saveBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
 
-            // Validate cơ bản
-            if (!el.title.value.trim() || !el.price.value || el.stock.value === '') {
-                alert("⚠️ Vui lòng nhập đủ: Tên sách, Giá và Tồn kho!");
-                return;
-            }
-
-            const originalBtnText = el.saveBtn.textContent;
-            el.saveBtn.textContent = "⌛ Đang xử lý...";
-            el.saveBtn.disabled = true;
-
-            try {
-                // CHUẨN FORMDATA DÀNH CHO UPLOAD FILE
-                const formData = new FormData();
-                formData.append('title', el.title.value.trim());
-                formData.append('author', el.author.value.trim() || "Chưa rõ");
-                formData.append('price', parseFloat(el.price.value));
-                formData.append('stock', parseInt(el.stock.value));
-
-                if (el.categoryId.value) {
-                    formData.append('categoryId', parseInt(el.categoryId.value));
-                }
-                formData.append('description', el.description.value.trim());
-
-                // Xử lý ném file ảnh vào FormData
-                const imageFile = el.image.files[0];
-                if (imageFile) {
-                    // Nếu có chọn ảnh mới thì đính kèm vào
-                    formData.append('file', imageFile);
-                } else if (!bookId) {
-                    // Nếu là Thêm Mới mà không có ảnh thì chặn lại ngay
-                    alert("⚠️ Vui lòng chọn ảnh bìa cho sách mới!");
-                    el.saveBtn.textContent = originalBtnText;
-                    el.saveBtn.disabled = false;
+                // Validate cơ bản
+                if (!el.title.value.trim() || !el.price.value || el.stock.value === '') {
+                    alert("⚠️ Vui lòng nhập đủ: Tên sách, Giá và Tồn kho!");
                     return;
                 }
 
-                // Call API
-                if (bookId) {
-                    await ApiService.Book.update(bookId, formData);
-                    alert("✅ Cập nhật sách thành công!");
-                } else {
-                    await ApiService.Book.create(formData);
-                    alert("✅ Thêm sách mới thành công!");
+                // Xử lý ảnh: Nếu là thêm mới mà không có ảnh thì chặn
+                const imageFile = el.image.files[0];
+                if (!bookId && !imageFile) {
+                    alert("⚠️ Vui lòng chọn ảnh bìa cho sách mới!");
+                    return;
                 }
 
-                // Trở về trang quản lý kho
-                window.location.href = '/seller/inventory';
+                const originalBtnText = el.saveBtn.textContent;
+                el.saveBtn.textContent = "⌛ Đang xử lý...";
+                el.saveBtn.disabled = true;
 
-            } catch (err) {
-                alert("❌ Lỗi: " + (err.response?.data?.message || "Không thể lưu sách"));
-                console.error(err);
-            } finally {
-                el.saveBtn.textContent = originalBtnText;
-                el.saveBtn.disabled = false;
-            }
-        });
-    }
+                try {
+                    // BƯỚC 1: TẠO OBJECT JSON ĐỂ LƯU SÁCH
+                    const bookData = {
+                        title: el.title.value.trim(),
+                        author: el.author.value.trim() || "Chưa rõ",
+                        price: parseFloat(el.price.value),
+                        stockQuantity: parseInt(el.stock.value),
+                        description: el.description.value.trim()
+                    };
+
+                    // Xử lý categoryId (Tùy backend cài đặt, thường là gửi thẳng ID hoặc object)
+                    if (el.categoryId.value) {
+                        // Nếu Entity Book của bro map là @ManyToOne private Category category;
+                        // bookData.category = { id: parseInt(el.categoryId.value) };
+                        // Nếu map thẳng ID:
+                        bookData.categoryId = parseInt(el.categoryId.value);
+                    }
+
+                    let savedBook;
+
+                    // GỌI API LƯU/CẬP NHẬT THÔNG TIN SÁCH
+                    if (bookId) {
+                        savedBook = await ApiService.Book.update(bookId, bookData);
+                        alert("✅ Cập nhật thông tin sách thành công!");
+                    } else {
+                        savedBook = await ApiService.Book.create(bookData);
+                    }
+
+                    // BƯỚC 2: NẾU CÓ CHỌN ẢNH THÌ GỌI API UPLOAD ẢNH RIÊNG
+                    if (imageFile) {
+                        // Lấy ID sách vừa tạo (hoặc ID sách đang sửa)
+                        const targetBookId = bookId ? bookId : savedBook.id;
+
+                        const fileFormData = new FormData();
+                        fileFormData.append('file', imageFile);
+
+                        await ApiService.Book.uploadCover(targetBookId, fileFormData);
+                        if (!bookId) alert("✅ Thêm sách và tải ảnh bìa thành công!");
+                    }
+
+                    // Trở về trang quản lý kho
+                    window.location.href = '/seller/inventory';
+
+                } catch (err) {
+                    alert("❌ Lỗi: " + (err.response?.data?.message || "Không thể lưu sách. Vui lòng thử lại!"));
+                    console.error(err);
+                } finally {
+                    el.saveBtn.textContent = originalBtnText;
+                    el.saveBtn.disabled = false;
+                }
+            });
+        }
 
     initForm();
 });

@@ -81,3 +81,6 @@ admin2@gmail.com
 admin123
 
 taskkill /F /IM java.exe
+
+shop_nha_nam@gmail.com
+seller123

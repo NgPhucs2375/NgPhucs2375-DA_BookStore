@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString; // <-- Nhớ phải có import này nha bro
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -45,25 +46,29 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    @ToString.Exclude // <--- Bùa chống Lazy cho Danh mục
     @ManyToMany
     @JoinTable(
-        name = "user_favorite_categories",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "category_id")
+            name = "user_favorite_categories",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
     )
     @Builder.Default
     private Set<Category> favoriteCategories = new LinkedHashSet<>();
 
+    @ToString.Exclude // <--- Chống sập khi gọi tới Sách
     @OneToMany(mappedBy = "seller")
     @JsonIgnore
     @Builder.Default
     private List<Book> books = new ArrayList<>();
 
+    @ToString.Exclude // <--- Chống sập khi gọi tới Đơn hàng
     @OneToMany(mappedBy = "seller")
     @JsonIgnore
     @Builder.Default
     private List<SubOrder> subOrders = new ArrayList<>();
 
+    @ToString.Exclude // <--- Chống sập khi gọi tới Giỏ hàng
     @OneToOne(mappedBy = "buyer")
     @JsonIgnore
     private Cart cart;

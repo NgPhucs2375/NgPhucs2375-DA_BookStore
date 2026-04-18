@@ -14,7 +14,7 @@
 
     if (!ApiService.isAuthenticated() || !ApiService.isSeller()) {
         alert('Chỉ seller mới có quyền truy cập');
-        window.location.href = '/main/index';
+        window.location.href = '/';
         return;
     }
 

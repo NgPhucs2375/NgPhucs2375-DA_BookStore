@@ -378,40 +378,23 @@
 
             <div class="flex flex-col xl:flex-row items-center justify-between gap-8">
                 <div class="flex items-center gap-4 w-full xl:w-2/3 overflow-x-auto no-scrollbar pb-2">
-
-                    <div class="w-32 flex-shrink-0 flex flex-col items-center group cursor-pointer relative">
-                        <div class="w-24 h-32 bg-[#2c3e50] border-4 border-white shadow-md flex flex-col items-center justify-center text-white p-2 mb-3 relative overflow-hidden group-hover:scale-105 transition-transform">
-                            <div class="text-xs font-serif font-bold text-center leading-tight text-yellow-400">ĐẠI GIA<br>GATSBY</div>
+                <!-- Dynamic Bought Together Section -->
+                <th:block th:if="${boughtTogetherBooks != null and !boughtTogetherBooks.isEmpty()}">
+                    <th:block th:each="b, iterStat : ${boughtTogetherBooks}">
+                        <div class="w-32 flex-shrink-0 flex flex-col items-center group cursor-pointer relative">
+                            <a th:href="@{/book/{id}(id=${b.id})}" class="contents">
+                                <div class="w-24 h-32 bg-[#2c3e50] border-4 border-white shadow-md flex flex-col items-center justify-center text-white p-2 mb-3 relative overflow-hidden group-hover:scale-105 transition-transform" th:style="'background-color:' + (${b.id % 2 == 0} ? '#2c3e50' : '#8e44ad')">
+                                    <div class="text-xs font-serif font-bold text-center leading-tight text-yellow-400" th:text="${b.title}">BOOK TITLE</div>
+                                </div>
+                                <h4 class="text-xs font-bold text-center text-brand-dark line-clamp-1 group-hover:text-brand-brown" th:text="${b.title}">Book Name</h4>
+                                <div class="text-brand-orange font-bold text-sm" th:text="${#numbers.formatDecimal(b.price, 0, 'COMMA', 0, 'POINT')} + 'đ'">100.000đ</div>
+                            </a>
                         </div>
-                        <h4 class="text-xs font-bold text-center text-brand-dark line-clamp-1 group-hover:text-brand-brown">Đại Gia Gatsby</h4>
-                        <div class="text-brand-orange font-bold text-sm">100.000đ</div>
-                    </div>
-
-                    <div class="text-2xl text-gray-300 font-bold">+</div>
-
-                    <div class="w-32 flex-shrink-0 flex flex-col items-center group cursor-pointer relative">
-                        <input type="checkbox" class="custom-cb absolute top-0 left-2 z-10" checked>
-                        <div class="w-24 h-32 bg-[#8e44ad] border-4 border-white shadow-md flex flex-col items-center justify-center text-white p-2 mb-3 relative overflow-hidden group-hover:scale-105 transition-transform">
-                            <div class="text-xs font-serif font-bold text-center leading-tight">SUỐI NGUỒN</div>
-                        </div>
-                        <h4 class="text-xs font-bold text-center text-brand-dark line-clamp-1 group-hover:text-brand-brown">Suối Nguồn</h4>
-                        <div class="text-brand-orange font-bold text-sm">210.000đ</div>
-                    </div>
-
-                    <div class="text-2xl text-gray-300 font-bold">+</div>
-
-                    <div class="w-32 flex-shrink-0 flex flex-col items-center group cursor-pointer relative">
-                        <input type="checkbox" class="custom-cb absolute top-0 left-2 z-10" checked>
-                        <div class="w-24 h-32 bg-[#c23616] border-4 border-white shadow-md flex flex-col items-center justify-center text-white p-2 mb-3 relative overflow-hidden group-hover:scale-105 transition-transform">
-                            <div class="text-xs font-serif font-bold text-center leading-tight">BỐ GIÀ</div>
-                        </div>
-                        <h4 class="text-xs font-bold text-center text-brand-dark line-clamp-1 group-hover:text-brand-brown">Bố Già</h4>
-                        <div class="text-brand-orange font-bold text-sm">115.000đ</div>
-                    </div>
-
-                </div>
-
-                <div class="w-full xl:w-1/3 flex flex-col xl:items-end border-t xl:border-t-0 xl:border-l border-brand-border pt-6 xl:pt-0 xl:pl-8">
+                        <div class="text-2xl text-gray-300 font-bold" th:if="${!iterStat.last}">+</div>
+                    </th:block>
+                </th:block>
+                <div th:if="${boughtTogetherBooks == null or boughtTogetherBooks.isEmpty()}" class="text-gray-400 italic text-sm py-4">Chưa có dữ liệu mua kèm.</div>
+            <div class="w-full xl:w-1/3 flex flex-col xl:items-end border-t xl:border-t-0 xl:border-l border-brand-border pt-6 xl:pt-0 xl:pl-8">
                     <div class="text-sm text-gray-500 mb-1">Tổng cộng (3 sản phẩm):</div>
                     <div class="flex items-baseline gap-3 mb-4">
                         <div class="text-gray-400 line-through text-sm">450.000đ</div>
@@ -613,149 +596,24 @@
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 xl:gap-8">
-
-                <div class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border p-4 h-full flex flex-col relative shadow-sm">
-                        <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow-sm">-20%</div>
-                        <div class="relative w-full h-56 bg-brand-brown/10 mb-4 flex items-center justify-center overflow-hidden border border-brand-brown/20">
-                            <div class="book-cover w-3/4 h-5/6 bg-[#34495e] border-[3px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-2 text-[10px]">TỘI ÁC VÀ TRỪNG PHẠT</div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
+                <!-- Dynamic Similar Books Grid -->
+                <th:block th:if="${similarBooks != null}">
+                    <div class="product-card group cursor-pointer h-full" th:each="simBook : ${similarBooks}">
+                        <a th:href="@{/book/{id}(id=${simBook.id})}" class="contents">
+                            <div class="product-card-inner bg-white border border-brand-border p-4 h-full flex flex-col relative shadow-sm">
+                                <div class="relative w-full h-56 bg-brand-brown/10 mb-4 flex items-center justify-center overflow-hidden border border-brand-brown/20">
+                                    <div class="book-cover w-3/4 h-5/6 bg-[#34495e] border-[3px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-2 text-[10px]" th:text="${simBook.title}" th:style="'background-color:' + (${simBook.id % 3 == 0} ? '#c0392b' : '#2980b9')">BOOK</div>
+                                </div>
+                                <div class="flex-grow flex flex-col">
+                                    <h3 class="text-sm font-bold text-brand-dark leading-tight mb-2 group-hover:text-brand-brown transition-colors line-clamp-2" th:text="${simBook.title}">Name</h3>
+                                    <div class="mt-auto flex flex-col gap-1">
+                                        <div class="text-brand-dark font-medium text-xs">Giá: <span class="text-brand-orange text-base font-bold" th:text="${#numbers.formatDecimal(simBook.price, 0, 'COMMA', 0, 'POINT')} + 'đ'">100.000đ</span></div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <h3 class="text-sm font-bold text-brand-dark leading-tight mb-2 group-hover:text-brand-brown transition-colors line-clamp-2">Tội Ác Và Trừng Phạt</h3>
-                            <div class="mt-auto flex flex-col gap-1">
-                                <div class="text-gray-400 text-xs line-through">185.000đ</div>
-                                <div class="text-brand-dark font-medium text-xs">Giá: <span class="text-brand-orange text-base font-bold">148.000đ</span></div>
-                            </div>
-                        </div>
+                        </a>
                     </div>
-                </div>
-
-                <div class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border p-4 h-full flex flex-col relative shadow-sm">
-                        <div class="relative w-full h-56 bg-brand-brown/10 mb-4 flex items-center justify-center overflow-hidden border border-brand-brown/20">
-                            <div class="book-cover w-3/4 h-5/6 bg-[#8e44ad] border-[3px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-2 text-[10px]">KIÊU HÃNH VÀ ĐỊNH KIẾN</div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <h3 class="text-sm font-bold text-brand-dark leading-tight mb-2 group-hover:text-brand-brown transition-colors line-clamp-2">Kiêu Hãnh Và Định Kiến</h3>
-                            <div class="mt-auto flex flex-col gap-1">
-                                <div class="text-brand-dark font-medium text-xs">Giá: <span class="text-brand-orange text-base font-bold">95.000đ</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border p-4 h-full flex flex-col relative shadow-sm">
-                        <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded shadow-sm">MỚI</div>
-                        <div class="relative w-full h-56 bg-brand-brown/10 mb-4 flex items-center justify-center overflow-hidden border border-brand-brown/20">
-                            <div class="book-cover w-3/4 h-5/6 bg-[#c0392b] border-[3px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-2 text-[10px]">CUỐN THEO CHIỀU GIÓ</div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <h3 class="text-sm font-bold text-brand-dark leading-tight mb-2 group-hover:text-brand-brown transition-colors line-clamp-2">Cuốn Theo Chiều Gió (Trọn Bộ 2 Tập)</h3>
-                            <div class="mt-auto flex flex-col gap-1">
-                                <div class="text-brand-dark font-medium text-xs">Giá: <span class="text-brand-orange text-base font-bold">250.000đ</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border p-4 h-full flex flex-col relative shadow-sm">
-                        <div class="relative w-full h-56 bg-brand-brown/10 mb-4 flex items-center justify-center overflow-hidden border border-brand-brown/20">
-                            <div class="book-cover w-3/4 h-5/6 bg-[#16a085] border-[3px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-2 text-[10px]">ÔNG GIÀ VÀ BIỂN CẢ</div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <h3 class="text-sm font-bold text-brand-dark leading-tight mb-2 group-hover:text-brand-brown transition-colors line-clamp-2">Ông Già Và Biển Cả</h3>
-                            <div class="mt-auto flex flex-col gap-1">
-                                <div class="text-brand-dark font-medium text-xs">Giá: <span class="text-brand-orange text-base font-bold">58.000đ</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border p-4 h-full flex flex-col relative shadow-sm">
-                        <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-[10px] font-black px-2 py-1 rounded shadow-sm">-15%</div>
-                        <div class="relative w-full h-56 bg-brand-brown/10 mb-4 flex items-center justify-center overflow-hidden border border-brand-brown/20">
-                            <div class="book-cover w-3/4 h-5/6 bg-[#f39c12] border-[3px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-2 text-[10px]">CHÚ CHÓ NHỎ MANG GIỎ HOA HỒNG</div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <h3 class="text-sm font-bold text-brand-dark leading-tight mb-2 group-hover:text-brand-brown transition-colors line-clamp-2">Chú Chó Nhỏ Mang Giỏ Hoa Hồng</h3>
-                            <div class="mt-auto flex flex-col gap-1">
-                                <div class="text-gray-400 text-xs line-through">95.000đ</div>
-                                <div class="text-brand-dark font-medium text-xs">Giá: <span class="text-brand-orange text-base font-bold">80.750đ</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border p-4 h-full flex flex-col relative shadow-sm">
-                        <div class="relative w-full h-56 bg-brand-brown/10 mb-4 flex items-center justify-center overflow-hidden border border-brand-brown/20">
-                            <div class="book-cover w-3/4 h-5/6 bg-[#2980b9] border-[3px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-2 text-[10px]">NHỮNG NGƯỜI KHỐN KHỔ</div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <h3 class="text-sm font-bold text-brand-dark leading-tight mb-2 group-hover:text-brand-brown transition-colors line-clamp-2">Những Người Khốn Khổ</h3>
-                            <div class="mt-auto flex flex-col gap-1">
-                                <div class="text-brand-dark font-medium text-xs">Giá: <span class="text-brand-orange text-base font-bold">320.000đ</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border p-4 h-full flex flex-col relative shadow-sm">
-                        <div class="relative w-full h-56 bg-brand-brown/10 mb-4 flex items-center justify-center overflow-hidden border border-brand-brown/20">
-                            <div class="book-cover w-3/4 h-5/6 bg-[#d35400] border-[3px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-2 text-[10px]">ĐỒI GIÓ HÚ</div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <h3 class="text-sm font-bold text-brand-dark leading-tight mb-2 group-hover:text-brand-brown transition-colors line-clamp-2">Đồi Gió Hú</h3>
-                            <div class="mt-auto flex flex-col gap-1">
-                                <div class="text-brand-dark font-medium text-xs">Giá: <span class="text-brand-orange text-base font-bold">115.000đ</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border p-4 h-full flex flex-col relative shadow-sm">
-                        <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded shadow-sm">HOT</div>
-                        <div class="relative w-full h-56 bg-brand-brown/10 mb-4 flex items-center justify-center overflow-hidden border border-brand-brown/20">
-                            <div class="book-cover w-3/4 h-5/6 bg-[#273c75] border-[3px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-2 text-[10px]">SUỐI NGUỒN</div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <h3 class="text-sm font-bold text-brand-dark leading-tight mb-2 group-hover:text-brand-brown transition-colors line-clamp-2">Suối Nguồn (Bìa Cứng)</h3>
-                            <div class="mt-auto flex flex-col gap-1">
-                                <div class="text-brand-dark font-medium text-xs">Giá: <span class="text-brand-orange text-base font-bold">210.000đ</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                </th:block>
             </div>
         </div>
     </section>

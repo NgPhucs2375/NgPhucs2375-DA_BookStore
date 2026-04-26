@@ -3,6 +3,7 @@ package com.example.bookstore.dto;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -14,10 +15,7 @@ public class AuthRegisterRequest {
 
     @NotBlank(message = "Email dang ky khong duoc de trong")
     @Size(max = 100, message = "Email dang ky toi da 100 ky tu")
-    @Pattern(
-            regexp = "^[A-Za-z0-9._%+-]+@(gmail|mail|email|outlook)\\.(com|vn|edu\\.vn|net)$",
-        message = "Email dang ky khong dung dinh dang"
-    )
+    @Email(message = "Email dang ky khong dung dinh dang")
     private String username;
 
     @NotBlank(message = "Mat khau khong duoc de trong")

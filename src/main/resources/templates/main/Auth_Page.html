@@ -957,7 +957,7 @@
             // Gọi API login JWT để lưu token/user cho các luồng cần auth (cart/order)
             axios.post(`${API_BASE_URL}/login-jwt`, {
                 username: username,
-                passwordHash: password
+                password: password
             })
                 .then(response => {
                     const data = response.data || {};
@@ -979,7 +979,7 @@
                             } else if (data.role === 'SELLER') {
                                 window.location.href = "/seller/dashboard";
                             } else {
-                                window.location.href = "Discovery_Page.html";
+                                window.location.href = "/";
                             }
                         });
                 })

@@ -43,4 +43,31 @@ public interface BookRepository extends JpaRepository<Book, Long>{
             @Param("status") ApprovalStatus status,
             Pageable pageable
         );
+
+    /**
+     * Tìm sách của seller (dùng cho Inventory Management - S03)
+     * Bao gồm tất cả trạng thái: PENDING, APPROVED, REJECTED
+     */
+    @Query("""
+            SELECT b FROM Book b
+            LEFT JOIN b.category c
+            WHERE b.seller.id = :sellerId
+              AND (
+                :q IS NULL
+                OR :q = ''
+                OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
+              AND (
+                :categoryId IS NULL
+                OR c.id = :categoryId
+              )
+            ORDER BY b.id DESC
+            """)
+        Page<Book> findBySellerIdAndKeywordAndCategory(
+            @Param("sellerId") Long sellerId,
+            @Param("q") String keyword,
+            @Param("categoryId") Long categoryId,
+            Pageable pageable
+        );
 }

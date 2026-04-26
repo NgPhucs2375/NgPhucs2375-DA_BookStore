@@ -14,13 +14,13 @@
 
     if (!ApiService.isAuthenticated()) {
         alert('Vui lòng đăng nhập để truy cập');
-        window.location.href = '/main/index';
+        window.location.href = '/';
         return;
     }
 
     if (!ApiService.isSeller()) {
         alert('Chỉ seller mới có quyền truy cập trang này');
-        window.location.href = '/main/index';
+        window.location.href = '/';
         return;
     }
 
@@ -120,13 +120,16 @@
     // ==========================================
 
     const renderDashboardStats = (shop, orders) => {
-        // Tính toán thống kê
-        const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+        // Tính toán thống kê từ sub-orders
+        // Orders data là SubOrderSummaryResponse array từ API
+        const totalRevenue = orders.reduce((sum, o) => sum + (o.subTotal || o.totalAmount || 0), 0);
         const totalOrders = orders.length;
-        const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
+        const pendingOrders = orders.filter(o => o.status === 'PENDING_PAYMENT' || o.status === 'PENDING').length;
         const confirmedOrders = orders.filter(o => o.status === 'CONFIRMED').length;
-        const shippedOrders = orders.filter(o => o.status === 'SHIPPED').length;
+        const shippedOrders = orders.filter(o => o.status === 'SHIPPING' || o.status === 'SHIPPED').length;
         const deliveredOrders = orders.filter(o => o.status === 'DELIVERED').length;
+
+        console.log('📊 Dashboard Stats:', { totalRevenue, totalOrders, pendingOrders });
 
         // Render stats
         if (sellerRevenueEl) {
@@ -152,13 +155,22 @@
                     labels: ['Chờ xác nhận', 'Đã xác nhận', 'Đang giao', 'Đã giao'],
                     datasets: [{
                         data: [pendingOrders, confirmedOrders, shippedOrders, deliveredOrders],
-                        backgroundColor: ['#fbbf24', '#3b82f6', '#06b6d4', '#10b981']
+                        backgroundColor: ['#fbbf24', '#3b82f6', '#06b6d4', '#10b981'],
+                        borderColor: '#fff',
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: true,
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: { 
+                            position: 'bottom',
+                            labels: { 
+                                font: { size: 12, weight: 'bold' },
+                                padding: 15
+                            }
+                        }
                     }
                 }
             });

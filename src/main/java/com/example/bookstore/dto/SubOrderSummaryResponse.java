@@ -11,6 +11,9 @@ public class SubOrderSummaryResponse {
     private Long orderId;
     private Long sellerId;
     private String sellerName;
+    private String buyerUsername;
+    private String itemSummary;
+    private Integer itemCount;
     private OrderStatus status;
     private Double subTotal;
 }

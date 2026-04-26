@@ -1,6 +1,6 @@
 # UC Feasibility Note - Multi-vendor BookStore
 
-Cập nhật ngày: 2026-04-15
+Cập nhật ngày: 2026-04-26
 
 ## Ghi chú quyết định
 - Tài liệu này dùng để đánh giá mức khả thi UC theo trạng thái code hiện tại.
@@ -23,6 +23,7 @@ Chưa đầy đủ:
 - Chưa có admin moderation đầy đủ (approve/reject flow hoàn chỉnh).
 - Chưa có lock/unlock user đầy đủ.
 - Chưa có E2E automation toàn luồng.
+- Chưa có trang chi tiết đơn hàng riêng cho seller.
 
 ## Ma trận UC và khả năng triển khai
 
@@ -42,7 +43,7 @@ Chưa đầy đủ:
 | S01 Hồ sơ shop | Trung bình-Cao | Có nền tảng qua user profile | Cần UX/API riêng |
 | S02 Đăng bán sách chờ duyệt | Trung bình | Có model approvalStatus | Cần moderation flow hoàn chỉnh |
 | S03 Quản lý kho | Trung bình | Có update cơ bản | Cần ownership-safe đầy đủ |
-| S04 Xử lý đơn | Cao | Có update status sub-order + ownership guard | Khả thi cao |
+| S04 Xử lý đơn | Cao | Danh sách sub-order đã bind API thật | Khả thi cao |
 | S05 Dashboard doanh thu | Trung bình | Có panel nền tảng | Cần KPI business chuẩn |
 
 ### ADMIN
@@ -71,6 +72,13 @@ Chưa đầy đủ:
 - Admin: sidebar TailAdmin có thu gọn/mở rộng, dùng CSS riêng.
 - Admin: fetch có auth header + xử lý chuyển về login khi 401/403.
 - Kiểm chứng: compile và regression tests hiện có đều pass.
+
+## Delta mới nhất (2026-04-26)
+- Gỡ conflict merge (User + application.properties).
+- Seller orders list lấy dữ liệu thật từ `/api/orders/seller/me/sub-orders`.
+- SubOrderSummaryResponse có thêm buyer + item summary cho UI seller.
+- Seller book write API đồng bộ route `/api/books/seller/**`.
+- Dọn docs, bỏ thông tin đăng nhập test.
 
 ## Kết luận
 - Các UC BUYER trọng tâm đã khả thi ở mức end-to-end cho demo.

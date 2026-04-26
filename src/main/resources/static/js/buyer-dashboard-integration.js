@@ -14,13 +14,13 @@
 
     if (!ApiService.isAuthenticated()) {
         alert('Vui lòng đăng nhập');
-        window.location.href = '/main/index';
+        window.location.href = '/';
         return;
     }
 
     if (!ApiService.isBuyer()) {
         alert('Chỉ buyer mới có quyền truy cập');
-        window.location.href = '/main/index';
+        window.location.href = '/';
         return;
     }
 

@@ -248,11 +248,11 @@
 
   function initSellerDashboard() {
     return Promise.all([
-      getJson(API_ROOT + "/seller/analytics"),
-      getJson(API_ROOT + "/seller/orders?status=all&q=")
+      getJson(API_ROOT + "/seller/analytics")
+      // getJson(API_ROOT + "/seller/orders?status=all&q=") // Disabled - endpoint not implemented
     ]).then(function (res) {
       var ana = res[0] || {};
-      var orders = res[1] || [];
+      var orders = []; // Empty for now
 
       setText("seller-metric-revenue", vnd(ana.estimatedRevenue || 0));
       setText("seller-metric-pending", String((ana.orderStatusCounts && ana.orderStatusCounts["Cho xac nhan"]) || 0));
@@ -272,42 +272,97 @@
       }).join("");
 
       setHtml("seller-dashboard-orders", html || '<tr><td class="px-4 py-3" colspan="5">Khong co du lieu</td></tr>');
+    }).catch(function(err) {
+      console.error('Dashboard error (non-critical):', err);
+      // Don't throw - allow page to continue
     });
   }
 
   function initSellerOrders() {
     var qEl = document.getElementById("orders-q");
     var sEl = document.getElementById("orders-status");
+    function getStatusColor(status) {
+      switch(status) {
+        case 'PENDING_PAYMENT': return 'text-red-600';
+        case 'CONFIRMED': return 'text-amber-600';
+        case 'SHIPPING': return 'text-indigo-600';
+        case 'DELIVERED': return 'text-emerald-600';
+        default: return 'text-gray-600';
+      }
+    }
+
+    function getStatusLabel(status) {
+      var labels = {
+        'PENDING_PAYMENT': 'Chờ thanh toán',
+        'CONFIRMED': 'Đã xác nhận',
+        'SHIPPING': 'Đang giao',
+        'DELIVERED': 'Đã giao'
+      };
+      return labels[status] || status;
+    }
 
     function load() {
-      var url = API_ROOT + "/seller/orders?" + qs({
-        q: qEl ? qEl.value : "",
-        status: sEl ? sEl.value : "all"
-      });
+      if (!window.ApiService || !ApiService.Order || !ApiService.Order.getSellerOrders) {
+        setHtml("seller-orders-body", '<tr><td class="px-4 py-3" colspan="6">Thiếu ApiService</td></tr>');
+        return Promise.resolve();
+      }
 
-      return getJson(url).then(function (rows) {
-        var html = (rows || []).map(function (o) {
-          var tone = o.status === "Cho xac nhan" ? "text-amber-600" : o.status === "Dang giao" ? "text-indigo-600" : "text-emerald-600";
+      var query = (qEl ? qEl.value : "").toLowerCase();
+      var statusFilter = sEl ? sEl.value : "all";
+
+      return ApiService.Order.getSellerOrders().then(function (rows) {
+        var orders = Array.isArray(rows) ? rows : [];
+
+        var filtered = orders.filter(function (order) {
+          var orderId = String(order.orderId || "");
+          var buyerName = (order.buyerUsername || "").toLowerCase();
+          var itemSummary = (order.itemSummary || "").toLowerCase();
+
+          var matchQuery = !query ||
+            orderId.includes(query) ||
+            buyerName.includes(query) ||
+            itemSummary.includes(query);
+
+          var matchStatus = statusFilter === "all" || String(order.status) === statusFilter;
+
+          return matchQuery && matchStatus;
+        });
+
+        var html = filtered.map(function (order) {
+          var statusColor = getStatusColor(order.status);
+          var statusLabel = getStatusLabel(order.status);
+          var buyerName = order.buyerUsername || "--";
+          var itemSummary = order.itemSummary || "--";
+
           return (
-            "<tr>" +
-            '<td class="px-4 py-3 font-bold">#' + esc(o.id) + "</td>" +
-            '<td class="px-4 py-3">' + esc(o.customer) + "</td>" +
-            '<td class="px-4 py-3">' + esc(o.item) + "</td>" +
-            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(o.value) + "</td>" +
-            '<td class="px-4 py-3 font-black ' + tone + '">' + esc(o.status) + "</td>" +
-            '<td class="px-4 py-3 text-right"><button class="rounded border border-brand-accent px-3 py-1 text-xs font-black">Chi tiet</button></td>' +
-            "</tr>"
+            '<tr>' +
+            '<td class="px-4 py-3 font-bold">#' + esc(order.orderId || order.subOrderId || "?") + '</td>' +
+            '<td class="px-4 py-3 text-sm">' + esc(buyerName) + '</td>' +
+            '<td class="px-4 py-3 text-sm">' + esc(itemSummary) + '</td>' +
+            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(order.subTotal) + '</td>' +
+            '<td class="px-4 py-3 font-black ' + statusColor + '">' + esc(statusLabel) + '</td>' +
+            '<td class="px-4 py-3 text-right">' +
+              '<button class="rounded border border-brand-accent px-3 py-1 text-xs font-bold hover:bg-gray-50 transition" onclick="viewOrderDetail(' + (order.orderId || 0) + ')">Chi tiết</button>' +
+            '</td>' +
+            '</tr>'
           );
         }).join("");
 
-        setHtml("seller-orders-body", html || '<tr><td class="px-4 py-3" colspan="6">Khong co du lieu</td></tr>');
+        setHtml("seller-orders-body", html || '<tr><td class="px-4 py-3" colspan="6">Không có dữ liệu</td></tr>');
+      }).catch(function (err) {
+        console.error('Seller orders load failed:', err);
+        setHtml("seller-orders-body", '<tr><td class="px-4 py-3" colspan="6">Lỗi tải dữ liệu</td></tr>');
       });
     }
 
-    [qEl, sEl].forEach(function (el) {
+    [qEl, sEl].forEach(function(el) {
       if (el) el.addEventListener("input", load);
       if (el) el.addEventListener("change", load);
     });
+
+    window.viewOrderDetail = function(orderId) {
+      alert('Xem chi tiết đơn hàng #' + orderId + ' (chưa có trang chi tiết cho seller)');
+    };
 
     return load();
   }
@@ -328,33 +383,61 @@
     }
 
     function load() {
-      var url = API_ROOT + "/books?" + qs({
-        q: qEl ? qEl.value : "",
-        category: cEl ? cEl.value : "all",
-        stock: sEl ? sEl.value : "all"
-      });
+      // Use ApiService to load seller books from API
+      if (typeof ApiService === 'undefined' || !ApiService.Book || !ApiService.Book.getSellerBooks) {
+        console.error('ApiService.Book.getSellerBooks not available');
+        setHtml("seller-inventory-body", '<tr><td colspan="6" class="px-4 py-3">Lỗi tải dữ liệu</td></tr>');
+        return Promise.resolve();
+      }
 
-      return getJson(url).then(function (rows) {
-        var html = (rows || []).map(function (r) {
-          var badge = r.stockBucket === "low"
+      var categoryId = (cEl && cEl.value !== "all") ? cEl.value : null;
+      var query = qEl ? qEl.value : "";
+      
+      return ApiService.Book.getSellerBooks(query, categoryId, 0, 500).then(function(result) {
+        // Handle both Page<Book> format and array format
+        var books = result.content || result || [];
+        
+        if (!Array.isArray(books)) {
+          books = [];
+        }
+
+        // Filter by stock if needed
+        if (sEl && sEl.value !== "all") {
+          var stockFilter = sEl.value;
+          books = books.filter(function(b) {
+            var stock = b.stockQuantity || 0;
+            if (stockFilter === "low") return stock < 10;
+            if (stockFilter === "normal") return stock >= 10 && stock < 50;
+            if (stockFilter === "high") return stock >= 50;
+            return true;
+          });
+        }
+
+        var html = books.map(function(book) {
+          var statusColor = book.approvalStatus === 'APPROVED' ? 'text-emerald-600' : 
+                           book.approvalStatus === 'PENDING' ? 'text-amber-600' : 'text-red-600';
+          var badge = book.stockQuantity < 10
             ? '<span class="rounded bg-rose-100 px-2 py-1 text-xs font-black text-rose-700">Low</span>'
-            : r.stockBucket === "normal"
+            : book.stockQuantity < 50
               ? '<span class="rounded bg-amber-100 px-2 py-1 text-xs font-black text-amber-700">Normal</span>'
               : '<span class="rounded bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-700">High</span>';
-
+          
           return (
             "<tr>" +
-            '<td class="px-4 py-3 font-bold">' + esc(r.title) + "</td>" +
-            '<td class="px-4 py-3">' + esc(r.author) + "</td>" +
-            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(r.price) + "</td>" +
-            '<td class="px-4 py-3">' + esc(r.stock) + "</td>" +
+            '<td class="px-4 py-3 font-bold">' + esc(book.title || '?') + "</td>" +
+            '<td class="px-4 py-3">' + esc(book.author || '?') + "</td>" +
+            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(book.price || 0) + "</td>" +
+            '<td class="px-4 py-3">' + (book.stockQuantity || 0) + "</td>" +
             '<td class="px-4 py-3">' + badge + "</td>" +
-            '<td class="px-4 py-3 text-right"><button class="rounded border border-brand-accent px-3 py-1 text-xs font-black">Cap nhat</button></td>' +
+            '<td class="px-4 py-3 text-right"><button class="rounded border border-brand-accent px-3 py-1 text-xs font-black" onclick="editBook(' + book.id + ')">Cập nhật</button></td>' +
             "</tr>"
           );
         }).join("");
 
-        setHtml("seller-inventory-body", html || '<tr><td class="px-4 py-3" colspan="6">Khong co du lieu</td></tr>');
+        setHtml("seller-inventory-body", html || '<tr><td colspan="6" class="px-4 py-3">Không có sách</td></tr>');
+      }).catch(function(err) {
+        console.error('Failed to load books:', err);
+        setHtml("seller-inventory-body", '<tr><td colspan="6" class="px-4 py-3">Lỗi tải dữ liệu từ server</td></tr>');
       });
     }
 

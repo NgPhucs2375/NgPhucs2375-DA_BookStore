@@ -923,20 +923,26 @@
             }
 
             // Gọi API
-            axios.post(`${API_BASE_URL}/login`, {
+            axios.post(`${API_BASE_URL}/login-jwt`, {
                 username: username,
-                passwordHash: password
+                password: password
             })
                 .then(response => {
+                    const data = response.data;
+                    // Lưu thông tin đăng nhập vào localStorage
+                    localStorage.setItem('accessToken', data.accessToken);
+                    localStorage.setItem('userId', data.userId);
+                    localStorage.setItem('userRole', data.role);
+
                     Swal.fire({ icon: 'success', title: 'Tuyệt vời!', text: 'Đăng nhập thành công!', timer: 1500, showConfirmButton: false })
                         .then(() => {
-                            // Chuyển hướng trang tùy theo role (mặc định buyer)
+                            // Chuyển hướng trang tùy theo role
                             if (data.role === 'ADMIN') {
                                 window.location.href = "/admin";
                             } else if (data.role === 'SELLER') {
                                 window.location.href = "/seller/dashboard";
                             } else {
-                                window.location.href = "Discovery_Page.html";
+                                window.location.href = "/buyer/dashboard";
                             }
                         });
                 })

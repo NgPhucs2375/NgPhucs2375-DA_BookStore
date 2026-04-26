@@ -2,17 +2,23 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.model.Book;
 import com.example.bookstore.repository.BookRepository;
+import com.example.bookstore.service.recommendation.RecommendationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import java.util.List;
+
 @Controller
 public class PageController {
 
     @Autowired
     private BookRepository bookRepository;
+
+    @Autowired
+    private RecommendationService recommendationService;
 
     // Khi người dùng gõ link: localhost:8080/book/1
     @GetMapping("/book/{id}")
@@ -26,10 +32,16 @@ public class PageController {
             return "redirect:/";
         }
 
-        // 3. Lấy sách bỏ vào "giỏ hàng" Model để shipper mang sang file HTML
-        model.addAttribute("book", book);
+        // 3. Load 2 luồng gợi ý
+        List<Book> boughtTogether = recommendationService.getBoughtTogetherBooks(id);
+        List<Book> similarBooks = recommendationService.getSimilarBooks(id);
 
-        // 4. Mở file BookDetail.html (Spring Boot tự động đi tìm file này trong thư mục templates)
+        // 4. Lấy sách bỏ vào "giỏ hàng" Model để shipper mang sang file HTML
+        model.addAttribute("book", book);
+        model.addAttribute("boughtTogetherBooks", boughtTogether);
+        model.addAttribute("similarBooks", similarBooks);
+
+        // 5. Mở file BookDetail.html (Spring Boot tự động đi tìm file này trong thư mục templates)
         return "main/Details_Produce";
     }
 }

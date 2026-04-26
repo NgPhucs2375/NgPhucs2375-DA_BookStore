@@ -9,19 +9,32 @@ CREATE TABLE users (
                        password_hash NVARCHAR(255) NOT NULL,
                        role VARCHAR(20) NOT NULL CONSTRAINT DF_users_role DEFAULT 'BUYER',
                        shop_name NVARCHAR(255) NULL,
-                       shop_address NVARCHAR(500) NULL
+                       shop_address NVARCHAR(500) NULL,
+                       avatar_url NVARCHAR(MAX) NULL
 );
 END;
 
--- 2. TẠO BẢNG CATEGORY (Bảng danh mục sách - Cần có trước bảng Books)
+-- 2. TẠO BẢNG CATEGORY
 IF OBJECT_ID('category', 'U') IS NULL
 BEGIN
 CREATE TABLE category (
                           id BIGINT IDENTITY(1,1) PRIMARY KEY,
-                          name NVARCHAR(255) NOT NULL
+                          name NVARCHAR(255) NOT NULL UNIQUE,
+                          description NVARCHAR(MAX) NULL -- <-- BẠN THÊM DÒNG NÀY VÀO ĐÂY
 );
 END;
 
+-- TẠO BẢNG USER_FAVORITE_CATEGORIES
+IF OBJECT_ID('user_favorite_categories', 'U') IS NULL
+BEGIN
+CREATE TABLE user_favorite_categories (
+                                          user_id BIGINT NOT NULL,
+                                          category_id BIGINT NOT NULL,
+                                          PRIMARY KEY (user_id, category_id),
+                                          CONSTRAINT FK_user_fav_cat_user FOREIGN KEY (user_id) REFERENCES users(id),
+                                          CONSTRAINT FK_user_fav_cat_category FOREIGN KEY (category_id) REFERENCES category(id)
+);
+END;
 -- 3. TẠO BẢNG BOOKS (Đã bao gồm cột seller_id và approval_status)
 IF OBJECT_ID('books', 'U') IS NULL
 BEGIN

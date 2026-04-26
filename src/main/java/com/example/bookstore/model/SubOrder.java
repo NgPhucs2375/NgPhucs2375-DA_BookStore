@@ -32,7 +32,7 @@ public class SubOrder {
     private User seller;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
     private OrderStatus status;
 
     @Column(nullable = false)

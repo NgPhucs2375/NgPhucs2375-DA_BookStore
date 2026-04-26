@@ -10,16 +10,29 @@ public class MailService {
 
     private final JavaMailSender mailSender;
     private final String fromAddress;
+    private final String mailHost;
+    private final String mailUsername;
 
     public MailService(
         JavaMailSender mailSender,
-        @Value("${app.mail.from:${spring.mail.username:no-reply@bookstore.local}}") String fromAddress
+        @Value("${app.mail.from:${spring.mail.username:no-reply@bookstore.local}}") String fromAddress,
+        @Value("${spring.mail.host:}") String mailHost,
+        @Value("${spring.mail.username:}") String mailUsername
     ) {
         this.mailSender = mailSender;
         this.fromAddress = fromAddress;
+        this.mailHost = mailHost == null ? "" : mailHost.trim();
+        this.mailUsername = mailUsername == null ? "" : mailUsername.trim();
+    }
+
+    public boolean isConfigured() {
+        return !mailHost.isBlank() && !mailUsername.isBlank();
     }
 
     public void sendOtpEmail(String toEmail, String otp, long expireMinutes) {
+        if (!isConfigured()) {
+            throw new IllegalStateException("Mail server chua duoc cau hinh");
+        }
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
         message.setFrom(fromAddress);

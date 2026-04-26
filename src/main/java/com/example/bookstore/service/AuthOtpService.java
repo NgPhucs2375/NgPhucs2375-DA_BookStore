@@ -27,10 +27,20 @@ public class AuthOtpService {
         String otp = String.format("%06d", random.nextInt(1_000_000));
         Instant expiresAt = Instant.now().plusSeconds(OTP_EXPIRE_SECONDS);
         otpStore.put(normalizedEmail, new OtpEntry(otp, expiresAt, false));
+        System.out.println(">> [OTP GENERATED] Email: " + normalizedEmail + " | OTP: " + otp);
+
+        if (!mailService.isConfigured()) {
+            otpStore.remove(normalizedEmail);
+            throw new ResponseStatusException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Chua cau hinh SMTP nen khong the gui OTP"
+            );
+        }
 
         try {
             mailService.sendOtpEmail(normalizedEmail, otp, OTP_EXPIRE_SECONDS / 60);
         } catch (Exception ex) {
+            System.err.println("Failed to send OTP email to " + normalizedEmail + ": " + ex.getMessage());
             otpStore.remove(normalizedEmail);
             throw new ResponseStatusException(
                 HttpStatus.INTERNAL_SERVER_ERROR,

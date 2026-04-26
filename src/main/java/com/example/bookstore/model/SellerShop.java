@@ -52,7 +52,7 @@ public class SellerShop {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(length = 50)
+    @Column(length = 50, columnDefinition = "NVARCHAR(50)")
     private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
 
     @CreationTimestamp

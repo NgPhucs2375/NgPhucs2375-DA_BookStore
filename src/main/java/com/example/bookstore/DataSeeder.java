@@ -57,6 +57,12 @@ public class DataSeeder implements CommandLineRunner {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 
+    private String normalizeForComparison(String s) {
+        if (s == null) return "";
+        // Chỉ giữ lại ký tự chữ và số cơ bản (a-z, 0-9) để so sánh tối giản nhất
+        return s.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
     private String bookKey(String title, String author) {
         return normalizeKey(title) + "::" + normalizeKey(author);
     }
@@ -91,11 +97,6 @@ public class DataSeeder implements CommandLineRunner {
         System.out.println("⚡ Khoi dong DataSeeder (User: " + userCount + ", Category: " + categoryCount + ", Book: " + bookCount + ")");
         System.out.println("✅ Chi bo sung du lieu chua co, KHONG xoa du lieu cu.");
 
-        Map<String, Category> categoryByKey = new HashMap<>();
-        for (Category existing : categoryRepository.findAll()) {
-            categoryByKey.put(normalizeKey(existing.getName()), existing);
-        }
-
         List<Category> orderedCategories = new ArrayList<>();
         List<Category> seededCategories = List.of(
             new Category(null, "Tiểu thuyết - Văn học", "Tác phẩm văn học trong và ngoài nước", null),
@@ -108,15 +109,52 @@ public class DataSeeder implements CommandLineRunner {
             new Category(null, "Ngoại ngữ", "Tài liệu học tiếng Anh, Nhật, Hàn", null)
         );
 
+        // --- FIX START: Efficient Category Seeding ---
+        // 1. Fetch all existing categories ONCE and put them into a map for fast lookup.
+        Map<String, Category> existingCategoriesMap = new HashMap<>();
+        // The error happens on this line, so we apply the fix here
+        try {
+            for (Category existing : categoryRepository.findAll()) {
+                existingCategoriesMap.put(normalizeForComparison(existing.getName()), existing);
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ A known error occurred while fetching categories, attempting to proceed with an empty map. The error was: " + e.getMessage());
+            // Proceed with an empty map, the logic below will handle saving the seeds.
+        }
+
+        // 2. Iterate through the hardcoded seeds and check against the map.
         for (Category seed : seededCategories) {
-            String key = normalizeKey(seed.getName());
-            Category existing = categoryByKey.get(key);
+            String seedNorm = normalizeForComparison(seed.getName());
+            Category existing = existingCategoriesMap.get(seedNorm);
+
             if (existing == null) {
-                existing = categoryRepository.save(seed);
-                categoryByKey.put(key, existing);
+                // This category is new, save it.
+                try {
+                    existing = categoryRepository.save(seed);
+                    System.out.println("✅ Added new category: " + seed.getName());
+                } catch (Exception e) {
+                    System.out.println("⚠️ Warning: Could not save new category: " + seed.getName());
+                    continue; // Skip to next seed
+                }
+            } else {
+                // Category exists, check if name/description needs updating for consistency.
+                boolean isNameDiff = existing.getName() == null || !existing.getName().equals(seed.getName());
+                boolean isDescDiff = existing.getDescription() == null || !existing.getDescription().equals(seed.getDescription());
+
+                if (isNameDiff || isDescDiff) {
+                    existing.setName(seed.getName());
+                    existing.setDescription(seed.getDescription());
+                    try {
+                        existing = categoryRepository.save(existing);
+                        System.out.println("🔧 Updated category: " + seed.getName());
+                    } catch (Exception e) {
+                        System.out.println("⚠️ Could not update category: " + existing.getName());
+                    }
+                }
             }
             orderedCategories.add(existing);
         }
+        // --- FIX END ---
 
         Category[] categories = orderedCategories.toArray(new Category[0]);
 

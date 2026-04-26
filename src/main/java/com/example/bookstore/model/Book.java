@@ -42,7 +42,7 @@ public class Book {
     private User seller;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
     private ApprovalStatus approvalStatus;
 
     @PrePersist

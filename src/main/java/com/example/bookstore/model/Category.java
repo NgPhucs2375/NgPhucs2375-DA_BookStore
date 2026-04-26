@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "category")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,9 +19,10 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, columnDefinition = "NVARCHAR(255)")
     private String name;
 
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     // Quan hệ 1-Nhiều: 1 Thể loại có nhiều Cuốn sách

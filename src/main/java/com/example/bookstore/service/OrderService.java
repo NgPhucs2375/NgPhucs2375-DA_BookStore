@@ -219,19 +219,17 @@ public class OrderService {
             .build();
     }
 
+    @Transactional
     public List<SubOrderSummaryResponse> getSellerSubOrders(Long sellerId) {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
 
+        if (seller.getRole() != UserRole.SELLER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
+        }
+
         return subOrderRepository.findBySellerOrderByIdDesc(seller).stream()
-                .map(subOrder -> SubOrderSummaryResponse.builder()
-                        .subOrderId(subOrder.getId())
-                        .orderId(subOrder.getParentOrder() == null ? null : subOrder.getParentOrder().getId())
-                        .sellerId(seller.getId())
-                        .sellerName(seller.getShopName() == null ? seller.getUsername() : seller.getShopName())
-                        .status(subOrder.getStatus())
-                        .subTotal(subOrder.getSubTotal())
-                        .build())
+            .map(this::toSubOrderSummary)
                 .toList();
     }
 
@@ -254,16 +252,47 @@ public class OrderService {
         subOrder.setStatus(status);
         SubOrder saved = subOrderRepository.save(subOrder);
 
-        User savedSeller = saved.getSeller();
-        String sellerName = savedSeller == null ? null : (savedSeller.getShopName() == null ? savedSeller.getUsername() : savedSeller.getShopName());
+        return toSubOrderSummary(saved);
+    }
+
+    private SubOrderSummaryResponse toSubOrderSummary(SubOrder subOrder) {
+        User seller = subOrder.getSeller();
+        String sellerName = seller == null ? null : (seller.getShopName() == null ? seller.getUsername() : seller.getShopName());
+
+        User buyer = subOrder.getParentOrder() == null ? null : subOrder.getParentOrder().getBuyer();
+        String buyerUsername = buyer == null ? null : buyer.getUsername();
+
+        int itemCount = 0;
+        List<String> titles = new ArrayList<>();
+        List<OrderItem> items = subOrder.getItems();
+        if (items != null) {
+            for (OrderItem item : items) {
+                int qty = item.getQuantity() == null ? 0 : item.getQuantity();
+                itemCount += qty;
+
+                if (titles.size() < 3) {
+                    Book book = item.getBook();
+                    String title = book == null || book.getTitle() == null ? "Không rõ" : book.getTitle();
+                    titles.add(title);
+                }
+            }
+        }
+
+        String itemSummary = titles.isEmpty() ? null : String.join(", ", titles);
+        if (items != null && items.size() > titles.size()) {
+            itemSummary = itemSummary + " ...";
+        }
 
         return SubOrderSummaryResponse.builder()
-                .subOrderId(saved.getId())
-                .orderId(saved.getParentOrder() == null ? null : saved.getParentOrder().getId())
-                .sellerId(savedSeller == null ? null : savedSeller.getId())
+                .subOrderId(subOrder.getId())
+                .orderId(subOrder.getParentOrder() == null ? null : subOrder.getParentOrder().getId())
+                .sellerId(seller == null ? null : seller.getId())
                 .sellerName(sellerName)
-                .status(saved.getStatus())
-                .subTotal(saved.getSubTotal())
+                .buyerUsername(buyerUsername)
+                .itemSummary(itemSummary)
+                .itemCount(itemCount)
+                .status(subOrder.getStatus())
+                .subTotal(subOrder.getSubTotal())
                 .build();
     }
 }

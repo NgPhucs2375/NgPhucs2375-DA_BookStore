@@ -144,7 +144,7 @@ const ApiService = (() => {
 
     const Book = {
         /**
-         * Tìm kiếm sách
+         * Tìm kiếm sách APPROVED cho BUYER
          */
         search: async (query = '', categoryId = null, page = 0, size = 20) => {
             const params = new URLSearchParams({
@@ -155,6 +155,24 @@ const ApiService = (() => {
             if (categoryId) params.append('categoryId', categoryId);
 
             const response = await fetch(`${API_BASE}/books/search?${params}`, {
+                headers: getHeaders()
+            });
+            return response.json();
+        },
+
+        /**
+         * Lấy danh sách sách của SELLER (bao gồm PENDING, APPROVED, REJECTED)
+         * Dùng cho trang Inventory Management (S03)
+         */
+        getSellerBooks: async (query = '', categoryId = null, page = 0, size = 500) => {
+            const params = new URLSearchParams({
+                q: query,
+                page: page,
+                size: size
+            });
+            if (categoryId) params.append('categoryId', categoryId);
+
+            const response = await fetch(`${API_BASE}/books/seller/me?${params}`, {
                 headers: getHeaders()
             });
             return response.json();
@@ -174,7 +192,7 @@ const ApiService = (() => {
          * Tạo sách mới (seller)
          */
         create: async (bookData) => {
-            const response = await fetch(`${API_BASE}/books`, {
+            const response = await fetch(`${API_BASE}/books/seller`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify(bookData)
@@ -186,19 +204,47 @@ const ApiService = (() => {
          * Cập nhật sách
          */
         update: async (bookId, bookData) => {
-            const response = await fetch(`${API_BASE}/books/${bookId}`, {
+            const response = await fetch(`${API_BASE}/books/seller/${bookId}`, {
                 method: 'PUT',
                 headers: getHeaders(),
                 body: JSON.stringify(bookData)
             });
             return response.json();
         },
+        uploadCover: async (bookId, formData) => {
+                    // CẦN LƯU Ý: Khi dùng fetch với FormData, KHÔNG set header Content-Type.
+                    // Trình duyệt sẽ tự động set 'multipart/form-data' kèm theo Boundary (ranh giới file).
 
+                    const { userId, token } = getAuth();
+                    const headers = {
+                        'X-User-Id': userId || ''
+                    };
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
+
+                    const response = await fetch(`${API_BASE}/books/seller/${bookId}/upload-cover`, {
+                        method: 'POST',
+                        headers: headers, // Dùng bộ header riêng, KHÔNG dùng getHeaders() vì cái đó đang set cứng application/json
+                        body: formData
+                    });
+
+                    // Nếu Backend trả về text (đường dẫn link) thay vì JSON, thì return dạng text
+                    if (!response.ok) throw new Error('Upload ảnh thất bại');
+
+                    // Xử lý cẩn thận: nếu response là text thì lấy text, json thì lấy json
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.indexOf("application/json") !== -1) {
+                        return response.json();
+                    } else {
+                        return response.text();
+                    }
+                },
         /**
          * Xóa sách
          */
         delete: async (bookId) => {
-            const response = await fetch(`${API_BASE}/books/${bookId}`, {
+            const response = await fetch(`${API_BASE}/books/seller/${bookId}`, {
                 method: 'DELETE',
                 headers: getHeaders()
             });
@@ -307,8 +353,10 @@ const ApiService = (() => {
          * Lấy sub-orders của seller
          */
         getSellerOrders: async (sellerId = null) => {
-            const id = sellerId || getAuth().userId;
-            const response = await fetch(`${API_BASE}/orders/seller/${id}/sub-orders`, {
+            const url = sellerId
+                ? `${API_BASE}/orders/seller/${sellerId}/sub-orders`
+                : `${API_BASE}/orders/seller/me/sub-orders`;
+            const response = await fetch(url, {
                 headers: getHeaders()
             });
             return response.json();
@@ -431,7 +479,7 @@ const ApiService = (() => {
             localStorage.removeItem('userId');
             localStorage.removeItem('accessToken');
             localStorage.removeItem('userRole');
-            window.location.href = '/main/index';
+            window.location.href = '/';
         }
     };
 })();

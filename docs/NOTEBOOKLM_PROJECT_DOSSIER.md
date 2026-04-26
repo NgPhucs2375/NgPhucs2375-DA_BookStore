@@ -1,6 +1,6 @@
 # BOOKSTORE MULTI-VENDOR - NOTEBOOKLM PROJECT DOSSIER
 
-Cập nhật: 2026-04-15
+Cập nhật: 2026-04-26
 Mục tiêu tài liệu: tệp tổng hợp để dùng trong NotebookLM cho Q&A kỹ thuật, báo cáo đồ án và theo dõi tiến độ.
 
 ---
@@ -21,7 +21,9 @@ Giá trị đã đạt được:
 Đánh giá hiện tại:
 - Backend foundation: tốt.
 - Buyer flow chính (cart -> checkout -> order pages): chạy end-to-end ở mức nghiệp vụ.
-- Mức sẵn sàng tương đối: ~86% cho foundation + buyer storefront`/order flow.
+- Seller inventory: đã đồng bộ API + UI (create/update/upload cover) theo route seller.
+- Seller orders: danh sách đã lấy từ API thật (sub-orders), chưa có trang chi tiết riêng cho seller.
+- Mức sẵn sàng tương đối: ~88% cho foundation + buyer flow + seller core ops.
 
 ---
 
@@ -44,7 +46,7 @@ Mục tiêu kỹ thuật:
 ## 3) Tech Stack
 
 - Java 17
-- Spring Boot 4.0.3
+- Spring Boot 3.2.4
 - Spring Web, Spring Data JPA, Thymeleaf
 - Spring Security + JWT filter
 - Spring Validation
@@ -132,7 +134,13 @@ Orders (`/api/orders`):
 - `GET /me`
 - `GET /me/{orderId}`
 - `GET /seller/{sellerId}/sub-orders`
+- `GET /seller/me/sub-orders`
 - `PATCH /sub-orders/{subOrderId}/status?status=`
+
+SubOrderSummaryResponse (seller orders list):
+- `subOrderId`, `orderId`, `sellerId`, `sellerName`
+- `buyerUsername`, `itemSummary`, `itemCount`
+- `status`, `subTotal`
 
 ---
 
@@ -186,6 +194,7 @@ Admin:
 Cần ưu tiên:
 - Mở rộng security coverage cho toàn bộ endpoint (không chỉ carts/orders)
 - Hoàn thiện API admin/seller còn thiếu
+- Bổ sung trang chi tiết đơn hàng cho seller (hoặc gắn link tới order detail phù hợp)
 - Bổ sung E2E test tự động cho toàn luồng UI
 - Chuẩn hóa quy trình migration theo môi trường
 
@@ -201,19 +210,14 @@ Cần ưu tiên:
 
 ---
 
-## 13) Delta mới nhất (2026-04-15)
+## 13) Delta mới nhất (2026-04-26)
 
-- Thêm OTP qua SMTP cho auth
-- Register yêu cầu email đã verify OTP
-- Lưu avatar + favorite categories xuống DB
-- Bind Cart_Page với API cart (list/update/remove/recalc)
-- Bind Checkout_Page với API cart và `/api/orders/me/checkout`
-- Thêm API `GET /api/orders/me/{orderId}`
-- Bind Order_Success và Order_Details theo orderId
-- Cập nhật tài liệu UC feasibility (nhánh `origin/Scu` đã hợp nhất)
-- Admin: chuẩn hóa layout/head theo `pageTitle`, thêm loader + nút refresh, toast thông báo, và xử lý auth header cho API admin
-- Admin: giao diện sidebar TailAdmin có thu gọn/mở rộng, theme CSS riêng
-- Compile và regression tests hiện có đều pass
+- Resolve merge conflict ở `User.java` và `application.properties`
+- Thêm endpoint `GET /api/orders/seller/me/sub-orders` cho seller orders
+- SubOrderSummaryResponse có thêm `buyerUsername`, `itemSummary`, `itemCount`
+- Seller Orders UI lấy dữ liệu thật từ API (không còn mock)
+- Seller book write API dùng `/api/books/seller/**` để đồng bộ security
+- Làm sạch docs (bỏ credentials, sửa title, cập nhật Spring Boot version)
 
 ---
 

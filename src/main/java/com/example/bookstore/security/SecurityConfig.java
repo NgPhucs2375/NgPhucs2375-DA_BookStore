@@ -11,9 +11,14 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
-@EnableWebSecurity // Đảm bảo có annotation này
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -23,42 +28,57 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults())
-                // 1. QUAN TRỌNG: Stateless (Không lưu session)
+                // Kích hoạt CORS toàn cầu lấy cấu hình từ Bean bên dưới
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // 1. QUAN TRỌNG: Stateless
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 2. Xử lý lỗi để không redirect về /login
+                // 2. Xử lý lỗi
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            // Thay vì redirect, ta trả về lỗi 401 Unauthorized
                             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Token is missing or invalid");
                         })
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                                // Public routes
-                    .requestMatchers("/api/auth/register-admin").hasRole("ADMIN")
+                        // Public routes
+                        .requestMatchers("/api/auth/register-admin").hasRole("ADMIN")
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/shops/**").permitAll()
-
-                        // Allow safe read-only access to panel endpoints and admin pages
                         .requestMatchers(HttpMethod.GET, "/api/panel/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/admin", "/admin/**").permitAll()
 
-                        // Protected routes dựa trên Role (write operations)
+                        // Đã bổ sung bảo mật cho API Sách của Seller
+                        .requestMatchers("/api/books/seller/**").hasRole("SELLER")
+
+                        // Protected routes dựa trên Role
                         .requestMatchers("/api/seller/**").hasRole("SELLER")
                         .requestMatchers("/api/panel/**").hasRole("ADMIN")
 
                         // Yêu cầu đăng nhập cho Carts và Orders
                         .requestMatchers("/api/carts/**", "/api/orders/**").authenticated()
 
-                        // Mọi request khác cho phép đi qua (hoặc để .authenticated() nếu muốn bảo mật tuyệt đối)
                         .anyRequest().permitAll()
                 )
-                // 3. Đưa Filter của bạn vào đúng vị trí
+                // 3. Đưa Filter vào đúng vị trí
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
+    // BEAN CẤU HÌNH CORS TOÀN CẦU: Khắc phục triệt để lỗi (failed) net::ERR_FAILED
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // Cho phép Frontend (ví dụ localhost:3000, 5173,...) gọi API thoải mái
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }

@@ -10,7 +10,9 @@ import com.example.bookstore.model.enums.OrderStatus;
 import com.example.bookstore.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -55,7 +57,20 @@ public class OrderController {
     }
 
     @GetMapping("/seller/{sellerId}/sub-orders")
-    public List<SubOrderSummaryResponse> getSellerSubOrders(@PathVariable Long sellerId) {
+    public List<SubOrderSummaryResponse> getSellerSubOrders(
+            @PathVariable Long sellerId,
+            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId
+    ) {
+        if (currentUserId != null && !currentUserId.equals(sellerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller cannot access other seller orders");
+        }
+        return orderService.getSellerSubOrders(sellerId);
+    }
+
+    @GetMapping("/seller/me/sub-orders")
+    public List<SubOrderSummaryResponse> getCurrentSellerSubOrders(
+            @RequestHeader("X-User-Id") Long sellerId
+    ) {
         return orderService.getSellerSubOrders(sellerId);
     }
 

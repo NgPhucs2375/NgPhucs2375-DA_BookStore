@@ -5,8 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
@@ -16,8 +15,7 @@ import java.util.Set;
 
 @Entity // Đánh dấu đây là 1 bảng trong DB
 @Table(name="users") // Tên bảng dưới Database sẽ là 'users'
-@Getter
-@Setter
+@Data
 @NoArgsConstructor // Tự tạo Constructor không tham số
 @AllArgsConstructor // Tự tạo Constructor có đủ tham số
 @Builder
@@ -34,7 +32,7 @@ public class User {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
+    @Column(nullable = false, length = 20)
     private UserRole role;
 
     @Column(length = 255)
@@ -47,7 +45,7 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany
     @JoinTable(
         name = "user_favorite_categories",
         joinColumns = @JoinColumn(name = "user_id"),

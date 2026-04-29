@@ -934,6 +934,20 @@
             await axios.post(`${API_BASE_URL}/otp/verify`, { email, otp });
         };
 
+        const getApiErrorMessage = (error, fallback = 'Loi ket noi Server') => {
+            const data = error?.response?.data;
+
+            if (typeof data === 'string') {
+                return data;
+            }
+
+            if (data && typeof data === 'object') {
+                return data.detail || data.message || data.error || JSON.stringify(data);
+            }
+
+            return fallback;
+        };
+
         loadFavoriteCategories();
 
         // ==========================================================
@@ -984,7 +998,7 @@
                         });
                 })
                 .catch(error => {
-                    Swal.fire({ icon: 'error', title: 'Đăng nhập thất bại', text: error.response ? error.response.data : 'Lỗi kết nối Server' });
+                        Swal.fire({ icon: 'error', title: 'Đăng nhập thất bại', text: getApiErrorMessage(error) });
                 });
         });
 
@@ -1023,7 +1037,7 @@
                 }
                 Swal.fire({ icon: 'success', title: 'OTP da gui', text: 'Vui long nhap ma OTP trong email de hoan tat dang ky.' });
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: error.response ? error.response.data : 'Loi ket noi Server' });
+                Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: getApiErrorMessage(error) });
             }
         });
 
@@ -1036,7 +1050,7 @@
                 await requestRegisterOtp(pendingRegister.email);
                 Swal.fire({ icon: 'success', title: 'Da gui lai OTP', text: 'Vui long kiem tra email cua ban.' });
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: error.response ? error.response.data : 'Loi ket noi Server' });
+                Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: getApiErrorMessage(error) });
             }
         });
 
@@ -1047,7 +1061,7 @@
             }
 
             const otp = Array.from(registerOtpInputs).map((i) => i.value).join('');
-            if (otp.length < 4) {
+            if (otp.length !== 6) {
                 Swal.fire({ icon: 'warning', title: 'OTP khong hop le', text: 'Vui long nhap day du ma OTP.' });
                 return;
             }
@@ -1071,7 +1085,7 @@
                     input.value = '';
                 });
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Xac thuc that bai', text: error.response ? error.response.data : 'Loi ket noi Server' });
+                Swal.fire({ icon: 'error', title: 'Xac thuc that bai', text: getApiErrorMessage(error) });
             }
         });
     });

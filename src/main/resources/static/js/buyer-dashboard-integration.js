@@ -8,316 +8,163 @@
  */
 
 (function () {
-    // ==========================================
-    // 1. CHECK AUTHENTICATION
-    // ==========================================
-
-    if (!ApiService.isAuthenticated()) {
-        alert('Vui lòng đăng nhập');
+    if (!window.ApiService || !ApiService.isAuthenticated()) {
         window.location.href = '/';
         return;
     }
 
     if (!ApiService.isBuyer()) {
-        alert('Chỉ buyer mới có quyền truy cập');
         window.location.href = '/';
         return;
     }
 
-    // ==========================================
-    // 2. ELEMENT REFERENCES
-    // ==========================================
+    const headerNameEl = document.getElementById('buyer-header-name');
+    const headerCartCountEl = document.getElementById('header-cart-count');
+    const sidebarNameEl = document.getElementById('sidebar-name');
+    const sidebarXuCountEl = document.getElementById('sidebar-xu-count');
+    const greetingEl = document.getElementById('buyer-greeting');
+    const ordersCountEl = document.getElementById('buyer-orders-count');
+    const favoriteCountEl = document.getElementById('buyer-favorite-count');
+    const voucherCountEl = document.getElementById('buyer-voucher-count');
+    const recentOrdersEl = document.getElementById('order-list');
+    const profileAvatarEl = document.getElementById('profile-avatar-preview');
+    const sidebarAvatarEl = document.getElementById('sidebar-avatar');
+    const headerAvatarEl = document.getElementById('header-avatar-preview');
+    const firstNameInput = document.getElementById('prof_ten');
+    const lastNameInput = document.getElementById('prof_ho');
+    const emailInput = document.getElementById('prof_email');
+    const phoneInput = document.getElementById('prof_phone');
 
-    const buyerNameEl = document.getElementById('buyer-name') || 
-                       document.querySelector('[data-buyer-name]');
-    const buyerEmailEl = document.getElementById('buyer-email') || 
-                        document.querySelector('[data-buyer-email]');
-    const buyerAvatarEl = document.getElementById('buyer-avatar') || 
-                         document.querySelector('[data-buyer-avatar]');
+    const defaultAvatar = 'https://i.pravatar.cc/150?img=11';
 
-    const ordersListEl = document.getElementById('buyer-orders-list') || 
-                        document.querySelector('[data-orders-list]');
-    const totalOrdersEl = document.getElementById('total-orders') || 
-                         document.querySelector('[data-total-orders]');
-    const totalSpendEl = document.getElementById('total-spend') || 
-                        document.querySelector('[data-total-spend]');
+    const setText = (element, value) => {
+        if (element) {
+            element.textContent = value;
+        }
+    };
 
-    const filterAllBtn = document.querySelector('button[data-filter="all"]');
-    const filterPendingBtn = document.querySelector('button[data-filter="pending"]');
-    const filterDeliveredBtn = document.querySelector('button[data-filter="delivered"]');
-    const filterCancelledBtn = document.querySelector('button[data-filter="cancelled"]');
+    const setAvatar = (element, url) => {
+        if (element) {
+            element.style.backgroundImage = `url('${url || defaultAvatar}')`;
+        }
+    };
 
-    const searchOrdersInput = document.getElementById('search-orders') || 
-                            document.querySelector('input[data-search="orders"]');
+    const toDisplayName = (username) => {
+        const raw = String(username || '').split('@')[0].replace(/[._-]+/g, ' ').trim();
+        if (!raw) return 'Khách hàng';
 
-    // ==========================================
-    // 3. STATE MANAGEMENT
-    // ==========================================
+        return raw
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    };
 
-    let allOrders = [];
-    let currentFilter = 'all';
-    let currentSearchQuery = '';
+    const splitDisplayName = (displayName) => {
+        const parts = String(displayName || '').trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) {
+            return { firstName: 'Khách', lastName: 'Hàng' };
+        }
 
-    // ==========================================
-    // 4. UTILITY FUNCTIONS
-    // ==========================================
+        if (parts.length === 1) {
+            return { firstName: parts[0], lastName: '' };
+        }
 
-    const formatDate = (dateString) => {
-        if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString('vi-VN', {
+        return {
+            firstName: parts[parts.length - 1],
+            lastName: parts.slice(0, -1).join(' ')
+        };
+    };
+
+    const formatDate = (value) => {
+        if (!value) return '-';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '-';
+        return date.toLocaleDateString('vi-VN', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit'
         });
     };
 
-    const getStatusIcon = (status) => {
-        const icons = {
-            'PENDING': '⏳',
-            'CONFIRMED': '✓',
-            'PACKED': '📦',
-            'SHIPPED': '🚚',
-            'DELIVERED': '🏠',
-            'CANCELLED': '✗'
-        };
-        return icons[status] || '?';
-    };
+    const renderRecentOrders = (orders) => {
+        if (!recentOrdersEl) return;
 
-    const getStatusLabel = (status) => {
-        const labels = {
-            'PENDING': 'Chờ xác nhận',
-            'CONFIRMED': 'Đã xác nhận',
-            'PACKED': 'Đã đóng gói',
-            'SHIPPED': 'Đang giao',
-            'DELIVERED': 'Đã giao',
-            'CANCELLED': 'Đã hủy'
-        };
-        return labels[status] || status;
-    };
-
-    const getStatusBadgeClass = (status) => {
-        const classes = {
-            'PENDING': 'bg-yellow-100 text-yellow-800',
-            'CONFIRMED': 'bg-blue-100 text-blue-800',
-            'PACKED': 'bg-purple-100 text-purple-800',
-            'SHIPPED': 'bg-cyan-100 text-cyan-800',
-            'DELIVERED': 'bg-green-100 text-green-800',
-            'CANCELLED': 'bg-red-100 text-red-800'
-        };
-        return classes[status] || 'bg-gray-100 text-gray-800';
-    };
-
-    const filterOrders = () => {
-        let filtered = allOrders;
-
-        // Filter by status
-        if (currentFilter !== 'all') {
-            filtered = filtered.filter(o => {
-                if (currentFilter === 'pending') {
-                    return ['PENDING', 'CONFIRMED', 'PACKED', 'SHIPPED'].includes(o.status);
-                } else if (currentFilter === 'delivered') {
-                    return o.status === 'DELIVERED';
-                } else if (currentFilter === 'cancelled') {
-                    return o.status === 'CANCELLED';
-                }
-                return true;
-            });
-        }
-
-        // Filter by search query
-        if (currentSearchQuery) {
-            const query = currentSearchQuery.toLowerCase();
-            filtered = filtered.filter(o => {
-                return (
-                    String(o.id).includes(query) ||
-                    (o.buyerName && o.buyerName.toLowerCase().includes(query))
-                );
-            });
-        }
-
-        return filtered;
-    };
-
-    // ==========================================
-    // 5. FETCH & RENDER FUNCTIONS
-    // ==========================================
-
-    const loadBuyerProfile = async () => {
-        try {
-            const userId = ApiService.getAuth().userId;
-            const profile = await ApiService.Auth.getProfile(userId);
-
-            if (buyerNameEl) buyerNameEl.textContent = profile.username || 'Khách hàng';
-            if (buyerEmailEl) buyerEmailEl.textContent = profile.email || 'N/A';
-            if (buyerAvatarEl && profile.avatarUrl) {
-                buyerAvatarEl.src = profile.avatarUrl;
-            }
-
-        } catch (error) {
-            console.error('❌ Lỗi tải profile:', error);
-        }
-    };
-
-    const loadBuyerOrders = async () => {
-        try {
-            const orders = await ApiService.Order.getBuyerOrders();
-            allOrders = Array.isArray(orders) ? orders : [];
-
-            // Update stats
-            const totalSpend = allOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-            if (totalOrdersEl) totalOrdersEl.textContent = allOrders.length;
-            if (totalSpendEl) totalSpendEl.textContent = ApiService.formatVND(totalSpend);
-
-            renderOrdersList();
-
-        } catch (error) {
-            console.error('❌ Lỗi tải đơn hàng:', error);
-            if (ordersListEl) {
-                ordersListEl.innerHTML = `
-                    <div class="text-center py-6 text-red-600">
-                        ❌ Không thể tải danh sách đơn hàng
-                    </div>
-                `;
-            }
-        }
-    };
-
-    const renderOrdersList = () => {
-        if (!ordersListEl) return;
-
-        const filtered = filterOrders();
-
-        if (filtered.length === 0) {
-            ordersListEl.innerHTML = `
-                <div class="text-center py-6 text-gray-500">
-                    ${currentSearchQuery ? '❌ Không tìm thấy đơn hàng' : '📭 Bạn chưa có đơn hàng nào'}
+        if (!orders.length) {
+            recentOrdersEl.innerHTML = `
+                <div class="bg-white border border-brand-accent rounded-2xl p-6 shadow-sm text-gray-500">
+                    Bạn chưa có đơn hàng nào.
                 </div>
             `;
             return;
         }
 
-        ordersListEl.innerHTML = filtered.map(order => `
-            <div class="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition mb-4">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div class="flex-grow">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-2xl">${getStatusIcon(order.status)}</span>
-                            <div>
-                                <p class="font-bold text-lg">Đơn hàng #${order.id}</p>
-                                <p class="text-xs text-gray-500">${formatDate(order.createdAt)}</p>
-                            </div>
-                        </div>
-                        <p class="text-sm text-gray-600">
-                            ${(order.items || []).length || 1} sản phẩm
-                        </p>
+        recentOrdersEl.innerHTML = orders.slice(0, 3).map((order) => `
+            <div class="bg-white border border-brand-accent rounded-2xl shadow-sm overflow-hidden">
+                <div class="bg-gray-50 border-b border-brand-accent px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex items-center gap-3">
+                        <span class="bg-brand-orange text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">Đơn hàng</span>
+                        <span class="font-bold text-brand-dark text-sm">Mã #${order.id}</span>
                     </div>
-
-                    <div class="flex flex-col md:items-end gap-2">
-                        <span class="px-3 py-1 rounded-full text-sm font-bold ${getStatusBadgeClass(order.status)}">
-                            ${getStatusLabel(order.status)}
-                        </span>
-                        <span class="text-xl font-black text-brand-orange">
-                            ${ApiService.formatVND(order.totalAmount || 0)}
-                        </span>
+                    <div class="flex items-center gap-2 text-sm font-bold text-gray-500 uppercase tracking-wide text-xs">
+                        ${formatDate(order.createdAt)}
                     </div>
-
-                    <div class="flex gap-2">
-                        <button 
-                            onclick="window.viewOrderDetail(${order.id})"
-                            class="px-4 py-2 bg-brand-orange text-white rounded-lg hover:bg-brand-dark transition font-bold text-sm"
-                        >
-                            Xem chi tiết
-                        </button>
-                        ${order.status === 'PENDING' ? `
-                            <button 
-                                onclick="window.cancelOrder(${order.id})"
-                                class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition font-bold text-sm"
-                            >
-                                Hủy
-                            </button>
-                        ` : ''}
+                </div>
+                <div class="px-6 py-5 flex items-start gap-4">
+                    <div class="w-20 aspect-[3/4] bg-[#2c3e50] border border-gray-200 shadow-sm flex-shrink-0 flex items-center justify-center text-white text-center font-bold text-[8px] uppercase p-1">BOOKOM</div>
+                    <div class="flex flex-col flex-grow">
+                        <h4 class="font-bold text-brand-dark text-sm line-clamp-2 mb-1">Đơn hàng của bạn</h4>
+                        <span class="text-xs text-gray-500 mb-2">${order.shippingAddress || 'Địa chỉ giao hàng đang cập nhật'}</span>
+                        <span class="text-xs font-bold text-brand-dark">x1</span>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+                        <span class="text-brand-orange font-bold text-sm">${ApiService.formatVND(order.totalAmount || 0)}</span>
                     </div>
                 </div>
             </div>
         `).join('');
     };
 
-    // ==========================================
-    // 6. ACTION HANDLERS
-    // ==========================================
+    const loadProfile = async () => {
+        const userId = ApiService.getAuth().userId;
+        const profile = await ApiService.Auth.getProfile(userId);
+        const displayName = toDisplayName(profile.username);
+        const nameParts = splitDisplayName(displayName);
 
-    window.viewOrderDetail = (orderId) => {
-        window.location.href = `/main/order-details?orderId=${orderId}`;
+        setText(headerNameEl, displayName);
+        setText(sidebarNameEl, displayName);
+        setText(greetingEl, `Xin chào, ${displayName}!`);
+        setText(favoriteCountEl, String((profile.favoriteCategoryIds || []).length));
+        setText(voucherCountEl, '0');
+
+        if (emailInput) emailInput.value = profile.username || '';
+        if (firstNameInput) firstNameInput.value = nameParts.firstName;
+        if (lastNameInput) lastNameInput.value = nameParts.lastName;
+        if (phoneInput) phoneInput.value = '';
+
+        setAvatar(profileAvatarEl, profile.avatarUrl);
+        setAvatar(sidebarAvatarEl, profile.avatarUrl);
+        setAvatar(headerAvatarEl, profile.avatarUrl);
     };
 
-    window.cancelOrder = async (orderId) => {
-        if (!confirm('⚠️ Bạn chắc chắn muốn hủy đơn hàng này?')) {
-            return;
-        }
-
-        try {
-            await ApiService.Order.updateSubOrderStatus(orderId, 'CANCELLED');
-            alert('✓ Hủy đơn hàng thành công');
-            await loadBuyerOrders();
-        } catch (error) {
-            alert('❌ Lỗi hủy đơn hàng: ' + error.message);
-        }
+    const loadCart = async () => {
+        const cart = await ApiService.Cart.get();
+        setText(headerCartCountEl, String(cart.totalItems || 0));
+        setText(sidebarXuCountEl, '0');
     };
 
-    // ==========================================
-    // 7. FILTER & SEARCH
-    // ==========================================
+    const loadOrders = async () => {
+        const orders = await ApiService.Order.getBuyerOrders();
+        const list = Array.isArray(orders) ? orders : [];
+        setText(ordersCountEl, String(list.length));
+        renderRecentOrders(list);
+    };
 
-    const updateFilterButtons = () => {
-        [filterAllBtn, filterPendingBtn, filterDeliveredBtn, filterCancelledBtn].forEach(btn => {
-            if (btn) {
-                const filter = btn.getAttribute('data-filter');
-                btn.classList.toggle('bg-brand-orange text-white', filter === currentFilter);
-                btn.classList.toggle('bg-gray-200 text-gray-800', filter !== currentFilter);
+    Promise.allSettled([loadProfile(), loadCart(), loadOrders()]).then((results) => {
+        results.forEach((result) => {
+            if (result.status === 'rejected') {
+                console.error('Buyer dashboard load failed:', result.reason);
             }
         });
-    };
-
-    if (filterAllBtn) filterAllBtn.addEventListener('click', () => {
-        currentFilter = 'all';
-        updateFilterButtons();
-        renderOrdersList();
     });
-
-    if (filterPendingBtn) filterPendingBtn.addEventListener('click', () => {
-        currentFilter = 'pending';
-        updateFilterButtons();
-        renderOrdersList();
-    });
-
-    if (filterDeliveredBtn) filterDeliveredBtn.addEventListener('click', () => {
-        currentFilter = 'delivered';
-        updateFilterButtons();
-        renderOrdersList();
-    });
-
-    if (filterCancelledBtn) filterCancelledBtn.addEventListener('click', () => {
-        currentFilter = 'cancelled';
-        updateFilterButtons();
-        renderOrdersList();
-    });
-
-    if (searchOrdersInput) {
-        let searchTimeout;
-        searchOrdersInput.addEventListener('input', (e) => {
-            currentSearchQuery = e.target.value.trim();
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                renderOrdersList();
-            }, 300);
-        });
-    }
-
-    // ==========================================
-    // 8. INITIALIZATION
-    // ==========================================
-
-    console.log('👤 Buyer Dashboard loaded');
-    Promise.all([loadBuyerProfile(), loadBuyerOrders()]);
-
 })();

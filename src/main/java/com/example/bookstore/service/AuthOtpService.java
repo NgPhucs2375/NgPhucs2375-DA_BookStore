@@ -33,7 +33,7 @@ public class AuthOtpService {
             otpStore.remove(normalizedEmail);
             throw new ResponseStatusException(
                 HttpStatus.SERVICE_UNAVAILABLE,
-                "Chua cau hinh SMTP nen khong the gui OTP"
+                "Chua cau hinh Gmail SMTP. Can cai dat MAIL_HOST=smtp.gmail.com, MAIL_USERNAME va MAIL_PASSWORD (app password) de gui OTP"
             );
         }
 

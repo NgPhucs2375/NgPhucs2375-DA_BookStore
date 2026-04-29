@@ -14,10 +14,10 @@ CREATE TABLE users (
 );
 END;
 
--- 2. TẠO BẢNG CATEGORY
-IF OBJECT_ID('category', 'U') IS NULL
+-- 2. TẠO BẢNG CATEGORIES
+IF OBJECT_ID('categories', 'U') IS NULL
 BEGIN
-CREATE TABLE category (
+CREATE TABLE categories (
                           id BIGINT IDENTITY(1,1) PRIMARY KEY,
                           name NVARCHAR(255) NOT NULL UNIQUE,
                           description NVARCHAR(MAX) NULL -- <-- BẠN THÊM DÒNG NÀY VÀO ĐÂY
@@ -32,7 +32,7 @@ CREATE TABLE user_favorite_categories (
                                           category_id BIGINT NOT NULL,
                                           PRIMARY KEY (user_id, category_id),
                                           CONSTRAINT FK_user_fav_cat_user FOREIGN KEY (user_id) REFERENCES users(id),
-                                          CONSTRAINT FK_user_fav_cat_category FOREIGN KEY (category_id) REFERENCES category(id)
+                                          CONSTRAINT FK_user_fav_cat_category FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 END;
 -- 3. TẠO BẢNG BOOKS (Đã bao gồm cột seller_id và approval_status)
@@ -54,7 +54,7 @@ CREATE TABLE books (
 
     -- Ràng buộc khóa ngoại
                        CONSTRAINT FK_books_seller_id_users FOREIGN KEY (seller_id) REFERENCES users(id),
-                       CONSTRAINT FK_books_category_id FOREIGN KEY (category_id) REFERENCES category(id)
+                       CONSTRAINT FK_books_category_id FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 END;
 

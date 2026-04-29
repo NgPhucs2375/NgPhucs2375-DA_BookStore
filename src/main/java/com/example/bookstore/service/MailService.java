@@ -12,21 +12,24 @@ public class MailService {
     private final String fromAddress;
     private final String mailHost;
     private final String mailUsername;
+    private final String mailPassword;
 
     public MailService(
         JavaMailSender mailSender,
         @Value("${app.mail.from:${spring.mail.username:no-reply@bookstore.local}}") String fromAddress,
         @Value("${spring.mail.host:}") String mailHost,
-        @Value("${spring.mail.username:}") String mailUsername
+        @Value("${spring.mail.username:}") String mailUsername,
+        @Value("${spring.mail.password:}") String mailPassword
     ) {
         this.mailSender = mailSender;
         this.fromAddress = fromAddress;
         this.mailHost = mailHost == null ? "" : mailHost.trim();
         this.mailUsername = mailUsername == null ? "" : mailUsername.trim();
+        this.mailPassword = mailPassword == null ? "" : mailPassword.trim();
     }
 
     public boolean isConfigured() {
-        return !mailHost.isBlank() && !mailUsername.isBlank();
+        return !mailHost.isBlank() && !mailUsername.isBlank() && !mailPassword.isBlank();
     }
 
     public void sendOtpEmail(String toEmail, String otp, long expireMinutes) {

@@ -26,6 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class SellerShopControllerTest {
 
+    private static final Long CURRENT_USER_ID = 1L;
+
     @Mock
     private SellerShopService sellerShopService;
 
@@ -58,10 +60,11 @@ class SellerShopControllerTest {
             .approvalStatus(ApprovalStatus.PENDING)
             .build();
 
-        when(sellerShopService.createMyShop(eq(1L), any(SellerShopUpsertRequest.class))).thenReturn(response);
+        when(sellerShopService.createMyShop(eq(CURRENT_USER_ID), any(SellerShopUpsertRequest.class))).thenReturn(response);
 
         mockMvc.perform(post("/api/seller/me/shop")
                 .contentType(MediaType.APPLICATION_JSON)
+            .requestAttr("CURRENT_USER_ID", CURRENT_USER_ID)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(100))
@@ -107,9 +110,10 @@ class SellerShopControllerTest {
             .approvalStatus(ApprovalStatus.APPROVED)
             .build();
 
-        when(sellerShopService.changeStatus(1L, ApprovalStatus.APPROVED)).thenReturn(response);
+        when(sellerShopService.changeStatus(CURRENT_USER_ID, ApprovalStatus.APPROVED)).thenReturn(response);
 
         mockMvc.perform(patch("/api/seller/me/shop/status")
+            .requestAttr("CURRENT_USER_ID", CURRENT_USER_ID)
                 .param("status", "APPROVED"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.approvalStatus").value("APPROVED"));

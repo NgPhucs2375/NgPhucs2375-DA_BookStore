@@ -64,6 +64,11 @@ public class User {
     @Builder.Default
     private List<SubOrder> subOrders = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @Builder.Default
+    private List<Notification> notifications = new ArrayList<>();
+
     @OneToOne(mappedBy = "buyer")
     @JsonIgnore
     private Cart cart;

@@ -39,11 +39,14 @@ class OrderServiceSecurityAndOwnershipTest {
     @Mock
     private SubOrderRepository subOrderRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
     private OrderService orderService;
 
     @BeforeEach
     void setUp() {
-        orderService = new OrderService(userRepository, cartRepository, orderRepository, subOrderRepository);
+        orderService = new OrderService(userRepository, cartRepository, orderRepository, subOrderRepository, notificationService);
     }
 
     @Test

@@ -32,6 +32,7 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final OrderRepository orderRepository;
     private final SubOrderRepository subOrderRepository;
+    private final com.example.bookstore.service.NotificationService notificationService;
 
     @Transactional
     public CheckoutResponse checkoutFromCart(CheckoutRequest request) {
@@ -251,6 +252,29 @@ public class OrderService {
 
         subOrder.setStatus(status);
         SubOrder saved = subOrderRepository.save(subOrder);
+
+        // Send notification to buyer about sub-order status change
+        try {
+            if (saved.getParentOrder() != null && saved.getParentOrder().getBuyer() != null) {
+                Long buyerId = saved.getParentOrder().getBuyer().getId();
+                com.example.bookstore.dto.NotificationCreateRequest req = new com.example.bookstore.dto.NotificationCreateRequest();
+                req.setUserId(buyerId);
+                req.setType(com.example.bookstore.model.enums.NotificationType.SUB_ORDER_STATUS_CHANGED);
+                req.setTitle("Trạng thái đơn hàng thay đổi");
+                req.setMessage(String.format("Sub-order #%d của đơn #%d đã chuyển sang %s", saved.getId(),
+                        saved.getParentOrder().getId(), status == null ? "UNKNOWN" : status.name()));
+                req.setPayloadJson(String.format("{\"subOrderId\":%d,\"orderId\":%d,\"status\":\"%s\"}",
+                        saved.getId(), saved.getParentOrder().getId(), status == null ? "UNKNOWN" : status.name()));
+                req.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
+
+                // fire-and-forget; NotificationService will persist and enqueue delivery with retry
+                try {
+                    notificationService.createNotification(sellerId, buyerId, req);
+                } catch (Exception ignored) {
+                }
+            }
+        } catch (Exception ignored) {
+        }
 
         return toSubOrderSummary(saved);
     }

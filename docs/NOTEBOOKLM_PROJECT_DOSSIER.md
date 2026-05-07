@@ -1,6 +1,6 @@
 # BOOKSTORE MULTI-VENDOR - NOTEBOOKLM PROJECT DOSSIER
 
-Cập nhật: 2026-04-26
+Cập nhật: 2026-04-29
 Mục tiêu tài liệu: tệp tổng hợp để dùng trong NotebookLM cho Q&A kỹ thuật, báo cáo đồ án và theo dõi tiến độ.
 
 ---
@@ -75,6 +75,7 @@ Controller:
 Data/Migration:
 - DataSeeder
 - `src/main/resources/db/migration/V1__init_multivendor_schema.sql`
+- Seeder service/controller: `DatabaseSeederService` + `DatabaseSeederController`
 
 ---
 
@@ -210,14 +211,11 @@ Cần ưu tiên:
 
 ---
 
-## 13) Delta mới nhất (2026-04-26)
+## 13) Delta mới nhất (2026-04-29)
 
-- Resolve merge conflict ở `User.java` và `application.properties`
-- Thêm endpoint `GET /api/orders/seller/me/sub-orders` cho seller orders
-- SubOrderSummaryResponse có thêm `buyerUsername`, `itemSummary`, `itemCount`
-- Seller Orders UI lấy dữ liệu thật từ API (không còn mock)
-- Seller book write API dùng `/api/books/seller/**` để đồng bộ security
-- Làm sạch docs (bỏ credentials, sửa title, cập nhật Spring Boot version)
+- Chuyển logic seeding sang `DatabaseSeederService`
+- Thêm endpoint admin seeder: `POST /api/admin/seeder/run`
+- Thêm config seeder: `app.seeder.max-books`, `app.seeder.ai-enabled`
 
 ---
 

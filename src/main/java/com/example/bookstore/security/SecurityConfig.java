@@ -49,6 +49,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/panel/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/admin", "/admin/**").permitAll()
 
+                        .requestMatchers("/api/admin/seeder/**").hasRole("ADMIN")
+
                         // Đã bổ sung bảo mật cho API Sách của Seller
                         .requestMatchers("/api/books/seller/**").hasRole("SELLER")
 

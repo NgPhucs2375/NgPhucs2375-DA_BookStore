@@ -52,6 +52,34 @@ const ApiService = (() => {
         }).format(value || 0);
     };
 
+    /**
+     * Parse JSON or text response safely
+     */
+    const parseResponse = async (response) => {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            return response.json();
+        }
+        const text = await response.text();
+        return text;
+    };
+
+    /**
+     * Handle API response with error normalization
+     */
+    const handleResponse = async (response) => {
+        const data = await parseResponse(response);
+        if (!response.ok) {
+            const message = typeof data === 'string' && data.trim()
+                ? data
+                : 'Request failed';
+            const error = new Error(message);
+            error.data = data;
+            throw error;
+        }
+        return data;
+    };
+
     // ==========================================
     // 2. AUTHENTICATION APIs
     // ==========================================
@@ -67,7 +95,7 @@ const ApiService = (() => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -81,7 +109,7 @@ const ApiService = (() => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, otp })
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -98,7 +126,7 @@ const ApiService = (() => {
                     favoriteCategoryIds
                 })
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -157,7 +185,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/books/search?${params}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -175,7 +203,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/books/seller/me?${params}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -185,7 +213,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/books/${bookId}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -197,7 +225,7 @@ const ApiService = (() => {
                 headers: getHeaders(),
                 body: JSON.stringify(bookData)
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -209,7 +237,7 @@ const ApiService = (() => {
                 headers: getHeaders(),
                 body: JSON.stringify(bookData)
             });
-            return response.json();
+            return handleResponse(response);
         },
         uploadCover: async (bookId, formData) => {
                     // CẦN LƯU Ý: Khi dùng fetch với FormData, KHÔNG set header Content-Type.
@@ -248,7 +276,7 @@ const ApiService = (() => {
                 method: 'DELETE',
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         }
     };
 
@@ -265,7 +293,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/carts/buyer/${id}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -278,7 +306,7 @@ const ApiService = (() => {
                 headers: getHeaders(),
                 body: JSON.stringify(itemData)
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -293,7 +321,7 @@ const ApiService = (() => {
                     headers: getHeaders()
                 }
             );
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -308,7 +336,7 @@ const ApiService = (() => {
                     headers: getHeaders()
                 }
             );
-            return response.json();
+            return handleResponse(response);
         }
     };
 
@@ -326,7 +354,7 @@ const ApiService = (() => {
                 headers: getHeaders(),
                 body: JSON.stringify({ shippingAddress })
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -336,7 +364,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/orders/me`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -346,7 +374,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/orders/me/${orderId}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -359,7 +387,7 @@ const ApiService = (() => {
             const response = await fetch(url, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -373,7 +401,7 @@ const ApiService = (() => {
                     headers: getHeaders()
                 }
             );
-            return response.json();
+            return handleResponse(response);
         }
     };
 
@@ -389,7 +417,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/seller/me/shop`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -401,7 +429,7 @@ const ApiService = (() => {
                 headers: getHeaders(),
                 body: JSON.stringify(shopData)
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -413,7 +441,7 @@ const ApiService = (() => {
                 headers: getHeaders(),
                 body: JSON.stringify(shopData)
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -423,7 +451,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/shops/${slug}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         }
     };
 
@@ -439,7 +467,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/categories`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         }
     };
 

@@ -1,6 +1,6 @@
 # UC Feasibility Note - Multi-vendor BookStore
 
-Cập nhật ngày: 2026-04-26
+Cập nhật ngày: 2026-04-29
 
 ## Ghi chú quyết định
 - Tài liệu này dùng để đánh giá mức khả thi UC theo trạng thái code hiện tại.
@@ -73,12 +73,13 @@ Chưa đầy đủ:
 - Admin: fetch có auth header + xử lý chuyển về login khi 401/403.
 - Kiểm chứng: compile và regression tests hiện có đều pass.
 
-## Delta mới nhất (2026-04-26)
+## Delta mới nhất (2026-04-29)
 - Gỡ conflict merge (User + application.properties).
 - Seller orders list lấy dữ liệu thật từ `/api/orders/seller/me/sub-orders`.
 - SubOrderSummaryResponse có thêm buyer + item summary cho UI seller.
 - Seller book write API đồng bộ route `/api/books/seller/**`.
 - Dọn docs, bỏ thông tin đăng nhập test.
+- Refactor seeding sang `DatabaseSeederService` + endpoint admin `/api/admin/seeder/run`.
 
 ## Kết luận
 - Các UC BUYER trọng tâm đã khả thi ở mức end-to-end cho demo.

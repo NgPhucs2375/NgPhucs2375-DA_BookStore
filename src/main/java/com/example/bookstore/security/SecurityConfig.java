@@ -49,15 +49,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/panel/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/admin", "/admin/**").permitAll()
 
+                        .requestMatchers("/api/admin/seeder/**").hasRole("ADMIN")
+
                         // Đã bổ sung bảo mật cho API Sách của Seller
                         .requestMatchers("/api/books/seller/**").hasRole("SELLER")
+
+                        // Admin-only endpoints for notifications management
+                        .requestMatchers("/api/notifications/admin/**").hasRole("ADMIN")
 
                         // Protected routes dựa trên Role
                         .requestMatchers("/api/seller/**").hasRole("SELLER")
                         .requestMatchers("/api/panel/**").hasRole("ADMIN")
 
-                        // Yêu cầu đăng nhập cho Carts và Orders
-                        .requestMatchers("/api/carts/**", "/api/orders/**").authenticated()
+                        // Yêu cầu đăng nhập cho Carts, Orders và Notifications
+                        .requestMatchers("/api/carts/**", "/api/orders/**", "/api/notifications/**").authenticated()
 
                         .anyRequest().permitAll()
                 )

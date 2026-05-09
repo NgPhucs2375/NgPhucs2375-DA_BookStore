@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOOKOM - Cổng Đăng Nhập & Thành Viên Cao Cấp</title>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -770,10 +771,8 @@
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/js/api-service.js"></script>
 <script>
-    // --- KHAI BÁO CẤU HÌNH API ---
-    const API_BASE_URL = 'http://localhost:8080/api/auth';
-
     document.addEventListener('DOMContentLoaded', () => {
         const toggleBtns = document.querySelectorAll('.toggle-password');
         toggleBtns.forEach(btn => {
@@ -875,8 +874,8 @@
                 return;
             }
             try {
-                const response = await axios.get('/api/categories');
-                const categories = Array.isArray(response.data) ? response.data : [];
+                const result = await ApiService.Category.getAll();
+                const categories = Array.isArray(result) ? result : [];
                 if (categories.length === 0) {
                     favoriteCategoriesHint.textContent = 'Chua co danh muc de chon.';
                     favoriteCategoriesGrid.innerHTML = '';
@@ -927,11 +926,11 @@
         }
 
         const requestRegisterOtp = async (email) => {
-            await axios.post(`${API_BASE_URL}/otp/request`, { email });
+            await ApiService.Auth.requestOtp(email);
         };
 
         const verifyRegisterOtp = async (email, otp) => {
-            await axios.post(`${API_BASE_URL}/otp/verify`, { email, otp });
+            await ApiService.Auth.verifyOtp(email, otp);
         };
 
         const getApiErrorMessage = (error, fallback = 'Loi ket noi Server') => {
@@ -951,12 +950,12 @@
         loadFavoriteCategories();
 
         // ==========================================================
-        // PHẦN 2: LOGIC GỌI API BẰNG AXIOS
+        // PHẦN 2: LOGIC GỌI API BẰNG APISERVICE
         // ==========================================================
 
         // 1. XỬ LÝ ĐĂNG NHẬP
         const loginBtn = document.querySelector('.view-login .btn-primary');
-        loginBtn.addEventListener('click', (e) => {
+        loginBtn.addEventListener('click', async (e) => {
             e.preventDefault(); // Ngăn trình duyệt tự load lại trang
 
             // Lấy giá trị từ input
@@ -969,37 +968,32 @@
             }
 
             // Gọi API login JWT để lưu token/user cho các luồng cần auth (cart/order)
-            axios.post(`${API_BASE_URL}/login-jwt`, {
-                username: username,
-                password: password
-            })
-                .then(response => {
-                    const data = response.data || {};
-                    if (data.accessToken) {
-                        localStorage.setItem('accessToken', data.accessToken);
-                    }
-                    if (data.userId) {
-                        localStorage.setItem('userId', String(data.userId));
-                    }
-                    if (data.role) {
-                        localStorage.setItem('userRole', data.role);
-                    }
+            try {
+                const data = await ApiService.Auth.loginJwt(username, password);
+                if (data?.accessToken) {
+                    localStorage.setItem('accessToken', data.accessToken);
+                }
+                if (data?.userId) {
+                    localStorage.setItem('userId', String(data.userId));
+                }
+                if (data?.role) {
+                    localStorage.setItem('userRole', data.role);
+                }
 
-                    Swal.fire({ icon: 'success', title: 'Tuyệt vời!', text: 'Đăng nhập thành công!', timer: 1500, showConfirmButton: false })
-                        .then(() => {
-                            // Chuyển hướng trang tùy theo role (mặc định buyer)
-                            if (data.role === 'ADMIN') {
-                                window.location.href = "/admin";
-                            } else if (data.role === 'SELLER') {
-                                window.location.href = "/seller/dashboard";
-                            } else {
-                                window.location.href = "/";
-                            }
-                        });
-                })
-                .catch(error => {
-                        Swal.fire({ icon: 'error', title: 'Đăng nhập thất bại', text: getApiErrorMessage(error) });
-                });
+                Swal.fire({ icon: 'success', title: 'Tuyệt vời!', text: 'Đăng nhập thành công!', timer: 1500, showConfirmButton: false })
+                    .then(() => {
+                        // Chuyển hướng trang tùy theo role (mặc định buyer)
+                        if (data?.role === 'ADMIN') {
+                            window.location.href = "/admin";
+                        } else if (data?.role === 'SELLER') {
+                            window.location.href = "/seller/dashboard";
+                        } else {
+                            window.location.href = "/";
+                        }
+                    });
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Đăng nhập thất bại', text: error?.message || 'Lỗi kết nối Server' });
+            }
         });
 
         // 2. XỬ LÝ ĐĂNG KÝ + OTP EMAIL
@@ -1037,7 +1031,8 @@
                 }
                 Swal.fire({ icon: 'success', title: 'OTP da gui', text: 'Vui long nhap ma OTP trong email de hoan tat dang ky.' });
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: getApiErrorMessage(error) });
+                const message = typeof error?.data === 'string' ? error.data : (error?.message || 'Loi ket noi Server');
+                Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: message });
             }
         });
 
@@ -1050,7 +1045,8 @@
                 await requestRegisterOtp(pendingRegister.email);
                 Swal.fire({ icon: 'success', title: 'Da gui lai OTP', text: 'Vui long kiem tra email cua ban.' });
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: getApiErrorMessage(error) });
+                const message = typeof error?.data === 'string' ? error.data : (error?.message || 'Loi ket noi Server');
+                Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: message });
             }
         });
 
@@ -1061,19 +1057,19 @@
             }
 
             const otp = Array.from(registerOtpInputs).map((i) => i.value).join('');
-            if (otp.length !== 6) {
+            if (otp.length < 4) {
                 Swal.fire({ icon: 'warning', title: 'OTP khong hop le', text: 'Vui long nhap day du ma OTP.' });
                 return;
             }
 
             try {
                 await verifyRegisterOtp(pendingRegister.email, otp);
-                await axios.post(`${API_BASE_URL}/register`, {
-                    username: pendingRegister.email,
-                    passwordHash: pendingRegister.password,
-                    avatarUrl: pendingRegister.avatarUrl,
-                    favoriteCategoryIds: pendingRegister.favoriteCategoryIds
-                });
+                await ApiService.Auth.register(
+                    pendingRegister.email,
+                    pendingRegister.password,
+                    pendingRegister.avatarUrl,
+                    pendingRegister.favoriteCategoryIds
+                );
                 Swal.fire({ icon: 'success', title: 'Dang ky thanh cong', text: 'Ban co the dang nhap ngay bay gio.' })
                     .then(() => {
                         document.getElementById('route-login').checked = true;
@@ -1085,7 +1081,8 @@
                     input.value = '';
                 });
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Xac thuc that bai', text: getApiErrorMessage(error) });
+                const message = typeof error?.data === 'string' ? error.data : (error?.message || 'Loi ket noi Server');
+                Swal.fire({ icon: 'error', title: 'Xac thuc that bai', text: message });
             }
         });
     });

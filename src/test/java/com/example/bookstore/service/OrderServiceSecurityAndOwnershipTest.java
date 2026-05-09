@@ -43,6 +43,9 @@ class OrderServiceSecurityAndOwnershipTest {
     private SubOrderRepository subOrderRepository;
 
     @Mock
+    private NotificationService notificationService;
+
+    @Mock
     private BookRepository bookRepository;
 
     private OrderService orderService;
@@ -50,6 +53,7 @@ class OrderServiceSecurityAndOwnershipTest {
     @BeforeEach
     void setUp() {
         orderService = new OrderService(userRepository, cartRepository, orderRepository, subOrderRepository, bookRepository);
+
     }
 
     @Test

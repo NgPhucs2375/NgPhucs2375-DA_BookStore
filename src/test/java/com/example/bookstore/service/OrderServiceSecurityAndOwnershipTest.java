@@ -1,11 +1,14 @@
 package com.example.bookstore.service;
 
 import com.example.bookstore.dto.SubOrderSummaryResponse;
+import com.example.bookstore.dto.SellerAnalyticsResponse;
+import com.example.bookstore.model.Book;
 import com.example.bookstore.model.Order;
 import com.example.bookstore.model.SubOrder;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.OrderStatus;
 import com.example.bookstore.model.enums.UserRole;
+import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.CartRepository;
 import com.example.bookstore.repository.OrderRepository;
 import com.example.bookstore.repository.SubOrderRepository;
@@ -39,11 +42,14 @@ class OrderServiceSecurityAndOwnershipTest {
     @Mock
     private SubOrderRepository subOrderRepository;
 
+    @Mock
+    private BookRepository bookRepository;
+
     private OrderService orderService;
 
     @BeforeEach
     void setUp() {
-        orderService = new OrderService(userRepository, cartRepository, orderRepository, subOrderRepository);
+        orderService = new OrderService(userRepository, cartRepository, orderRepository, subOrderRepository, bookRepository);
     }
 
     @Test
@@ -128,4 +134,67 @@ class OrderServiceSecurityAndOwnershipTest {
         assertEquals(33L, response.getSellerId());
         assertEquals(2L, response.getOrderId());
     }
+
+        @Test
+        void getSellerAnalytics_shouldBuildSummaryFromCompletedOrders() {
+        User seller = User.builder()
+            .id(44L)
+            .username("seller-analytics")
+            .passwordHash("x")
+            .role(UserRole.SELLER)
+            .shopName("Analytics Shop")
+            .build();
+
+        User buyer = User.builder()
+            .id(55L)
+            .username("buyer-one")
+            .passwordHash("x")
+            .role(UserRole.BUYER)
+            .build();
+
+        com.example.bookstore.model.Category category = new com.example.bookstore.model.Category();
+        category.setId(1L);
+        category.setName("Sách bán chạy");
+
+        Book book = new Book();
+        book.setId(701L);
+        book.setTitle("Đắc Nhân Tâm");
+        book.setImageUrl("/img/book.jpg");
+        book.setStockQuantity(3);
+        book.setCategory(category);
+
+        SubOrder subOrder = SubOrder.builder()
+            .id(900L)
+            .seller(seller)
+            .status(OrderStatus.COMPLETED)
+            .subTotal(180000.0)
+            .parentOrder(Order.builder()
+                .id(800L)
+                .buyer(buyer)
+                .createdAt(java.time.LocalDateTime.now())
+                .build())
+            .build();
+
+        com.example.bookstore.model.OrderItem item = com.example.bookstore.model.OrderItem.builder()
+            .id(1000L)
+            .subOrder(subOrder)
+            .book(book)
+            .unitPrice(90000.0)
+            .quantity(2)
+            .build();
+        subOrder.setItems(java.util.List.of(item));
+
+        when(userRepository.findById(44L)).thenReturn(Optional.of(seller));
+        when(subOrderRepository.findBySellerOrderByIdDesc(seller)).thenReturn(java.util.List.of(subOrder));
+        when(bookRepository.findBySeller(seller)).thenReturn(java.util.List.of(book));
+
+        SellerAnalyticsResponse response = orderService.getSellerAnalytics(44L, 7);
+
+        assertEquals(44L, response.getSellerId());
+        assertEquals(1L, response.getCompletedOrders());
+        assertEquals(180000.0, response.getTotalRevenue());
+        assertEquals(1, response.getTopSellingProducts().size());
+        assertEquals(1, response.getLowStockProducts().size());
+        assertEquals(1, response.getRecentTransactions().size());
+        }
 }

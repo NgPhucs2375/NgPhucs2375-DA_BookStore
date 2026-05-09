@@ -4,6 +4,7 @@ import com.example.bookstore.dto.CheckoutMeRequest;
 import com.example.bookstore.dto.CheckoutRequest;
 import com.example.bookstore.dto.CheckoutResponse;
 import com.example.bookstore.dto.OrderDetailResponse;
+import com.example.bookstore.dto.SellerAnalyticsResponse;
 import com.example.bookstore.dto.SubOrderSummaryResponse;
 import com.example.bookstore.model.Order;
 import com.example.bookstore.model.enums.OrderStatus;
@@ -72,6 +73,26 @@ public class OrderController {
             @RequestHeader("X-User-Id") Long sellerId
     ) {
         return orderService.getSellerSubOrders(sellerId);
+    }
+
+    @GetMapping("/seller/me/analytics")
+    public SellerAnalyticsResponse getCurrentSellerAnalytics(
+            @RequestHeader("X-User-Id") Long sellerId,
+            @RequestParam(defaultValue = "30") int days
+    ) {
+        return orderService.getSellerAnalytics(sellerId, days);
+    }
+
+    @GetMapping("/seller/{sellerId}/analytics")
+    public SellerAnalyticsResponse getSellerAnalytics(
+            @PathVariable Long sellerId,
+            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId,
+            @RequestParam(defaultValue = "30") int days
+    ) {
+        if (currentUserId != null && !currentUserId.equals(sellerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller cannot access other seller analytics");
+        }
+        return orderService.getSellerAnalytics(sellerId, days);
     }
 
     @PatchMapping("/sub-orders/{subOrderId}/status")

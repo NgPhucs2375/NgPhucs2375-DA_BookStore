@@ -2,6 +2,7 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.CheckoutMeRequest;
 import com.example.bookstore.dto.CheckoutResponse;
+import com.example.bookstore.dto.SellerAnalyticsResponse;
 import com.example.bookstore.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,5 +67,27 @@ class OrderControllerTest {
 
         mockMvc.perform(get("/api/orders/me").header("X-User-Id", "1"))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldGetCurrentSellerAnalytics() throws Exception {
+        SellerAnalyticsResponse response = SellerAnalyticsResponse.builder()
+                .sellerId(7L)
+                .sellerName("Shop 7")
+                .days(30)
+                .periodLabel("30 ngày gần nhất")
+                .totalRevenue(120000.0)
+                .completedOrders(4L)
+                .averageOrderValue(30000.0)
+                .completionRate(80.0)
+                .soldUnits(6L)
+                .build();
+
+        when(orderService.getSellerAnalytics(eq(7L), eq(30))).thenReturn(response);
+
+        mockMvc.perform(get("/api/orders/seller/me/analytics").header("X-User-Id", "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sellerId").value(7))
+                .andExpect(jsonPath("$.totalRevenue").value(120000.0));
     }
 }

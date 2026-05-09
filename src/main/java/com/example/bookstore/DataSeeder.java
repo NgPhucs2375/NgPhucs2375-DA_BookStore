@@ -33,7 +33,6 @@ public class DataSeeder implements CommandLineRunner {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    // ✨ Lấy Key từ application.properties
     @Value("${google.gemini.api-key:MISSING_KEY}")
     private String apiKey;
 
@@ -222,7 +221,7 @@ public class DataSeeder implements CommandLineRunner {
         );
 
         User sellerNhaNam = ensureUser(
-                "shop_nha_nam@gmail.com",
+                    "shop_nha_nam@gmail.com",
                 UserRole.SELLER,
                 "seller123",
                 "Nha Nam Official",

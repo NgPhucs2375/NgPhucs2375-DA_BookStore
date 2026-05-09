@@ -363,6 +363,19 @@ const ApiService = (() => {
         },
 
         /**
+         * Lấy analytics doanh thu và tồn kho của seller
+         */
+        getSellerAnalytics: async (days = 30, sellerId = null) => {
+            const url = sellerId
+                ? `${API_BASE}/orders/seller/${sellerId}/analytics?days=${days}`
+                : `${API_BASE}/orders/seller/me/analytics?days=${days}`;
+            const response = await fetch(url, {
+                headers: getHeaders()
+            });
+            return response.json();
+        },
+
+        /**
          * Cập nhật trạng thái sub-order
          */
         updateSubOrderStatus: async (subOrderId, status) => {

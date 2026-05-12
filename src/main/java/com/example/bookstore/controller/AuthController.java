@@ -35,9 +35,21 @@ public class AuthController {
     private AuthOtpService authOtpService;
 
     @PostMapping("/otp/request")
-    public ResponseEntity<String> requestRegisterOtp(@Valid @RequestBody EmailOtpRequest request) {
-        authOtpService.requestOtp(request.getEmail());
-        return ResponseEntity.ok("OTP da duoc gui. Vui long kiem tra email.");
+    public ResponseEntity<?> requestRegisterOtp(@Valid @RequestBody EmailOtpRequest request) {
+        String fallbackOtp = authOtpService.requestOtp(request.getEmail());
+        if (fallbackOtp != null) {
+            // SMTP not configured or email send failed - return OTP for dev/test
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "[DEV MODE] SMTP chua config. OTP trong response (production se gui email)",
+                "otp", fallbackOtp
+            ));
+        }
+        // Email sent successfully
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "OTP da duoc gui. Vui long kiem tra email."
+        ));
     }
 
     @PostMapping("/otp/verify")

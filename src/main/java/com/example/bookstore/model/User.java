@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,6 +19,8 @@ import java.util.Set;
 @Entity // Đánh dấu đây là 1 bảng trong DB
 @Table(name="users") // Tên bảng dưới Database sẽ là 'users'
 @Data
+@ToString(exclude = {"favoriteCategories", "wishlistBooks", "books", "subOrders", "notifications", "addresses", "securityEvents", "cart"})
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor // Tự tạo Constructor không tham số
 @AllArgsConstructor // Tự tạo Constructor có đủ tham số
 @Builder

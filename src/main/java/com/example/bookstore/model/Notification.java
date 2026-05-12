@@ -19,10 +19,12 @@ import java.time.LocalDateTime;
     }
 )
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Notification {
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @ToString(exclude = {"user"})
+    @EqualsAndHashCode(of = "id")
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

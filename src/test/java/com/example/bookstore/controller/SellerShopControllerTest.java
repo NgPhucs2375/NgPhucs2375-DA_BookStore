@@ -62,6 +62,7 @@ class SellerShopControllerTest {
 
         mockMvc.perform(post("/api/seller/me/shop")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("X-User-Id", "1")
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(100))
@@ -77,6 +78,7 @@ class SellerShopControllerTest {
 
         mockMvc.perform(post("/api/seller/me/shop")
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("X-User-Id", "1")
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest());
     }
@@ -110,7 +112,8 @@ class SellerShopControllerTest {
         when(sellerShopService.changeStatus(1L, ApprovalStatus.APPROVED)).thenReturn(response);
 
         mockMvc.perform(patch("/api/seller/me/shop/status")
-                .param("status", "APPROVED"))
+                .param("status", "APPROVED")
+                .header("X-User-Id", "1"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.approvalStatus").value("APPROVED"));
     }

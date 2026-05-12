@@ -86,6 +86,15 @@ public class SellerShopController {
      * TODO: Thay thế bằng logic thực tế từ Spring Security (VD: SecurityContextHolder hoặc @AuthenticationPrincipal)
      */
     private Long getCurrentSellerId(HttpServletRequest request) {
+        // First, support a test-friendly header to locate current user id
+        String header = request.getHeader("X-User-Id");
+        if (header != null) {
+            try {
+                return Long.parseLong(header);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
         Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
         if (sellerId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");

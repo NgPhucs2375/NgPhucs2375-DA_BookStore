@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
@@ -19,12 +21,12 @@ import java.time.LocalDateTime;
     }
 )
 @Data
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    @ToString(exclude = {"user"})
-    @EqualsAndHashCode(of = "id")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@ToString(exclude = {"user"})
+@EqualsAndHashCode(of = "id")
+public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

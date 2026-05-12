@@ -42,6 +42,44 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     };
 
+    const applyWishlistButtonState = (button, isSaved) => {
+        if (!button) {
+            return;
+        }
+
+        button.dataset.wishlistSaved = isSaved ? 'true' : 'false';
+        button.setAttribute('aria-pressed', isSaved ? 'true' : 'false');
+        button.setAttribute('title', isSaved ? 'Xoa khoi wishlist' : 'Them vao wishlist');
+        button.className = isSaved
+            ? 'bg-red-500 text-white p-2.5 rounded-full shadow-md transition-colors'
+            : 'bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors';
+        button.innerHTML = isSaved
+            ? '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>'
+            : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>';
+    };
+
+    const createWishlistButton = (book, isSaved) => {
+        const title = escapeHtml(book.title || 'Chua co ten sach');
+        const author = escapeHtml(book.author || 'Chua co tac gia');
+        const imageUrl = escapeHtml(book.imageUrl || '');
+        const categoryName = escapeHtml(book.category?.name || 'Sach');
+
+        return `
+            <button type="button" title="${isSaved ? 'Xoa khoi wishlist' : 'Them vao wishlist'}" aria-pressed="${isSaved ? 'true' : 'false'}" data-toggle-wishlist="true" data-book-id="${book.id}" data-book-title="${title}" data-book-author="${author}" data-book-price="${book.price ?? ''}" data-book-image="${imageUrl}" data-book-category="${categoryName}" class="${isSaved ? 'bg-red-500 text-white p-2.5 rounded-full shadow-md transition-colors' : 'bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors'}">
+                ${isSaved ? '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>' : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>'}
+            </button>
+        `;
+    };
+
+    const getWishlistBookPayload = (button) => ({
+        id: Number(button.getAttribute('data-book-id')),
+        title: button.getAttribute('data-book-title') || '',
+        author: button.getAttribute('data-book-author') || '',
+        price: Number(button.getAttribute('data-book-price') || 0),
+        imageUrl: button.getAttribute('data-book-image') || '',
+        categoryName: button.getAttribute('data-book-category') || 'Sach'
+    });
+
     const setGridBusy = (isBusy) => {
         booksGrid.setAttribute('aria-busy', isBusy ? 'true' : 'false');
     };
@@ -234,6 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const imageUrl = book.imageUrl ? escapeHtml(book.imageUrl) : '';
         const detailUrl = '/book/' + book.id;
         const price = formatPriceVnd(book.price);
+        const isSaved = ApiService.Wishlist.isSaved(book.id);
 
         const coverHtml = imageUrl
             ? `<img src="${imageUrl}" alt="${title}" class="book-cover w-full h-full object-cover" loading="lazy">`
@@ -245,12 +284,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
                         ${coverHtml}
                         <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
+                            ${createWishlistButton(book, isSaved)}
                             <button type="button" title="Them vao gio" data-add-to-cart="true" data-book-id="${book.id}" class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                             </button>
                         </div>
                     </div>
-                    <div class="flex-grow flex flex-col">
+                    <div class="grow flex flex-col">
                         <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">${categoryName}</div>
                         <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">${title}</h3>
                         <div class="text-sm text-gray-600 mb-3">${author}</div>
@@ -354,6 +394,30 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     booksGrid.addEventListener('click', (event) => {
+        const wishlistButton = event.target.closest('button[data-toggle-wishlist="true"]');
+        if (wishlistButton) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const buyerId = ApiService.getAuth().userId;
+            const role = ApiService.getAuth().role;
+            if (!buyerId || role !== 'BUYER') {
+                alert('Vui long dang nhap tai khoan BUYER de luu sach yeu thich.');
+                window.location.href = '/main/auth';
+                return;
+            }
+
+            (async () => {
+                const book = getWishlistBookPayload(wishlistButton);
+                const result = await ApiService.Wishlist.toggle(book, buyerId);
+                applyWishlistButtonState(wishlistButton, result.saved);
+                alert(result.saved ? 'Da luu vao Wishlist.' : 'Da xoa khoi Wishlist.');
+            })().catch((error) => {
+                alert(error?.message || 'Khong the cap nhat Wishlist.');
+            });
+            return;
+        }
+
         const targetButton = event.target.closest('button[data-add-to-cart="true"]');
         if (!targetButton) {
             return;
@@ -387,8 +451,11 @@ document.addEventListener('DOMContentLoaded', () => {
         loadBooks();
     });
 
-    loadCategories();
-    loadBooks();
+    (async () => {
+        await ApiService.Wishlist.bootstrap().catch(() => {});
+        loadCategories();
+        await loadBooks();
+    })();
 
     const token = localStorage.getItem('accessToken');
     const role = localStorage.getItem('userRole');

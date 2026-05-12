@@ -147,59 +147,69 @@
     </div>
   </section>
 
+  <section class="py-10 bg-white border-b border-brand-accent relative z-10">
+    <div class="max-w-[1400px] mx-auto px-6">
+      <div class="grid lg:grid-cols-[1.4fr_1fr] gap-6 items-stretch">
+        <div class="bg-brand-cream border border-brand-accent rounded-[2rem] p-6 md:p-8 shadow-sm relative overflow-hidden">
+          <div class="absolute right-0 top-0 w-40 h-40 bg-brand-peach/50 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3"></div>
+          <div class="relative z-10">
+            <div class="flex items-center gap-2 mb-3 text-brand-biscuit font-black uppercase tracking-[0.28em] text-xs">
+              <span class="w-8 h-px bg-brand-biscuit"></span> Search & Discovery <span class="w-8 h-px bg-brand-biscuit"></span>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-black text-brand-dark mb-3 leading-tight">Tìm đúng cuốn sách, đọc ngay đề xuất phù hợp</h2>
+            <p class="text-brand-dark/70 mb-6 max-w-2xl">Autocomplete, lọc nhanh theo giá và năm xuất bản, cộng với bảng xếp hạng bán chạy giúp bạn đi từ tìm kiếm đến mua hàng chỉ trong vài thao tác.</p>
+
+            <form id="discovery-search-form" class="relative max-w-3xl">
+              <div class="flex flex-col md:flex-row bg-white rounded-[1.5rem] border-2 border-brand-accent focus-within:border-brand-biscuit focus-within:shadow-[0_0_0_6px_rgba(209,156,116,0.12)] transition-all overflow-hidden">
+                <div class="flex items-center gap-3 px-4 py-4 flex-1">
+                  <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  <input id="discovery-search-input" type="text" placeholder="Tìm sách, tác giả, nhà xuất bản..." autocomplete="off" class="w-full outline-none bg-transparent text-brand-dark font-semibold placeholder:text-gray-400">
+                </div>
+                <button type="submit" class="bg-brand-biscuit text-white font-black px-6 py-4 md:px-8 md:py-0 md:min-h-[64px] hover:bg-brand-dark transition-colors uppercase tracking-wide">Khám phá</button>
+              </div>
+              <div id="discovery-search-suggestions" class="absolute left-0 right-0 top-[calc(100%+0.75rem)] bg-white border border-brand-accent rounded-[1.5rem] shadow-lg overflow-hidden hidden z-20"></div>
+            </form>
+
+            <div id="discovery-category-chips" class="flex flex-wrap gap-3 mt-5">
+              <div class="px-4 py-2 rounded-full bg-white border border-brand-accent text-sm font-bold text-gray-500">Đang tải danh mục...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          <div class="bg-brand-dark text-white rounded-[2rem] p-6 shadow-[0_20px_60px_rgba(74,59,50,0.15)] relative overflow-hidden">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(248,217,192,0.22),transparent_45%)]"></div>
+            <div class="relative z-10 flex items-center justify-between mb-5">
+              <div>
+                <p class="text-brand-peach text-xs uppercase tracking-[0.3em] font-black mb-1">Top tuần này</p>
+                <h3 class="text-2xl font-black">Best Sellers</h3>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-white/10 text-xs font-bold">#1</span>
+            </div>
+            <div id="best-sellers-grid" class="space-y-3"></div>
+          </div>
+
+          <div class="bg-white border border-brand-accent rounded-[2rem] p-6 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <p class="text-brand-biscuit text-xs uppercase tracking-[0.3em] font-black mb-1">Xu hướng hiện tại</p>
+                <h3 class="text-2xl font-black text-brand-dark">Trending</h3>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-brand-cream text-brand-dark text-xs font-black">Hot</span>
+            </div>
+            <div id="trending-grid" class="space-y-3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="py-16 bg-white relative z-20 -mt-8 rounded-t-[3rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-b border-brand-accent">
     <div class="max-w-[1400px] mx-auto px-6">
       <h2 class="text-3xl font-black text-center text-brand-dark mb-12 uppercase tracking-wide">Danh Mục Sách</h2>
 
-      <div class="flex flex-wrap justify-center gap-4 md:gap-6">
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">T</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Tiểu thuyết</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">K</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Kỹ năng</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">L</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Lập trình</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">N</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Ngoại ngữ</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">Đ</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Đời sống</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">V</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Văn học</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">S</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Sử học</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">C</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Chính trị</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">K</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Kinh tế</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">Y</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Y học</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">P</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Pháp luật</span>
-        </a>
-        <a href="#" class="category-pill bg-brand-cream border border-brand-accent rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[130px] group">
-          <div class="w-12 h-12 rounded-full bg-brand-peach flex items-center justify-center text-brand-dark font-black text-xl mb-3 shadow-inner">T</div>
-          <span class="font-bold text-brand-dark text-sm group-hover:text-brand-biscuit transition-colors">Thiếu nhi</span>
-        </a>
+      <div id="discovery-category-grid" class="flex flex-wrap justify-center gap-4 md:gap-6">
+        <div class="rounded-2xl border border-dashed border-brand-accent bg-brand-cream/30 px-6 py-4 text-sm text-gray-500 font-semibold">Đang tải danh mục...</div>
       </div>
     </div>
   </section>

@@ -10,11 +10,15 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import com.example.bookstore.security.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController // Bao cho SB biet class nay chuyen dung de tao API tra ve du lieu thuong la dinh dang JSON chu khong phai tra ve giao dien HTML
 @CrossOrigin("*") // thẻ VIP để có thể ra vào dữ liệu
@@ -43,11 +47,57 @@ public class BookController {
     public Page<Book> searchApprovedBooks(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) String publishYearFrom,
+            @RequestParam(required = false) String publishYearTo,
+            @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, resolveSort(sort));
         String keyword = (q == null || q.isBlank()) ? null : q.trim();
-        return bookRepository.searchApprovedBooks(keyword, categoryId, ApprovalStatus.APPROVED, pageable);
+        String authorKeyword = (author == null || author.isBlank()) ? null : author.trim();
+        String yearFrom = (publishYearFrom == null || publishYearFrom.isBlank()) ? null : publishYearFrom.trim();
+        String yearTo = (publishYearTo == null || publishYearTo.isBlank()) ? null : publishYearTo.trim();
+        return bookRepository.searchApprovedBooks(
+                keyword,
+                categoryId,
+                authorKeyword,
+                minPrice,
+                maxPrice,
+                yearFrom,
+                yearTo,
+                ApprovalStatus.APPROVED,
+                pageable
+        );
+    }
+
+    @GetMapping("/suggestions")
+    public List<Book> getSearchSuggestions(
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "8") int size) {
+        String keyword = (q == null || q.isBlank()) ? null : q.trim();
+        if (keyword == null) {
+            return List.of();
+        }
+        Pageable pageable = PageRequest.of(0, Math.max(1, Math.min(size, 12)));
+        return bookRepository.findSuggestions(keyword, ApprovalStatus.APPROVED, pageable);
+    }
+
+    @GetMapping("/discovery/best-sellers")
+    public List<Book> getBestSellingBooks(@RequestParam(defaultValue = "8") int size) {
+        Pageable pageable = PageRequest.of(0, Math.max(1, Math.min(size, 12)));
+        return bookRepository.findBestSellingBooks(ApprovalStatus.APPROVED, pageable);
+    }
+
+    @GetMapping("/discovery/trending")
+    public List<Book> getTrendingBooks(
+            @RequestParam(defaultValue = "30") int days,
+            @RequestParam(defaultValue = "8") int size) {
+        Pageable pageable = PageRequest.of(0, Math.max(1, Math.min(size, 12)));
+        LocalDateTime since = LocalDateTime.now().minusDays(Math.max(1, days));
+        return bookRepository.findTrendingBooks(ApprovalStatus.APPROVED, since, pageable);
     }
 
     /**
@@ -180,5 +230,20 @@ public class BookController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", e.getMessage()));
 
         }
+    }
+
+    private Sort resolveSort(String sort) {
+        if (sort == null) {
+            return Sort.by(Sort.Direction.DESC, "id");
+        }
+
+        return switch (sort.toLowerCase()) {
+            case "price-asc" -> Sort.by(Sort.Direction.ASC, "price").and(Sort.by(Sort.Direction.DESC, "id"));
+            case "price-desc" -> Sort.by(Sort.Direction.DESC, "price").and(Sort.by(Sort.Direction.DESC, "id"));
+            case "title-asc" -> Sort.by(Sort.Direction.ASC, "title");
+            case "author-asc" -> Sort.by(Sort.Direction.ASC, "author");
+            case "latest" -> Sort.by(Sort.Direction.DESC, "id");
+            default -> Sort.by(Sort.Direction.DESC, "id");
+        };
     }
 }

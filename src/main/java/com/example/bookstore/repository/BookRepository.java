@@ -2,6 +2,7 @@ package com.example.bookstore.repository;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.User;
+import com.example.bookstore.model.OrderItem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,18 +32,89 @@ public interface BookRepository extends JpaRepository<Book, Long>{
                 :q IS NULL
                 OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
                 OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(COALESCE(b.publisher, '')) LIKE LOWER(CONCAT('%', :q, '%'))
               )
               AND (
                 :categoryId IS NULL
                 OR c.id = :categoryId
               )
+              AND (
+                :author IS NULL
+                OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%'))
+              )
+              AND (
+                :minPrice IS NULL
+                OR b.price >= :minPrice
+              )
+              AND (
+                :maxPrice IS NULL
+                OR b.price <= :maxPrice
+              )
+              AND (
+                :publishYearFrom IS NULL
+                OR b.publishYear >= :publishYearFrom
+              )
+              AND (
+                :publishYearTo IS NULL
+                OR b.publishYear <= :publishYearTo
+              )
             """)
         Page<Book> searchApprovedBooks(
             @Param("q") String q,
             @Param("categoryId") Long categoryId,
+            @Param("author") String author,
+            @Param("minPrice") Double minPrice,
+            @Param("maxPrice") Double maxPrice,
+            @Param("publishYearFrom") String publishYearFrom,
+            @Param("publishYearTo") String publishYearTo,
             @Param("status") ApprovalStatus status,
             Pageable pageable
         );
+
+    @Query("""
+            SELECT b FROM Book b
+            WHERE b.approvalStatus = :status
+              AND (
+                :q IS NULL
+                OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
+            ORDER BY
+              CASE
+                WHEN :q IS NOT NULL AND LOWER(b.title) LIKE LOWER(CONCAT(:q, '%')) THEN 0
+                WHEN :q IS NOT NULL AND LOWER(b.author) LIKE LOWER(CONCAT(:q, '%')) THEN 1
+                ELSE 2
+              END,
+              b.title ASC
+            """)
+    List<Book> findSuggestions(@Param("q") String q,
+                               @Param("status") ApprovalStatus status,
+                               Pageable pageable);
+
+    @Query("""
+            SELECT b FROM Book b
+            JOIN OrderItem oi ON oi.book = b
+            JOIN oi.subOrder so
+            JOIN so.parentOrder o
+            WHERE b.approvalStatus = :status
+            GROUP BY b
+            ORDER BY SUM(oi.quantity) DESC, MAX(o.createdAt) DESC, b.id DESC
+            """)
+    List<Book> findBestSellingBooks(@Param("status") ApprovalStatus status, Pageable pageable);
+
+    @Query("""
+            SELECT b FROM Book b
+            JOIN OrderItem oi ON oi.book = b
+            JOIN oi.subOrder so
+            JOIN so.parentOrder o
+            WHERE b.approvalStatus = :status
+              AND o.createdAt >= :since
+            GROUP BY b
+            ORDER BY SUM(oi.quantity) DESC, MAX(o.createdAt) DESC, b.id DESC
+            """)
+    List<Book> findTrendingBooks(@Param("status") ApprovalStatus status,
+                                 @Param("since") java.time.LocalDateTime since,
+                                 Pageable pageable);
 
     /**
      * Tìm sách của seller (dùng cho Inventory Management - S03)

@@ -174,15 +174,64 @@ const ApiService = (() => {
         /**
          * Tìm kiếm sách APPROVED cho BUYER
          */
-        search: async (query = '', categoryId = null, page = 0, size = 20) => {
-            const params = new URLSearchParams({
-                q: query,
-                page: page,
-                size: size
-            });
+        search: async (query = '', categoryId = null, page = 0, size = 20, filters = {}) => {
+            const params = new URLSearchParams();
+            params.set('q', query || '');
+            params.set('page', page);
+            params.set('size', size);
             if (categoryId) params.append('categoryId', categoryId);
 
+            const appendIfPresent = (key, value) => {
+                if (value !== null && value !== undefined && `${value}`.trim() !== '') {
+                    params.append(key, value);
+                }
+            };
+
+            appendIfPresent('author', filters.author);
+            appendIfPresent('minPrice', filters.minPrice);
+            appendIfPresent('maxPrice', filters.maxPrice);
+            appendIfPresent('publishYearFrom', filters.publishYearFrom);
+            appendIfPresent('publishYearTo', filters.publishYearTo);
+            appendIfPresent('sort', filters.sort);
+
             const response = await fetch(`${API_BASE}/books/search?${params}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Gợi ý tìm kiếm nhanh theo tiêu đề/tác giả
+         */
+        suggestions: async (query = '', size = 8) => {
+            const params = new URLSearchParams();
+            params.set('q', query || '');
+            params.set('size', size);
+
+            const response = await fetch(`${API_BASE}/books/suggestions?${params}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Sách bán chạy nhất
+         */
+        bestSellers: async (size = 8) => {
+            const response = await fetch(`${API_BASE}/books/discovery/best-sellers?size=${encodeURIComponent(size)}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Sách đang trending theo đơn gần đây
+         */
+        trending: async (size = 8, days = 30) => {
+            const params = new URLSearchParams();
+            params.set('size', size);
+            params.set('days', days);
+            const response = await fetch(`${API_BASE}/books/discovery/trending?${params}`, {
                 headers: getHeaders()
             });
             return handleResponse(response);
@@ -280,6 +329,164 @@ const ApiService = (() => {
         }
     };
 
+    const WISHLIST_STORAGE_PREFIX = 'bookom:wishlist:';
+
+    const getWishlistKey = (userId = getAuth().userId) => `${WISHLIST_STORAGE_PREFIX}${userId || 'guest'}`;
+
+    const readWishlist = (userId = getAuth().userId) => {
+        try {
+            const raw = localStorage.getItem(getWishlistKey(userId));
+            if (!raw) {
+                return [];
+            }
+
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed)
+                ? parsed.filter((item) => item && item.id !== undefined && item.id !== null)
+                : [];
+        } catch (error) {
+            return [];
+        }
+    };
+
+    const writeWishlist = (userId, items) => {
+        localStorage.setItem(getWishlistKey(userId), JSON.stringify(items));
+    };
+
+    const normalizeWishlistBook = (book) => {
+        const bookId = Number(book?.id);
+        return {
+            id: bookId,
+            title: book?.title || '',
+            author: book?.author || '',
+            price: Number(book?.price || 0),
+            imageUrl: book?.imageUrl || '',
+            categoryName: book?.categoryName || book?.category?.name || 'Sach',
+            stockQuantity: Number(book?.stockQuantity || 0),
+            shopName: book?.shopName || book?.seller?.shopName || '',
+            savedAt: Date.now()
+        };
+    };
+
+    const normalizeWishlistItems = (items) => {
+        if (!Array.isArray(items)) {
+            return [];
+        }
+
+        return items
+            .filter((item) => item && item.id !== undefined && item.id !== null)
+            .map((item) => ({
+                id: Number(item.id),
+                title: item.title || '',
+                author: item.author || '',
+                price: Number(item.price || 0),
+                imageUrl: item.imageUrl || '',
+                categoryName: item.categoryName || 'Sach',
+                stockQuantity: Number(item.stockQuantity || 0),
+                shopName: item.shopName || '',
+                savedAt: Number(item.savedAt || Date.now())
+            }));
+    };
+
+    const syncWishlistCache = (userId, items) => {
+        writeWishlist(userId, normalizeWishlistItems(items));
+    };
+
+    const Wishlist = {
+        bootstrap: async (buyerId = null) => {
+            return Wishlist.getItems(buyerId);
+        },
+
+        getItems: async (buyerId = null) => {
+            const id = buyerId || getAuth().userId;
+            if (!id) {
+                return readWishlist(id).slice().sort((a, b) => Number(b.savedAt || 0) - Number(a.savedAt || 0));
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/wishlist/me`, {
+                    headers: getHeaders()
+                });
+                const items = await handleResponse(response);
+                syncWishlistCache(id, items);
+                return readWishlist(id).slice().sort((a, b) => Number(b.savedAt || 0) - Number(a.savedAt || 0));
+            } catch (error) {
+                return readWishlist(id).slice().sort((a, b) => Number(b.savedAt || 0) - Number(a.savedAt || 0));
+            }
+        },
+
+        count: (buyerId = null) => readWishlist(buyerId).length,
+
+        isSaved: (bookId, buyerId = null) => {
+            const id = Number(bookId);
+            if (!id) {
+                return false;
+            }
+            return readWishlist(buyerId).some((item) => Number(item.id) === id);
+        },
+
+        toggle: async (book, buyerId = null) => {
+            const id = buyerId || getAuth().userId;
+            if (!id) {
+                throw new Error('Vui long dang nhap de luu vao Wishlist.');
+            }
+
+            const snapshot = normalizeWishlistBook(book);
+            if (!snapshot.id) {
+                throw new Error('Khong the luu sach nay.');
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/wishlist/me/${snapshot.id}`, {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+                const data = await handleResponse(response);
+                syncWishlistCache(id, data?.items || []);
+                return {
+                    saved: !!data?.saved,
+                    count: Number(data?.count || 0),
+                    items: readWishlist(id)
+                };
+            } catch (error) {
+                const items = readWishlist(id);
+                const index = items.findIndex((item) => Number(item.id) === snapshot.id);
+                let saved = true;
+
+                if (index >= 0) {
+                    items.splice(index, 1);
+                    saved = false;
+                } else {
+                    items.unshift(snapshot);
+                }
+
+                writeWishlist(id, items);
+                return { saved, count: items.length, items };
+            }
+        },
+
+        remove: async (bookId, buyerId = null) => {
+            const id = buyerId || getAuth().userId;
+            if (!id) {
+                return [];
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/wishlist/me/${Number(bookId)}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+                const data = await handleResponse(response);
+                syncWishlistCache(id, data?.items || []);
+                return readWishlist(id);
+            } catch (error) {
+                const items = readWishlist(id).filter((item) => Number(item.id) !== Number(bookId));
+                writeWishlist(id, items);
+                return items;
+            }
+        }
+    };
+
     // ==========================================
     // 4. CART APIs
     // ==========================================
@@ -368,6 +575,18 @@ const ApiService = (() => {
         },
 
         /**
+         * Lấy danh sách đơn hàng dạng summary cho buyer
+         */
+        getBuyerOrderSummaries: async () => {
+            const response = await fetch(`${API_BASE}/orders/me/filter/summary`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({})
+            });
+            return handleResponse(response);
+        },
+
+        /**
          * Lấy chi tiết đơn hàng
          */
         getDetail: async (orderId) => {
@@ -401,6 +620,17 @@ const ApiService = (() => {
                     headers: getHeaders()
                 }
             );
+            return handleResponse(response);
+        },
+
+        /**
+         * Hủy đơn hàng của buyer
+         */
+        cancelBuyerOrder: async (orderId) => {
+            const response = await fetch(`${API_BASE}/orders/me/${orderId}/cancel`, {
+                method: 'PATCH',
+                headers: getHeaders()
+            });
             return handleResponse(response);
         }
     };
@@ -485,6 +715,7 @@ const ApiService = (() => {
         Auth,
         Book,
         Cart,
+        Wishlist,
         Order,
         SellerShop,
         Category,

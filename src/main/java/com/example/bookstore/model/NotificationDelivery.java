@@ -50,6 +50,8 @@ import java.time.LocalDateTime;
            unique = false)
 })
 @Data
+@ToString(exclude = {"notification"})
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

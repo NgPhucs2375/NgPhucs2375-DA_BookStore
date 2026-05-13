@@ -41,7 +41,7 @@ public class OrderController {
             @Valid @RequestBody CheckoutMeRequest request
     ) {
         // Transitional user context before JWT is integrated.
-        return orderService.checkoutFromCurrentBuyer(buyerId, request.getShippingAddress());
+        return orderService.checkoutFromCurrentBuyer(buyerId, request.getShippingAddress(), request.getVoucherCode());
     }
 
     @GetMapping("/buyer/{buyerId}")

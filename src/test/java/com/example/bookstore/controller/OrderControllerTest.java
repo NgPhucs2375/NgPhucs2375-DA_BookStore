@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -50,7 +51,7 @@ class OrderControllerTest {
             .subOrderCount(2)
             .build();
 
-        when(orderService.checkoutFromCurrentBuyer(eq(1L), eq("Q1, HCM"))).thenReturn(response);
+        when(orderService.checkoutFromCurrentBuyer(eq(1L), eq("Q1, HCM"), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/orders/me/checkout")
                 .header("X-User-Id", "1")

@@ -10,6 +10,7 @@ import com.example.bookstore.dto.OrderFilterResponse;
 import com.example.bookstore.dto.OrderSummaryResponse;
 import com.example.bookstore.dto.SubOrderFilterRequest;
 import com.example.bookstore.dto.SubOrderFilterResponse;
+import com.example.bookstore.dto.SellerAnalyticsResponse;
 import com.example.bookstore.model.*;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.enums.OrderStatus;
@@ -43,19 +44,21 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final OrderRepository orderRepository;
     private final SubOrderRepository subOrderRepository;
+    private final com.example.bookstore.repository.BookRepository bookRepository;
     private final com.example.bookstore.service.NotificationService notificationService;
+    private final VoucherService voucherService;
 
     @Transactional
     public CheckoutResponse checkoutFromCart(CheckoutRequest request) {
-        return checkoutInternal(request.getBuyerId(), request.getShippingAddress());
+        return checkoutInternal(request.getBuyerId(), request.getShippingAddress(), null);
     }
 
     @Transactional
-    public CheckoutResponse checkoutFromCurrentBuyer(Long buyerId, String shippingAddress) {
-        return checkoutInternal(buyerId, shippingAddress);
+    public CheckoutResponse checkoutFromCurrentBuyer(Long buyerId, String shippingAddress, String voucherCode) {
+        return checkoutInternal(buyerId, shippingAddress, voucherCode);
     }
 
-    private CheckoutResponse checkoutInternal(Long buyerId, String shippingAddress) {
+    private CheckoutResponse checkoutInternal(Long buyerId, String shippingAddress, String voucherCode) {
         User buyer = userRepository.findById(buyerId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
 
@@ -138,7 +141,21 @@ public class OrderService {
         order.setTotalAmount(orderTotal);
         order.setSubOrders(subOrders);
 
+        // Apply Voucher if provided
+        Voucher appliedVoucher = null;
+        Double discountAmount = 0.0;
+        if (voucherCode != null && !voucherCode.trim().isEmpty()) {
+            appliedVoucher = voucherService.validateVoucher(voucherCode, buyer, orderTotal);
+            discountAmount = voucherService.applyVoucher(voucherCode, buyer, orderTotal);
+            order.setTotalAmount(orderTotal - discountAmount);
+        }
+
         Order saved = orderRepository.save(order);
+
+        // Record Voucher Usage
+        if (appliedVoucher != null) {
+            voucherService.useVoucher(appliedVoucher, buyer, saved, discountAmount);
+        }
 
         cart.getItems().clear();
         cartRepository.save(cart);
@@ -325,6 +342,135 @@ public class OrderService {
         }
 
         return toSubOrderSummary(saved);
+    }
+
+    /**
+     * Get seller analytics for the dashboard
+     */
+    @Transactional
+    public SellerAnalyticsResponse getSellerAnalytics(Long sellerId, int days) {
+        User seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+
+        if (seller.getRole() != UserRole.SELLER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
+        }
+
+        LocalDateTime end = LocalDateTime.now();
+        LocalDateTime start = end.minusDays(days);
+
+        // Fetch sub-orders for the seller in the given period
+        List<SubOrder> subOrders = subOrderRepository.findBySellerAndDateRange(seller, start, end);
+
+        // Filter for completed orders for revenue calculation
+        List<SubOrder> completedSubOrders = subOrders.stream()
+                .filter(so -> so.getStatus() == OrderStatus.COMPLETED)
+                .toList();
+
+        // Calculate KPI
+        double totalRevenue = completedSubOrders.stream()
+                .mapToDouble(SubOrder::getSubTotal)
+                .sum();
+
+        long completedCount = completedSubOrders.size();
+        double avgOrderValue = completedCount > 0 ? totalRevenue / completedCount : 0.0;
+        double completionRate = subOrders.isEmpty() ? 0.0 : (double) completedCount / subOrders.size() * 100.0;
+
+        long soldUnits = completedSubOrders.stream()
+                .flatMap(so -> so.getItems().stream())
+                .mapToLong(OrderItem::getQuantity)
+                .sum();
+
+        // Top Selling Products
+        Map<Book, Long> productSales = completedSubOrders.stream()
+                .flatMap(so -> so.getItems().stream())
+                .collect(Collectors.groupingBy(
+                        OrderItem::getBook,
+                        Collectors.summingLong(OrderItem::getQuantity)
+                ));
+
+        Map<Book, Double> productRevenue = completedSubOrders.stream()
+                .flatMap(so -> so.getItems().stream())
+                .collect(Collectors.groupingBy(
+                        OrderItem::getBook,
+                        Collectors.summingDouble(item -> item.getUnitPrice() * item.getQuantity())
+                ));
+
+        List<SellerAnalyticsResponse.ProductPerformance> topSellingProducts = productSales.entrySet().stream()
+                .sorted(Map.Entry.<Book, Long>comparingByValue().reversed())
+                .limit(5)
+                .map(entry -> {
+                    Book book = entry.getKey();
+                    long units = entry.getValue();
+                    double revenue = productRevenue.getOrDefault(book, 0.0);
+                    return SellerAnalyticsResponse.ProductPerformance.builder()
+                            .bookId(book.getId())
+                            .title(book.getTitle())
+                            .imageUrl(book.getImageUrl())
+                            .stockQuantity(book.getStockQuantity())
+                            .soldUnits(units)
+                            .revenue(revenue)
+                            .progressPercent(0.0) // Can calculate relative to top seller later
+                            .build();
+                })
+                .toList();
+
+        // Low Stock Products (Top 5 lowest stock)
+        List<SellerAnalyticsResponse.StockAlert> lowStockProducts = bookRepository.findBySeller(seller).stream()
+                .filter(book -> book.getStockQuantity() != null && book.getStockQuantity() < 10)
+                .sorted((b1, b2) -> b1.getStockQuantity().compareTo(b2.getStockQuantity()))
+                .limit(5)
+                .map(book -> SellerAnalyticsResponse.StockAlert.builder()
+                        .bookId(book.getId())
+                        .title(book.getTitle())
+                        .imageUrl(book.getImageUrl())
+                        .stockQuantity(book.getStockQuantity())
+                        .soldUnits(productSales.getOrDefault(book, 0L))
+                        .needReorder(book.getStockQuantity() < 5)
+                        .note(book.getStockQuantity() < 5 ? "Critical low stock" : "Low stock")
+                        .build())
+                .toList();
+
+        // Recent Transactions (Top 10 recent sub-orders)
+        List<SellerAnalyticsResponse.TransactionRow> recentTransactions = subOrders.stream()
+                .sorted((so1, so2) -> {
+                    LocalDateTime d1 = so1.getParentOrder() != null ? so1.getParentOrder().getCreatedAt() : LocalDateTime.MIN;
+                    LocalDateTime d2 = so2.getParentOrder() != null ? so2.getParentOrder().getCreatedAt() : LocalDateTime.MIN;
+                    return d2.compareTo(d1);
+                })
+                .limit(10)
+                .flatMap(so -> so.getItems().stream().map(item -> SellerAnalyticsResponse.TransactionRow.builder()
+                        .transactionId("TRX-" + so.getId() + "-" + item.getId())
+                        .orderId(so.getParentOrder() != null ? so.getParentOrder().getId() : null)
+                        .subOrderId(so.getId())
+                        .createdAt(so.getParentOrder() != null ? so.getParentOrder().getCreatedAt() : null)
+                        .customerName(so.getParentOrder() != null && so.getParentOrder().getBuyer() != null ? so.getParentOrder().getBuyer().getUsername() : "Unknown")
+                        .bookId(item.getBook() != null ? item.getBook().getId() : null)
+                        .productName(item.getBook() != null ? item.getBook().getTitle() : "Unknown")
+                        .quantity(item.getQuantity())
+                        .amount(item.getUnitPrice() * item.getQuantity())
+                        .paymentMethod("COD") // Defaulting to COD if not specified
+                        .build()))
+                .limit(10)
+                .toList();
+
+        return SellerAnalyticsResponse.builder()
+                .sellerId(seller.getId())
+                .sellerName(seller.getShopName() != null ? seller.getShopName() : seller.getUsername())
+                .days(days)
+                .periodLabel("Last " + days + " Days")
+                .generatedAt(LocalDateTime.now())
+                .totalRevenue(totalRevenue)
+                .completedOrders(completedCount)
+                .averageOrderValue(avgOrderValue)
+                .completionRate(completionRate)
+                .soldUnits(soldUnits)
+                .topSellingProducts(topSellingProducts)
+                .lowStockProducts(lowStockProducts)
+                .recentTransactions(recentTransactions)
+                .revenueTimeline(new ArrayList<>()) // Placeholder
+                .categoryRevenue(new ArrayList<>()) // Placeholder
+                .build();
     }
 
     private SubOrderSummaryResponse toSubOrderSummary(SubOrder subOrder) {

@@ -80,6 +80,14 @@ public class PanelPageController {
         return "seller/Shop_Seller";
     }
 
+    @GetMapping("/seller/vouchers")
+    public String sellerVouchers(Model model) {
+        model.addAttribute("pageTitle", "Quản lý ưu đãi");
+        model.addAttribute("pageSubtitle", "Tạo và quản lý các mã giảm giá cho shop");
+        model.addAttribute("activeMenu", "seller-vouchers");
+        return "seller/Voucher_Management";
+    }
+
     @GetMapping("/seller/product-detail")
     public String sellerProductDetail() {
         return "seller/Seller_Product_Detail";

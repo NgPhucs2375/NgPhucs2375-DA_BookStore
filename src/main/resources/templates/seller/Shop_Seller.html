@@ -1147,15 +1147,19 @@
     async function parseError(res) {
         const text = await res.text();
         if (!text) {
-            return `Yeu cau that bai (${res.status})`;
+            const error = new Error(`Yeu cau that bai (${res.status})`);
+            error.status = res.status;
+            return error;
         }
-        return text;
+        const error = new Error(text);
+        error.status = res.status;
+        return error;
     }
 
     async function request(url, options = {}) {
         const response = await fetch(url, { ...options, headers: { ...getAuthHeaders(), ...(options.headers || {}) } });
         if (!response.ok) {
-            throw new Error(await parseError(response));
+            throw await parseError(response);
         }
         return response.status === 204 ? null : response.json();
     }
@@ -1173,7 +1177,13 @@
             currentShop = null;
             fillForm({});
             updatePanelStatus(null);
-            showAlert('error', 'Chua co shop hoac ban chua dang nhap role SELLER.');
+            if (error.status === 404) {
+                clearAlert();
+            } else if (error.status === 401 || error.status === 403) {
+                showAlert('error', 'Ban chua dang nhap hoac khong co quyen SELLER.');
+            } else {
+                showAlert('error', error.message || 'Khong the tai thong tin shop.');
+            }
         } finally {
             setLoading(false);
         }
@@ -1275,7 +1285,5 @@
     loadShop();
 })();
 </script>
-<script th:src="@{/js/api-service.js}"></script>
-<script th:src="@{/js/shop-seller-integration.js}"></script>
 </body>
 </html>

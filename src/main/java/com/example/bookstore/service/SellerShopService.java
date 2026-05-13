@@ -11,6 +11,8 @@ import com.example.bookstore.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +25,9 @@ public class SellerShopService {
      * Lấy thông tin shop của chính Seller đang đăng nhập
      */
     public SellerShopResponse getMyShop(Long sellerId) {
+        validateAndGetSeller(sellerId);
         SellerShop shop = shopRepository.findBySellerId(sellerId)
-                .orElseThrow(() -> new RuntimeException("Bạn chưa tạo cửa hàng nào."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bạn chưa tạo cửa hàng nào."));
         return mapToResponse(shop);
     }
 

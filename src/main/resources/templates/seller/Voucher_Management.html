@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/panel_head :: head('BOOKOM SELLER - Quản lý ưu đãi', false)}"></head>
+<body class="font-sans bg-[#fbfaf8] text-[#5D4037]">
+<div class="flex min-h-screen">
+    <div th:replace="~{fragments/seller_layout :: sidebar(${activeMenu})}"></div>
+    <div class="flex-1 min-w-0 flex flex-col">
+        <div th:replace="~{fragments/seller_layout :: header(${pageTitle}, ${pageSubtitle})}"></div>
+        <main class="p-4 md:p-8 space-y-8 flex-grow">
+            <!-- Voucher Header & Search -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h2 class="text-3xl font-black text-[#5D4037]">Mã giảm giá</h2>
+                    <p class="text-sm font-bold text-[#5D4037]/60 mt-1"><span id="voucher-count">0</span> mã đang hoạt động</p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row items-center gap-3">
+                    <div class="relative w-full sm:w-64">
+                        <input type="text" id="voucher-search" placeholder="Tìm tên hoặc mã..." 
+                               class="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5CBB5] rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#D19C74] outline-none transition-all">
+                        <svg class="absolute left-3 top-3 w-4 h-4 text-[#5D4037]/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <button onclick="openCreateVoucherModal()" class="w-full sm:w-auto px-6 py-2.5 bg-[#5D4037] text-white text-sm font-black rounded-xl hover:bg-[#4a332c] transition shadow-md flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Tạo mã mới
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs / Filter Status -->
+            <div class="flex items-center gap-8 border-b border-[#E5CBB5] overflow-x-auto whitespace-nowrap">
+                <button onclick="filterVouchers('ALL')" class="voucher-tab active pb-4 text-sm font-black text-[#5D4037] border-b-2 border-[#5D4037] transition-all">Tất cả</button>
+                <button onclick="filterVouchers('ACTIVE')" class="voucher-tab pb-4 text-sm font-bold text-[#5D4037]/50 hover:text-[#5D4037] border-b-2 border-transparent transition-all">Đang chạy</button>
+                <button onclick="filterVouchers('EXPIRED')" class="voucher-tab pb-4 text-sm font-bold text-[#5D4037]/50 hover:text-[#5D4037] border-b-2 border-transparent transition-all">Hết hạn</button>
+                <button onclick="filterVouchers('DISABLED')" class="voucher-tab pb-4 text-sm font-bold text-[#5D4037]/50 hover:text-[#5D4037] border-b-2 border-transparent transition-all">Đã tắt</button>
+            </div>
+
+            <!-- Table Container -->
+            <div class="bg-white rounded-2xl shadow-premium border border-[#E5CBB5] overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[11px] font-black text-[#5D4037]/40 uppercase tracking-wider border-b border-[#FAF5E8]">
+                                <th class="px-6 py-5">Mã & Tên</th>
+                                <th class="px-6 py-5">Loại giảm giá</th>
+                                <th class="px-6 py-5 text-right">Giá trị</th>
+                                <th class="px-6 py-5">Thời hạn</th>
+                                <th class="px-6 py-5 text-center">Đã dùng</th>
+                                <th class="px-6 py-5">Trạng thái</th>
+                                <th class="px-6 py-5 text-center">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="voucher-table-body" class="divide-y divide-[#FAF5E8]">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div id="voucher-modal" class="hidden fixed inset-0 z-[60] overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-black/50" onclick="closeVoucherModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div class="inline-block w-full max-w-2xl p-8 overflow-hidden text-left align-middle transition-all transform bg-[#fbfaf8] shadow-2xl rounded-3xl sm:my-8 border border-[#E5CBB5]">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-black text-[#5D4037]" id="modal-title">Tạo mã giảm giá mới</h3>
+                    <button onclick="closeVoucherModal()" class="text-[#5D4037]/40 hover:text-[#5D4037] transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <form id="voucher-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-[#5D4037]/60 uppercase tracking-wider">Mã voucher</label>
+                            <input type="text" name="code" required placeholder="Ví dụ: SALE50" class="w-full px-4 py-3 bg-white border border-[#E5CBB5] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#D19C74]">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-[#5D4037]/60 uppercase tracking-wider">Tên chương trình</label>
+                            <input type="text" name="name" required placeholder="Ví dụ: Khuyến mãi hè" class="w-full px-4 py-3 bg-white border border-[#E5CBB5] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#D19C74]">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-[#5D4037]/60 uppercase tracking-wider">Loại giảm giá</label>
+                            <select name="discountType" class="w-full px-4 py-3 bg-white border border-[#E5CBB5] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#D19C74]">
+                                <option value="PERCENTAGE">Phần trăm (%)</option>
+                                <option value="FIXED_AMOUNT">Số tiền cố định (đ)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-[#5D4037]/60 uppercase tracking-wider">Giá trị giảm</label>
+                            <input type="number" name="discountValue" required class="w-full px-4 py-3 bg-white border border-[#E5CBB5] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#D19C74]">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-[#5D4037]/60 uppercase tracking-wider">Đơn tối thiểu</label>
+                            <input type="number" name="minOrderAmount" required class="w-full px-4 py-3 bg-white border border-[#E5CBB5] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#D19C74]">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-[#5D4037]/60 uppercase tracking-wider">Giảm tối đa (nếu là %)</label>
+                            <input type="number" name="maxDiscountAmount" class="w-full px-4 py-3 bg-white border border-[#E5CBB5] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#D19C74]">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-[#5D4037]/60 uppercase tracking-wider">Ngày bắt đầu</label>
+                            <input type="datetime-local" name="startDate" required class="w-full px-4 py-3 bg-white border border-[#E5CBB5] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#D19C74]">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-[#5D4037]/60 uppercase tracking-wider">Ngày kết thúc</label>
+                            <input type="datetime-local" name="endDate" required class="w-full px-4 py-3 bg-white border border-[#E5CBB5] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#D19C74]">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-[#5D4037]/60 uppercase tracking-wider">Lượt sử dụng tối đa</label>
+                            <input type="number" name="usageLimit" required class="w-full px-4 py-3 bg-white border border-[#E5CBB5] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#D19C74]">
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button type="button" onclick="closeVoucherModal()" class="px-6 py-3 bg-white border border-[#E5CBB5] text-[#5D4037] text-sm font-black rounded-xl hover:bg-[#FAF5E8] transition">Hủy</button>
+                        <button type="submit" class="px-6 py-3 bg-[#5D4037] text-white text-sm font-black rounded-xl hover:bg-[#4a332c] transition shadow-lg">Lưu mã giảm giá</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.shadow-premium {
+    box-shadow: 0 10px 30px -5px rgba(93, 64, 55, 0.05);
+}
+.voucher-tab.active {
+    color: #5D4037;
+    border-color: #5D4037;
+}
+.status-pill {
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+</style>
+
+<script th:src="@{/js/api-service.js}"></script>
+<script th:src="@{/js/panel-data.js}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof BookomPanelData !== 'undefined' && BookomPanelData.initVoucherManagement) {
+        BookomPanelData.initVoucherManagement();
+    }
+});
+</script>
+</body>
+</html>

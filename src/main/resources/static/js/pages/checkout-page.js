@@ -244,7 +244,7 @@
         if (!code) return alert('Nhập mã khuyến mãi');
         const rule = COUPONS[code];
         if (!rule) return alert('Mã không hợp lệ hoặc đã hết hạn');
-        appliedCoupon = rule;
+        appliedCoupon = { ...rule, code };
         appliedCouponText.textContent = rule.desc;
         appliedCouponWrap.classList.remove('hidden');
         clearCouponBtn?.classList.remove('hidden');
@@ -273,42 +273,32 @@
         });
     });
 
+    const placeOrder = async (shippingAddress, voucherCode) => {
+        const response = await fetch('/api/orders/me/checkout', {
+            method: 'POST',
+            headers: ApiService.getHeaders(),
+            body: JSON.stringify({ shippingAddress, voucherCode })
+        });
+        return ApiService.handleResponse(response);
+    };
+
     placeOrderBtn?.addEventListener('click', async () => {
         try {
-            const { addressLine, addressId } = deriveAddress();
-            if (!addressLine) { alert('Vui lòng nhập hoặc chọn địa chỉ giao hàng.'); return; }
+            const { addressLine } = deriveAddress();
+            if (!addressLine) return alert('Vui lòng chọn địa chỉ nhận hàng.');
 
-            // if user requested to save as default
-            const saveDefault = document.getElementById('save-default-checkbox')?.checked;
-            let usedAddressId = addressId;
-            if (saveDefault) {
-                if (!addressId) {
-                    // create a minimal address entity from the form
-                    const payload = {
-                        recipientName: fullnameInput?.value || '',
-                        recipientPhone: phoneInput?.value || '',
-                        addressLine: addressDetailInput?.value || addressLine,
-                        addressType: 'OTHER'
-                    };
-                    const created = await createAddress(payload);
-                    usedAddressId = created?.id || null;
-                    if (usedAddressId) {
-                        await setDefaultAddress(usedAddressId);
-                    }
-                } else {
-                    // set existing as default
-                    await setDefaultAddress(addressId);
-                }
-            }
+            placeOrderBtn.disabled = true;
+            placeOrderBtn.textContent = 'Đang xử lý...';
 
-            // proceed to checkout - backend expects a shippingAddress string
-            const response = await ApiService.Order.checkout(addressLine);
-            const orderId = response?.orderId;
-            localStorage.setItem('lastOrderId', String(orderId || ''));
+            const voucherCode = appliedCoupon ? appliedCoupon.code : null;
+            const { orderId } = await placeOrder(addressLine, voucherCode);
+            
             window.location.href = orderId ? `/main/order-success?orderId=${orderId}` : '/main/order-success';
         } catch (error) {
             const message = error?.message || 'Đặt hàng thất bại.';
             alert(message);
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.textContent = 'Đặt Hàng';
         }
     });
 

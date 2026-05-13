@@ -25,6 +25,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,11 +50,22 @@ class OrderServiceSecurityAndOwnershipTest {
     @Mock
     private BookRepository bookRepository;
 
+    @Mock
+    private VoucherService voucherService;
+
     private OrderService orderService;
 
     @BeforeEach
     void setUp() {
-        orderService = new OrderService(userRepository, cartRepository, orderRepository, subOrderRepository, bookRepository);
+        orderService = new OrderService(
+            userRepository,
+            cartRepository,
+            orderRepository,
+            subOrderRepository,
+            bookRepository,
+            notificationService,
+            voucherService
+        );
 
     }
 
@@ -189,7 +202,7 @@ class OrderServiceSecurityAndOwnershipTest {
         subOrder.setItems(java.util.List.of(item));
 
         when(userRepository.findById(44L)).thenReturn(Optional.of(seller));
-        when(subOrderRepository.findBySellerOrderByIdDesc(seller)).thenReturn(java.util.List.of(subOrder));
+        when(subOrderRepository.findBySellerAndDateRange(eq(seller), any(), any())).thenReturn(java.util.List.of(subOrder));
         when(bookRepository.findBySeller(seller)).thenReturn(java.util.List.of(book));
 
         SellerAnalyticsResponse response = orderService.getSellerAnalytics(44L, 7);

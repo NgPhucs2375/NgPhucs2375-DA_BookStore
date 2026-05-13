@@ -280,74 +280,129 @@
   function initSellerOrders() {
     var qEl = document.getElementById("orders-q");
     var periodEl = document.getElementById("orders-period");
+    var dateFromEl = document.getElementById("date-from");
+    var dateToEl = document.getElementById("date-to");
     var refreshEl = document.getElementById("orders-refresh");
+    var currentStatus = 'ALL';
     var latestAnalytics = null;
 
     function formatDate(value) {
       if (!value) return "-";
       var date = new Date(value);
       if (isNaN(date.getTime())) return "-";
-      return date.toLocaleDateString("vi-VN", { year: "numeric", month: "2-digit", day: "2-digit" });
+      return date.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "2-digit" });
+    }
+
+    function getStatusInfo(status) {
+      switch (status) {
+        case 'COMPLETED': return { label: 'Đã hoàn thành', color: '#10b981' };
+        case 'SHIPPING': return { label: 'Đang giao', color: '#3b82f6' };
+        case 'PENDING_PAYMENT': return { label: 'Chờ xử lý', color: '#f59e0b' };
+        case 'CANCELLED': return { label: 'Đã hủy', color: '#ef4444' };
+        case 'PROCESSING': return { label: 'Đang xử lý', color: '#8b5cf6' };
+        default: return { label: status || 'Chờ xử lý', color: '#f59e0b' };
+      }
     }
 
     function load() {
       if (!window.ApiService || !ApiService.Order || !ApiService.Order.getSellerAnalytics) {
-        setHtml("seller-orders-body", '<tr><td class="px-4 py-3" colspan="7">Thiếu ApiService</td></tr>');
+        setHtml("seller-orders-body", '<tr><td class="px-6 py-5 text-center" colspan="7">Thiếu ApiService</td></tr>');
         return Promise.resolve();
       }
 
-      var query = (qEl ? qEl.value : "").toLowerCase();
-      var days = periodEl ? Number(periodEl.value || 30) : 30;
-
+      var days = 90; // Fetch more for filtering
       return ApiService.Order.getSellerAnalytics(days).then(function (analytics) {
         latestAnalytics = analytics || {};
         var rows = Array.isArray(latestAnalytics.recentTransactions) ? latestAnalytics.recentTransactions : [];
 
+        // Apply filters
         var filtered = rows.filter(function (row) {
-          var transactionId = String(row.transactionId || "").toLowerCase();
-          var customerName = String(row.customerName || "").toLowerCase();
-          var productName = String(row.productName || "").toLowerCase();
+          // Status filter
+          if (currentStatus !== 'ALL' && (row.status || 'PENDING_PAYMENT') !== currentStatus) {
+            return false;
+          }
 
-          var matchQuery = !query ||
-            transactionId.includes(query) ||
-            customerName.includes(query) ||
-            productName.includes(query);
+          // Date filter
+          if (dateFromEl && dateFromEl.value) {
+            if (new Date(row.createdAt) < new Date(dateFromEl.value)) return false;
+          }
+          if (dateToEl && dateToEl.value) {
+            if (new Date(row.createdAt) > new Date(dateToEl.value)) return false;
+          }
 
-          return matchQuery;
+          return true;
         });
 
+        // Update count
+        if (document.getElementById("order-count")) setText("order-count", filtered.length);
+        if (document.getElementById("pagination-range")) setText("pagination-range", "Đang hiển thị 1-" + filtered.length + " trong số " + filtered.length);
+
         var html = filtered.map(function (row) {
+          var statusInfo = getStatusInfo(row.status);
+          var initials = (row.customerName || "U").substring(0, 1).toUpperCase();
+          
           return (
-            '<tr>' +
-            '<td class="px-4 py-3 font-black">' + esc(row.transactionId || "-") + '</td>' +
-            '<td class="px-4 py-3">' + esc(formatDate(row.createdAt)) + '</td>' +
-            '<td class="px-4 py-3 text-sm">' + esc(row.customerName || "--") + '</td>' +
-            '<td class="px-4 py-3 text-sm">' + esc(row.productName || "--") + '</td>' +
-            '<td class="px-4 py-3 font-black">' + esc(row.quantity || 0) + '</td>' +
-            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(row.amount || 0) + '</td>' +
-            '<td class="px-4 py-3">' + esc(row.paymentMethod || "COD") + '</td>' +
+            '<tr class="hover:bg-[#FAF5E8]/30 transition-colors">' +
+            '<td class="px-6 py-5 text-xs font-black text-[#5D4037]/60">#' + esc(row.subOrderId || row.transactionId || "0000") + '</td>' +
+            '<td class="px-6 py-5">' +
+              '<div class="flex items-center gap-3">' +
+                '<div class="h-8 w-8 rounded-full bg-[#E5CBB5] flex items-center justify-center text-[10px] font-black text-[#5D4037]">' + initials + '</div>' +
+                '<span class="text-xs font-black text-[#5D4037]">' + esc(row.customerName || "Unknown") + '</span>' +
+              '</div>' +
+            '</td>' +
+            '<td class="px-6 py-5 text-[11px] font-bold text-[#5D4037]/50 max-w-[200px] truncate">' + esc(row.address || "No address") + '</td>' +
+            '<td class="px-6 py-5 text-xs font-bold text-[#5D4037]">' + esc(formatDate(row.createdAt)) + '</td>' +
+            '<td class="px-6 py-5 text-xs font-black text-[#5D4037] text-right">' + vnd(row.amount || 0) + '</td>' +
+            '<td class="px-6 py-5">' +
+              '<div class="flex items-center gap-2">' +
+                '<span class="status-dot" style="background-color: ' + statusInfo.color + '"></span>' +
+                '<span class="text-xs font-bold" style="color: ' + statusInfo.color + '">' + statusInfo.label + '</span>' +
+              '</div>' +
+            '</td>' +
+            '<td class="px-6 py-5 text-center">' +
+              '<div class="flex items-center justify-center gap-3">' +
+                '<button class="text-[#5D4037]/30 hover:text-[#5D4037]"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button>' +
+                '<button class="text-[#5D4037]/30 hover:text-[#5D4037]"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>' +
+              '</div>' +
+            '</td>' +
             '</tr>'
           );
         }).join("");
 
-        setHtml("seller-orders-body", html || '<tr><td class="px-4 py-3" colspan="7">Không có dữ liệu</td></tr>');
+        setHtml("seller-orders-body", html || '<tr><td class="px-6 py-10 text-center font-bold text-[#5D4037]/40" colspan="7">Không có đơn hàng nào khớp với bộ lọc</td></tr>');
       }).catch(function (err) {
         console.error('Seller orders load failed:', err);
-        setHtml("seller-orders-body", '<tr><td class="px-4 py-3" colspan="7">Lỗi tải dữ liệu</td></tr>');
+        setHtml("seller-orders-body", '<tr><td class="px-6 py-5 text-center" colspan="7">Lỗi tải dữ liệu</td></tr>');
       });
     }
 
-    [qEl, periodEl, refreshEl].forEach(function(el) {
+    window.filterByStatus = function(status) {
+      currentStatus = status;
+      // Update tab UI
+      document.querySelectorAll('.order-tab').forEach(function(tab) {
+        tab.classList.remove('active', 'text-[#5D4037]', 'border-[#5D4037]');
+        tab.classList.add('text-[#5D4037]/50', 'border-transparent');
+        
+        var isMatch = false;
+        if (status === 'ALL' && tab.textContent.includes('Tất cả')) isMatch = true;
+        if (status === 'SHIPPING' && tab.textContent.includes('Đang giao')) isMatch = true;
+        if (status === 'PENDING_PAYMENT' && tab.textContent.includes('Chờ xử lý')) isMatch = true;
+        if (status === 'COMPLETED' && tab.textContent.includes('Đã hoàn thành')) isMatch = true;
+
+        if (isMatch) {
+           tab.classList.add('active', 'text-[#5D4037]', 'border-[#5D4037]');
+           tab.classList.remove('text-[#5D4037]/50', 'border-transparent');
+        }
+      });
+      load();
+    };
+
+    [qEl, periodEl, refreshEl, dateFromEl, dateToEl].forEach(function(el) {
       if (el) el.addEventListener("input", load);
       if (el) el.addEventListener("change", load);
     });
 
-    window.viewOrderDetail = function(orderId) {
-      alert('Trang seller orders hiện dùng cùng nguồn analytics mới nên không còn màn chi tiết riêng cho từng đơn.');
-    };
-
     window.loadSellerOrders = load;
-
     return load();
   }
 
@@ -722,6 +777,126 @@
     return load();
   }
 
+  function initVoucherManagement() {
+    var searchEl = document.getElementById("voucher-search");
+    var tableBodyEl = document.getElementById("voucher-table-body");
+    var formEl = document.getElementById("voucher-form");
+    var currentFilter = 'ALL';
+
+    function load() {
+      if (!window.ApiService || !ApiService.Voucher) return;
+      
+      var query = searchEl ? searchEl.value : "";
+      return ApiService.Voucher.getSellerVouchers(query, currentFilter).then(function(vouchers) {
+        setText("voucher-count", (vouchers || []).filter(v => v.status === 'ACTIVE').length);
+        
+        var html = (vouchers || []).map(function(v) {
+          var typeLabel = v.discountType === 'PERCENT' ? 'Phần trăm' : 'Số tiền cố định';
+          var valueDisplay = v.discountType === 'PERCENT' ? v.discountValue + '%' : vnd(v.discountValue);
+          var statusInfo = getVoucherStatusInfo(v.status);
+          var dateRange = formatDate(v.startDate) + " - " + formatDate(v.endDate);
+          
+          return (
+            '<tr class="hover:bg-[#FAF5E8]/30 transition-colors">' +
+            '<td class="px-6 py-5">' +
+              '<div class="font-black text-[#5D4037]">' + esc(v.code) + '</div>' +
+              '<div class="text-[10px] font-bold text-[#5D4037]/50">' + esc(v.name) + '</div>' +
+            '</td>' +
+            '<td class="px-6 py-5 text-xs font-bold text-[#5D4037]/70">' + typeLabel + '</td>' +
+            '<td class="px-6 py-5 text-right text-xs font-black text-[#ea580c]">' + valueDisplay + '</td>' +
+            '<td class="px-6 py-5 text-[10px] font-bold text-[#5D4037]/60">' + dateRange + '</td>' +
+            '<td class="px-6 py-5 text-center text-xs font-black text-[#5D4037]">' + v.usedCount + '/' + v.usageLimit + '</td>' +
+            '<td class="px-6 py-5">' +
+              '<span class="status-pill" style="background-color: ' + statusInfo.bg + '; color: ' + statusInfo.color + '">' + statusInfo.label + '</span>' +
+            '</td>' +
+            '<td class="px-6 py-5 text-center">' +
+              '<div class="flex items-center justify-center gap-3">' +
+                '<button onclick="deleteVoucher(' + v.id + ')" class="text-rose-400 hover:text-rose-600 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>' +
+              '</div>' +
+            '</td>' +
+            '</tr>'
+          );
+        }).join("");
+
+        setHtml("voucher-table-body", html || '<tr><td colspan="7" class="px-6 py-10 text-center font-bold text-[#5D4037]/40">Không tìm thấy mã giảm giá nào</td></tr>');
+      });
+    }
+
+    function getVoucherStatusInfo(status) {
+      switch (status) {
+        case 'ACTIVE': return { label: 'Đang chạy', bg: '#ecfdf5', color: '#059669' };
+        case 'EXPIRED': return { label: 'Hết hạn', bg: '#fef2f2', color: '#dc2626' };
+        case 'DISABLED': return { label: 'Đã tắt', bg: '#f3f4f6', color: '#4b5563' };
+        case 'EXHAUSTED': return { label: 'Hết lượt', bg: '#fffbeb', color: '#d97706' };
+        default: return { label: status, bg: '#f3f4f6', color: '#4b5563' };
+      }
+    }
+
+    function formatDate(d) {
+      if (!d) return "";
+      var date = new Date(d);
+      return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    window.filterVouchers = function(status) {
+      currentFilter = status;
+      document.querySelectorAll('.voucher-tab').forEach(function(tab) {
+        tab.classList.remove('active', 'text-[#5D4037]', 'border-[#5D4037]');
+        tab.classList.add('text-[#5D4037]/50', 'border-transparent');
+      });
+      event.target.classList.add('active', 'text-[#5D4037]', 'border-[#5D4037]');
+      event.target.classList.remove('text-[#5D4037]/50', 'border-transparent');
+      load();
+    };
+
+    window.openCreateVoucherModal = function() {
+      document.getElementById("voucher-modal").classList.remove("hidden");
+    };
+
+    window.closeVoucherModal = function() {
+      document.getElementById("voucher-modal").classList.add("hidden");
+      if (formEl) formEl.reset();
+    };
+
+    window.deleteVoucher = function(id) {
+      if (confirm("Bạn có chắc chắn muốn xóa mã giảm giá này?")) {
+        ApiService.Voucher.delete(id).then(function() {
+          BookomToast.success("Đã xóa mã giảm giá thành công");
+          load();
+        }).catch(function(err) {
+          BookomToast.error("Lỗi xóa voucher: " + err.message);
+        });
+      }
+    };
+
+    if (searchEl) searchEl.addEventListener("input", load);
+    if (formEl) {
+      formEl.addEventListener("submit", function(e) {
+        e.preventDefault();
+        var formData = new FormData(formEl);
+        var data = {};
+        formData.forEach((value, key) => {
+          if (['discountValue', 'minOrderAmount', 'maxDiscountAmount', 'usageLimit'].includes(key)) {
+            data[key] = value ? Number(value) : null;
+          } else {
+            data[key] = value;
+          }
+        });
+        
+        ApiService.Voucher.create(data).then(function() {
+          BookomToast.success("Đã tạo mã giảm giá mới thành công");
+          closeVoucherModal();
+          load();
+        }).catch(function(err) {
+          BookomToast.error("Lỗi tạo voucher: " + err.message);
+        });
+      });
+    }
+
+    window.loadVouchers = load;
+    return load();
+  }
+
   // Simple toast utility using Tailwind classes
   function ensureToastContainer(){
     var container = document.getElementById('bookom-toast-container');
@@ -767,6 +942,7 @@
     initSellerDashboard: initSellerDashboard,
     initSellerOrders: initSellerOrders,
     initSellerInventory: initSellerInventory,
-    initSellerAnalytics: initSellerAnalytics
+    initSellerAnalytics: initSellerAnalytics,
+    initVoucherManagement: initVoucherManagement
   };
 })();

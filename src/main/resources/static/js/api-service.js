@@ -715,6 +715,56 @@ const ApiService = (() => {
     };
 
     // ==========================================
+    // 8. VOUCHER APIs
+    // ==========================================
+
+    const Voucher = {
+        getSellerVouchers: async (query = '', status = '') => {
+            const { userId } = getAuth();
+            const params = new URLSearchParams({ sellerId: userId });
+            if (query) params.append('query', query);
+            if (status && status !== 'ALL') params.append('status', status);
+
+            const response = await fetch(`${API_BASE}/vouchers/seller/${userId}?${params}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        create: async (voucherData) => {
+            const { userId } = getAuth();
+            const response = await fetch(`${API_BASE}/vouchers?sellerId=${userId}`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(voucherData)
+            });
+            return handleResponse(response);
+        },
+
+        delete: async (voucherId) => {
+            const { userId } = getAuth();
+            const response = await fetch(`${API_BASE}/vouchers/${voucherId}?sellerId=${userId}`, {
+                method: 'DELETE',
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        validate: async (code, amount) => {
+            const { userId } = getAuth();
+            const params = new URLSearchParams({
+                code: code,
+                userId: userId,
+                amount: amount
+            });
+            const response = await fetch(`${API_BASE}/vouchers/validate?${params}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        }
+    };
+
+    // ==========================================
     // PUBLIC API
     // ==========================================
 
@@ -732,6 +782,7 @@ const ApiService = (() => {
         Order,
         SellerShop,
         Category,
+        Voucher,
 
         // Helper: Kiểm tra role
         isAuthenticated: () => !!getAuth().userId,

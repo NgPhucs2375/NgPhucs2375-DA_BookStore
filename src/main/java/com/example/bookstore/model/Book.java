@@ -5,12 +5,16 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.DynamicUpdate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity //danh dau day la 1 bang trong DB
 @Table(name="books")
 @Data // tu dong tao Getter,Setter,toString,equals,hashCode
+@ToString(exclude = {"category", "seller"})
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor // Auto tạo Constructor không tham số
 @AllArgsConstructor // Auto tao Constructor co tham so
 @DynamicUpdate // hỗ trợ để update động

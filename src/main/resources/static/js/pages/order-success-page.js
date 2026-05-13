@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const orders = await ApiService.Order.getBuyerOrders();
         const list = Array.isArray(orders) ? orders : [];
-        return list.length > 0 ? Number(list[0].id) : null;
+        return list.length > 0 ? Number(list[0].orderId || list[0].id) : null;
     };
 
     const bindOrderSuccess = async () => {

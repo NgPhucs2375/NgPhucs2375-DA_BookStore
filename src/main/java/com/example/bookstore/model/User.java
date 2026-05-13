@@ -7,7 +7,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -16,6 +19,8 @@ import java.util.Set;
 @Entity // Đánh dấu đây là 1 bảng trong DB
 @Table(name="users") // Tên bảng dưới Database sẽ là 'users'
 @Data
+@ToString(exclude = {"favoriteCategories", "wishlistBooks", "books", "subOrders", "notifications", "addresses", "securityEvents", "cart"})
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor // Tự tạo Constructor không tham số
 @AllArgsConstructor // Tự tạo Constructor có đủ tham số
 @Builder
@@ -35,6 +40,29 @@ public class User {
     @Column(nullable = false, length = 20)
     private UserRole role;
 
+    // Profile Information
+    @Column(length = 100)
+    private String firstName;
+
+    @Column(length = 100)
+    private String lastName;
+
+    @Column(length = 255)
+    private String email;
+
+    @Column(length = 20)
+    private String phone;
+
+    @Column
+    private LocalDate dateOfBirth;
+
+    @Column(length = 20)
+    private String gender; // MALE, FEMALE, OTHER
+
+    @Column(length = 500)
+    private String bio;
+
+    // Seller Information
     @Column(length = 255)
     private String shopName;
 
@@ -54,6 +82,17 @@ public class User {
     @Builder.Default
     private Set<Category> favoriteCategories = new LinkedHashSet<>();
 
+    @ManyToMany
+    @JoinTable(
+        name = "user_wishlist_books",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "book_id")
+    )
+    @OrderBy("id DESC")
+    @JsonIgnore
+    @Builder.Default
+    private Set<Book> wishlistBooks = new LinkedHashSet<>();
+
     @OneToMany(mappedBy = "seller")
     @JsonIgnore
     @Builder.Default
@@ -68,6 +107,16 @@ public class User {
     @JsonIgnore
     @Builder.Default
     private List<Notification> notifications = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @Builder.Default
+    private List<UserAddress> addresses = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @Builder.Default
+    private List<UserSecurityEvent> securityEvents = new ArrayList<>();
 
     @OneToOne(mappedBy = "buyer")
     @JsonIgnore

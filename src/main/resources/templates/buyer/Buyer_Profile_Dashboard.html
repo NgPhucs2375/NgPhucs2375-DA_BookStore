@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKOM - Hồ Sơ Cá Nhân</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-peach': '#F8D9C0', 'brand-cream': '#FAF5E8', 'brand-biscuit': '#D19C74',
+                        'brand-dark': '#5D4037', 'brand-accent': '#E5CBB5', 'brand-orange': '#ea580c',
+                        'brand-orange-light': '#ffedd5', 'brand-green': '#16a34a', 'brand-blue': '#0284c7', 'brand-red': '#dc2626',
+                    },
+                    fontFamily: { sans: ['Quicksand', 'sans-serif'], },
+                }
+            }
+        }
+    </script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #fbfaf8; min-height: 100vh; display: flex; flex-direction: column; color: #5D4037; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #D19C74; }
+        .tab-content { display: none; } .tab-content.active { display: block; }
+        .profile-header { background: linear-gradient(135deg, #F8D9C0 0%, #FAF5E8 100%); }
+        .card { background: white; border: 1px solid #E5CBB5; border-radius: 1rem; padding: 1.5rem; }
+        .btn-primary { background: #ea580c; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; }
+        .btn-primary:hover { background: #d84708; }
+        .input-field { width: 100%; padding: 0.75rem 1rem; border: 1.5px solid #E5CBB5; border-radius: 0.5rem; font-size: 0.95rem; }
+        .input-field:focus { outline: none; border-color: #D19C74; box-shadow: 0 0 0 3px rgba(209, 156, 116, 0.1); }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600; }
+        .badge-default { background: #E5CBB5; color: #5D4037; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+    </style>
+</head>
+<body>
+
+<div class="bg-white sticky top-0 z-50 shadow-sm border-b border-brand-accent">
+    <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
+        <a th:href="@{/}" class="text-3xl font-extrabold text-brand-dark">BOOKOM</a>
+        <div class="flex items-center gap-4">
+            <a th:href="@{/buyer/dashboard}" class="text-brand-dark font-bold hover:text-brand-orange">Tài Khoản</a>
+            <a th:href="@{/main}" class="text-gray-500 hover:text-brand-dark">Trang Chủ</a>
+        </div>
+    </div>
+</div>
+
+<div class="profile-header py-12">
+    <div class="max-w-[1200px] mx-auto px-4 sm:px-6">
+        <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <div class="relative">
+                <div id="profileAvatar" class="w-24 h-24 md:w-32 md:h-32 rounded-full bg-cover bg-center border-4 border-white shadow-lg"></div>
+                <label class="absolute bottom-2 right-2 bg-brand-orange text-white p-2 rounded-full cursor-pointer hover:bg-brand-dark transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <input type="file" class="hidden" accept="image/*">
+                </label>
+            </div>
+            <div class="flex-1">
+                <h1 id="profileName" class="text-3xl md:text-4xl font-bold text-brand-dark mb-2">Đang Tải...</h1>
+                <p id="profileUsername" class="text-gray-600 text-lg mb-4">@username</p>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="switchTab('profile')" class="btn-primary">Chỉnh Sửa Hồ Sơ</button>
+                    <button onclick="switchTab('settings')" class="border border-brand-orange text-brand-orange px-4 py-2 rounded-lg font-semibold hover:bg-brand-orange-light transition">Cài Đặt Tài Khoản</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<main class="flex-grow max-w-[1200px] mx-auto px-4 sm:px-6 py-8 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Navigation Tabs -->
+        <div class="lg:col-span-1">
+            <div class="card sticky top-32">
+                <h3 class="font-bold text-brand-dark mb-4 text-lg">Quản Lý Tài Khoản</h3>
+                <nav class="space-y-2">
+                    <button onclick="switchTab('overview')" class="tab-btn w-full text-left px-4 py-3 rounded-lg font-semibold text-gray-600 hover:bg-brand-cream hover:text-brand-orange active" data-tab="overview">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            Tổng Quan
+                        </span>
+                    </button>
+                    <button onclick="switchTab('profile')" class="tab-btn w-full text-left px-4 py-3 rounded-lg font-semibold text-gray-600 hover:bg-brand-cream hover:text-brand-orange" data-tab="profile">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Hồ Sơ Cá Nhân
+                        </span>
+                    </button>
+                    <button onclick="switchTab('addresses')" class="tab-btn w-full text-left px-4 py-3 rounded-lg font-semibold text-gray-600 hover:bg-brand-cream hover:text-brand-orange" data-tab="addresses">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                            Địa Chỉ Giao Hàng
+                        </span>
+                    </button>
+                    <button onclick="switchTab('settings')" class="tab-btn w-full text-left px-4 py-3 rounded-lg font-semibold text-gray-600 hover:bg-brand-cream hover:text-brand-orange" data-tab="settings">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+                            Cài Đặt Tài Khoản
+                        </span>
+                    </button>
+                    <button onclick="switchTab('security')" class="tab-btn w-full text-left px-4 py-3 rounded-lg font-semibold text-gray-600 hover:bg-brand-cream hover:text-brand-orange" data-tab="security">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            Bảo Mật
+                        </span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="lg:col-span-3">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <div class="card mb-6">
+                    <h2 class="text-2xl font-bold text-brand-dark mb-6">Thông Tin Tài Khoản</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-sm text-gray-500 font-bold uppercase mb-2">Tên Người Dùng</p>
+                            <p id="overviewUsername" class="text-lg text-brand-dark font-semibold">Đang Tải...</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 font-bold uppercase mb-2">Email</p>
+                            <p id="overviewEmail" class="text-lg text-brand-dark font-semibold">Chưa Cập Nhật</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 font-bold uppercase mb-2">Số Điện Thoại</p>
+                            <p id="overviewPhone" class="text-lg text-brand-dark font-semibold">Chưa Cập Nhật</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 font-bold uppercase mb-2">Trạng Thái</p>
+                            <span class="badge badge-success">✓ Đã Xác Nhận</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="text-xl font-bold text-brand-dark mb-4">Địa Chỉ Mặc Định</h3>
+                    <div id="defaultAddressDisplay" class="p-4 bg-brand-cream rounded-lg">
+                        <p class="text-gray-500">Chưa có địa chỉ mặc định. <a href="#" onclick="switchTab('addresses')" class="text-brand-orange font-bold">Thêm Địa Chỉ</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Tab -->
+            <div id="profile" class="tab-content">
+                <div class="card">
+                    <h2 class="text-2xl font-bold text-brand-dark mb-6">Chỉnh Sửa Hồ Sơ Cá Nhân</h2>
+                    <form id="profileForm" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-brand-dark mb-2">Tên *</label>
+                                <input type="text" id="firstName" class="input-field" placeholder="Tên" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-brand-dark mb-2">Họ *</label>
+                                <input type="text" id="lastName" class="input-field" placeholder="Họ" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-brand-dark mb-2">Email</label>
+                            <input type="email" id="email" class="input-field" placeholder="email@example.com">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-brand-dark mb-2">Số Điện Thoại</label>
+                                <input type="tel" id="phone" class="input-field" placeholder="+84 123 456 789">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-brand-dark mb-2">Giới Tính</label>
+                                <select id="gender" class="input-field">
+                                    <option value="">Chọn Giới Tính</option>
+                                    <option value="MALE">Nam</option>
+                                    <option value="FEMALE">Nữ</option>
+                                    <option value="OTHER">Khác</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-brand-dark mb-2">Ngày Sinh</label>
+                            <input type="date" id="dateOfBirth" class="input-field">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-brand-dark mb-2">Tiểu Sử</label>
+                            <textarea id="bio" class="input-field" placeholder="Viết gì đó về bạn..." rows="4"></textarea>
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="submit" class="btn-primary">Lưu Thay Đổi</button>
+                            <button type="reset" class="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Hủy</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Addresses Tab -->
+            <div id="addresses" class="tab-content">
+                <div class="card mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-brand-dark">Địa Chỉ Giao Hàng</h2>
+                        <button onclick="openAddAddressModal()" class="btn-primary text-sm">+ Thêm Địa Chỉ</button>
+                    </div>
+                    <div id="addressesList" class="space-y-4">
+                        <p class="text-gray-500 text-center py-8">Đang Tải Địa Chỉ...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Settings Tab -->
+            <div id="settings" class="tab-content">
+                <div class="card mb-6">
+                    <h2 class="text-2xl font-bold text-brand-dark mb-6">Cài Đặt Tài Khoản</h2>
+                    <div class="space-y-6">
+                        <div class="pb-6 border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-bold text-brand-dark mb-1">Thông Báo Email</h3>
+                                    <p class="text-sm text-gray-600">Nhận thông báo về đơn hàng và khuyến mãi</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-orange"></div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="pb-6 border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-bold text-brand-dark mb-1">Thông Báo SMS</h3>
+                                    <p class="text-sm text-gray-600">Nhận tin nhắn trạng thái đơn hàng</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-orange"></div>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-brand-dark mb-4">Tính Riêng Tư</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" class="w-5 h-5 rounded" checked>
+                                    <span class="text-gray-700">Cho phép hiển thị hồ sơ công khai</span>
+                                </label>
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" class="w-5 h-5 rounded" checked>
+                                    <span class="text-gray-700">Cho phép các người dùng khác xem lịch sử mua hàng</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Tab -->
+            <div id="security" class="tab-content">
+                <div class="card mb-6">
+                    <h2 class="text-2xl font-bold text-brand-dark mb-6">Bảo Mật Tài Khoản</h2>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-brand-orange-light rounded-lg border border-brand-orange">
+                            <p class="text-sm text-brand-dark font-semibold">💡 Mẹo Bảo Mật</p>
+                            <p class="text-sm text-gray-700 mt-2">Sử dụng mật khẩu mạnh (ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt) để bảo vệ tài khoản của bạn.</p>
+                        </div>
+                        <div class="border-b border-gray-200 pb-6">
+                            <h3 class="font-bold text-brand-dark mb-4">Đổi Mật Khẩu</h3>
+                            <form id="passwordForm" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-brand-dark mb-2">Mật Khẩu Hiện Tại *</label>
+                                    <input type="password" id="currentPassword" class="input-field" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-brand-dark mb-2">Mật Khẩu Mới *</label>
+                                    <input type="password" id="newPassword" class="input-field" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-brand-dark mb-2">Xác Nhận Mật Khẩu Mới *</label>
+                                    <input type="password" id="confirmPassword" class="input-field" required>
+                                </div>
+                                <button type="submit" class="btn-primary">Đổi Mật Khẩu</button>
+                            </form>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-brand-dark mb-4">Hoạt Động Bảo Mật Gần Đây</h3>
+                            <div id="securityEventsList" class="space-y-3 max-h-96 overflow-y-auto">
+                                <p class="text-gray-500 text-center py-8">Đang Tải Hoạt Động...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Add Address Modal -->
+<div id="addressModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-96 overflow-y-auto">
+        <div class="sticky top-0 bg-brand-cream border-b border-brand-accent p-6 flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-brand-dark">Thêm Địa Chỉ Giao Hàng</h2>
+            <button onclick="closeAddAddressModal()" class="text-gray-500 hover:text-brand-dark">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form id="addressForm" class="p-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-brand-dark mb-2">Loại Địa Chỉ *</label>
+                    <select id="addressType" class="input-field" required>
+                        <option value="HOME">Nhà Riêng</option>
+                        <option value="OFFICE">Văn Phòng</option>
+                        <option value="OTHER">Khác</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-brand-dark mb-2">Tên Người Nhận *</label>
+                    <input type="text" id="recipientName" class="input-field" required>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-brand-dark mb-2">Số Điện Thoại Người Nhận *</label>
+                <input type="tel" id="recipientPhone" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-brand-dark mb-2">Địa Chỉ Chi Tiết *</label>
+                <textarea id="addressLine" class="input-field" rows="2" placeholder="Số nhà, tên đường..." required></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-brand-dark mb-2">Phường/Xã</label>
+                    <input type="text" id="ward" class="input-field">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-brand-dark mb-2">Quận/Huyện *</label>
+                    <input type="text" id="district" class="input-field" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-brand-dark mb-2">Tỉnh/Thành Phố *</label>
+                    <input type="text" id="province" class="input-field" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-brand-dark mb-2">Mã Bưu Chính</label>
+                    <input type="text" id="postalCode" class="input-field">
+                </div>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="isDefault" class="w-5 h-5 rounded border-brand-accent">
+                <span class="text-sm font-semibold text-gray-700">Đặt Làm Địa Chỉ Mặc Định</span>
+            </label>
+            <div class="flex gap-3 pt-4">
+                <button type="submit" class="flex-1 btn-primary">Lưu Địa Chỉ</button>
+                <button type="button" onclick="closeAddAddressModal()" class="flex-1 border border-gray-300 text-gray-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Hủy</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Tab switching
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    }
+
+    // Load profile data
+    async function loadProfileData() {
+        try {
+            const response = await fetch('/buyer/profile/api/profile');
+            const profile = await response.json();
+            document.getElementById('profileName').textContent = profile.firstName + ' ' + profile.lastName || 'Tên Người Dùng';
+            document.getElementById('profileUsername').textContent = '@' + profile.username;
+            document.getElementById('overviewUsername').textContent = profile.username;
+            document.getElementById('overviewEmail').textContent = profile.email || 'Chưa Cập Nhật';
+            document.getElementById('overviewPhone').textContent = profile.phone || 'Chưa Cập Nhật';
+            
+            // Populate form
+            document.getElementById('firstName').value = profile.firstName || '';
+            document.getElementById('lastName').value = profile.lastName || '';
+            document.getElementById('email').value = profile.email || '';
+            document.getElementById('phone').value = profile.phone || '';
+            document.getElementById('gender').value = profile.gender || '';
+            document.getElementById('dateOfBirth').value = profile.dateOfBirth || '';
+            document.getElementById('bio').value = profile.bio || '';
+        } catch (error) {
+            console.error('Error loading profile:', error);
+        }
+    }
+
+    // Load addresses
+    async function loadAddresses() {
+        try {
+            const response = await fetch('/buyer/profile/api/addresses');
+            const addresses = await response.json();
+            const list = document.getElementById('addressesList');
+            
+            if (addresses.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 text-center py-8">Bạn chưa có địa chỉ nào. <a href="#" onclick="openAddAddressModal()" class="text-brand-orange font-bold">Thêm Địa Chỉ</a></p>';
+                return;
+            }
+            
+            list.innerHTML = addresses.map(addr => `
+                <div class="border border-brand-accent rounded-lg p-4 ${addr.isDefault ? 'bg-brand-orange-light' : ''}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="font-bold text-brand-dark">${addr.recipientName} (${addr.addressType})</h3>
+                            <p class="text-sm text-gray-600">${addr.recipientPhone}</p>
+                        </div>
+                        ${addr.isDefault ? '<span class="badge badge-success">Mặc Định</span>' : ''}
+                    </div>
+                    <p class="text-sm text-gray-700 mb-3">${addr.addressLine}, ${addr.ward || ''}, ${addr.district}, ${addr.province}</p>
+                    <div class="flex gap-2">
+                        <button onclick="editAddress(${addr.id})" class="text-sm text-brand-orange font-semibold hover:underline">Sửa</button>
+                        <button onclick="deleteAddress(${addr.id})" class="text-sm text-brand-red font-semibold hover:underline">Xóa</button>
+                        ${!addr.isDefault ? `<button onclick="setDefaultAddress(${addr.id})" class="text-sm text-brand-blue font-semibold hover:underline">Đặt Mặc Định</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading addresses:', error);
+        }
+    }
+
+    // Load security events
+    async function loadSecurityEvents() {
+        try {
+            const response = await fetch('/buyer/profile/api/security/events');
+            const events = await response.json();
+            const list = document.getElementById('securityEventsList');
+            
+            if (events.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 text-center py-8">Không có hoạt động bảo mật</p>';
+                return;
+            }
+            
+            list.innerHTML = events.slice(0, 10).map(event => `
+                <div class="flex items-start gap-3 p-3 bg-gray-50 rounded">
+                    <svg class="w-5 h-5 text-brand-orange flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-gray-900 text-sm">${event.eventType.replace(/_/g, ' ')}</p>
+                        <p class="text-xs text-gray-600 mt-1">${event.eventDescription || 'Hoạt động bảo mật'}</p>
+                        <p class="text-xs text-gray-500 mt-1">${new Date(event.createdAt).toLocaleString('vi-VN')}</p>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading security events:', error);
+        }
+    }
+
+    // Form submissions
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('/buyer/profile/api/profile/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    firstName: document.getElementById('firstName').value,
+                    lastName: document.getElementById('lastName').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    gender: document.getElementById('gender').value,
+                    dateOfBirth: document.getElementById('dateOfBirth').value,
+                    bio: document.getElementById('bio').value,
+                })
+            });
+            if (response.ok) {
+                alert('Cập nhật hồ sơ thành công!');
+                loadProfileData();
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+        }
+    });
+
+    document.getElementById('addressForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('/buyer/profile/api/addresses/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    addressType: document.getElementById('addressType').value,
+                    recipientName: document.getElementById('recipientName').value,
+                    recipientPhone: document.getElementById('recipientPhone').value,
+                    addressLine: document.getElementById('addressLine').value,
+                    ward: document.getElementById('ward').value,
+                    district: document.getElementById('district').value,
+                    province: document.getElementById('province').value,
+                    postalCode: document.getElementById('postalCode').value,
+                    isDefault: document.getElementById('isDefault').checked,
+                })
+            });
+            if (response.ok) {
+                alert('Thêm địa chỉ thành công!');
+                closeAddAddressModal();
+                loadAddresses();
+            }
+        } catch (error) {
+            console.error('Error adding address:', error);
+        }
+    });
+
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newPass = document.getElementById('newPassword').value;
+        const confirmPass = document.getElementById('confirmPassword').value;
+        
+        if (newPass !== confirmPass) {
+            alert('Mật khẩu xác nhận không trùng khớp!');
+            return;
+        }
+
+        try {
+            const response = await fetch('/buyer/profile/api/security/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    currentPassword: document.getElementById('currentPassword').value,
+                    newPassword: newPass,
+                    confirmPassword: confirmPass,
+                })
+            });
+            const data = await response.text();
+            if (response.ok) {
+                alert('Đổi mật khẩu thành công!');
+                document.getElementById('passwordForm').reset();
+                loadSecurityEvents();
+            } else {
+                alert('Lỗi: ' + data);
+            }
+        } catch (error) {
+            console.error('Error changing password:', error);
+        }
+    });
+
+    // Modal functions
+    function openAddAddressModal() {
+        document.getElementById('addressModal').classList.remove('hidden');
+        document.getElementById('addressForm').reset();
+    }
+
+    function closeAddAddressModal() {
+        document.getElementById('addressModal').classList.add('hidden');
+    }
+
+    async function deleteAddress(id) {
+        if (confirm('Bạn chắc chắn muốn xóa địa chỉ này?')) {
+            try {
+                const response = await fetch(`/buyer/profile/api/addresses/${id}/delete`, { method: 'POST' });
+                if (response.ok) {
+                    alert('Xóa thành công!');
+                    loadAddresses();
+                }
+            } catch (error) {
+                console.error('Error deleting address:', error);
+            }
+        }
+    }
+
+    async function setDefaultAddress(id) {
+        try {
+            const response = await fetch(`/buyer/profile/api/addresses/${id}/set-default`, { method: 'POST' });
+            if (response.ok) {
+                loadAddresses();
+            }
+        } catch (error) {
+            console.error('Error setting default address:', error);
+        }
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+        loadProfileData();
+        loadAddresses();
+        loadSecurityEvents();
+    });
+
+    // Close modal on outside click
+    document.getElementById('addressModal').addEventListener('click', (e) => {
+        if (e.target.id === 'addressModal') closeAddAddressModal();
+    });
+</script>
+</body>
+</html>

@@ -926,7 +926,8 @@
         }
 
         const requestRegisterOtp = async (email) => {
-            await ApiService.Auth.requestOtp(email);
+            const response = await ApiService.Auth.requestOtp(email);
+            return response; // Return response để check OTP
         };
 
         const verifyRegisterOtp = async (email, otp) => {
@@ -1020,7 +1021,7 @@
             }
 
             try {
-                await requestRegisterOtp(email);
+                const response = await requestRegisterOtp(email);
                 pendingRegister = { email, password, favoriteCategoryIds, avatarUrl };
                 localStorage.setItem('favoriteCategoryIds', JSON.stringify(favoriteCategoryIds));
                 if (registerOtpEmail) {
@@ -1029,7 +1030,18 @@
                 if (routeReg3) {
                     routeReg3.checked = true;
                 }
-                Swal.fire({ icon: 'success', title: 'OTP da gui', text: 'Vui long nhap ma OTP trong email de hoan tat dang ky.' });
+                
+                // Hiển thị OTP nếu SMTP không config
+                if (response?.otp) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '[DEV MODE] OTP trong UI',
+                        text: `Ma OTP: ${response.otp}\\n\\n${response.message}`,
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    Swal.fire({ icon: 'success', title: 'OTP da gui', text: 'Vui long nhap ma OTP trong email de hoan tat dang ky.' });
+                }
             } catch (error) {
                 const message = typeof error?.data === 'string' ? error.data : (error?.message || 'Loi ket noi Server');
                 Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: message });
@@ -1042,8 +1054,19 @@
                 return;
             }
             try {
-                await requestRegisterOtp(pendingRegister.email);
-                Swal.fire({ icon: 'success', title: 'Da gui lai OTP', text: 'Vui long kiem tra email cua ban.' });
+                const response = await requestRegisterOtp(pendingRegister.email);
+                
+                // Hiển thị OTP nếu SMTP không config
+                if (response?.otp) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '[DEV MODE] OTP trong UI',
+                        text: `Ma OTP: ${response.otp}\\n\\n${response.message}`,
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    Swal.fire({ icon: 'success', title: 'Da gui lai OTP', text: 'Vui long kiem tra email cua ban.' });
+                }
             } catch (error) {
                 const message = typeof error?.data === 'string' ? error.data : (error?.message || 'Loi ket noi Server');
                 Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: message });

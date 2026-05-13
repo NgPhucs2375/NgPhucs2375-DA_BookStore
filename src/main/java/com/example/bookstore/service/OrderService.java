@@ -4,34 +4,35 @@ import com.example.bookstore.dto.CheckoutRequest;
 import com.example.bookstore.dto.CheckoutResponse;
 import com.example.bookstore.dto.OrderDetailResponse;
 import com.example.bookstore.dto.OrderItemDetailResponse;
-import com.example.bookstore.dto.SellerAnalyticsResponse;
 import com.example.bookstore.dto.SubOrderSummaryResponse;
+import com.example.bookstore.dto.OrderFilterRequest;
+import com.example.bookstore.dto.OrderFilterResponse;
+import com.example.bookstore.dto.OrderSummaryResponse;
+import com.example.bookstore.dto.SubOrderFilterRequest;
+import com.example.bookstore.dto.SubOrderFilterResponse;
 import com.example.bookstore.model.*;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.enums.OrderStatus;
 import com.example.bookstore.model.enums.UserRole;
-import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.CartRepository;
 import com.example.bookstore.repository.OrderRepository;
 import com.example.bookstore.repository.SubOrderRepository;
 import com.example.bookstore.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.LinkedList;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,7 +44,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final SubOrderRepository subOrderRepository;
     private final com.example.bookstore.service.NotificationService notificationService;
-    private final BookRepository bookRepository;
 
     @Transactional
     public CheckoutResponse checkoutFromCart(CheckoutRequest request) {
@@ -165,6 +165,43 @@ public class OrderService {
 
     public List<Order> getCurrentBuyerOrders(Long buyerId) {
         return getBuyerOrders(buyerId);
+    }
+
+    @Transactional
+    public List<OrderSummaryResponse> getCurrentBuyerOrderSummaries(Long buyerId) {
+        return getBuyerOrders(buyerId).stream()
+            .map(this::toOrderSummary)
+            .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public OrderSummaryResponse cancelCurrentBuyerOrder(Long buyerId, Long orderId) {
+        User buyer = userRepository.findById(buyerId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
+
+        if (buyer.getRole() != UserRole.BUYER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a buyer");
+        }
+
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+
+        if (order.getBuyer() == null || !buyerId.equals(order.getBuyer().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Buyer cannot modify this order");
+        }
+
+        if (!canBuyerCancelOrder(order)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only pending orders can be cancelled");
+        }
+
+        if (order.getSubOrders() != null) {
+            for (SubOrder subOrder : order.getSubOrders()) {
+                subOrder.setStatus(OrderStatus.CANCELLED);
+            }
+            subOrderRepository.saveAll(order.getSubOrders());
+        }
+
+        return toOrderSummary(order);
     }
 
     @Transactional
@@ -290,250 +327,6 @@ public class OrderService {
         return toSubOrderSummary(saved);
     }
 
-    @Transactional
-    public SellerAnalyticsResponse getSellerAnalytics(Long sellerId, int days) {
-        User seller = userRepository.findById(sellerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
-
-        if (seller.getRole() != UserRole.SELLER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
-        }
-
-        int effectiveDays = Math.max(days, 1);
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(effectiveDays - 1L);
-        LocalDateTime cutoff = startDate.atStartOfDay();
-
-        List<SubOrder> sellerSubOrders = subOrderRepository.findBySellerOrderByIdDesc(seller);
-        List<SubOrder> scopedSubOrders = sellerSubOrders.stream()
-                .filter(subOrder -> subOrder.getParentOrder() != null)
-                .filter(subOrder -> subOrder.getParentOrder().getCreatedAt() != null)
-                .filter(subOrder -> !subOrder.getParentOrder().getCreatedAt().isBefore(cutoff))
-                .toList();
-
-        List<SubOrder> completedSubOrders = scopedSubOrders.stream()
-                .filter(subOrder -> subOrder.getStatus() == OrderStatus.COMPLETED)
-                .toList();
-
-        Map<LocalDate, RevenueBucket> revenueBuckets = new LinkedHashMap<>();
-        for (LocalDate cursor = startDate; !cursor.isAfter(endDate); cursor = cursor.plusDays(1)) {
-            revenueBuckets.put(cursor, new RevenueBucket());
-        }
-
-        Map<String, CategoryBucket> categoryBuckets = new LinkedHashMap<>();
-        Map<Long, ProductBucket> productBuckets = new HashMap<>();
-        List<SellerAnalyticsResponse.TransactionRow> transactions = new ArrayList<>();
-
-        for (SubOrder subOrder : completedSubOrders) {
-            LocalDate bucketDate = subOrder.getParentOrder().getCreatedAt().toLocalDate();
-            RevenueBucket revenueBucket = revenueBuckets.get(bucketDate);
-            if (revenueBucket == null) {
-                continue;
-            }
-
-            revenueBucket.orderCount += 1L;
-            revenueBucket.revenue += safeAmount(subOrder.getSubTotal());
-
-            User buyer = subOrder.getParentOrder().getBuyer();
-            String customerName = buyer == null ? "Không rõ" : buyer.getUsername();
-
-            List<OrderItem> items = subOrder.getItems() == null ? List.of() : subOrder.getItems();
-            for (OrderItem item : items) {
-                Book book = item.getBook();
-                int quantity = safeQuantity(item.getQuantity());
-                double amount = safeAmount(item.getUnitPrice()) * quantity;
-
-                revenueBucket.soldUnits += quantity;
-
-                String categoryName = resolveCategoryName(book);
-                CategoryBucket categoryBucket = categoryBuckets.computeIfAbsent(categoryName, key -> new CategoryBucket());
-                categoryBucket.revenue += amount;
-                categoryBucket.soldUnits += quantity;
-
-                if (book != null) {
-                    ProductBucket productBucket = productBuckets.computeIfAbsent(book.getId(), key -> new ProductBucket(book));
-                    productBucket.soldUnits += quantity;
-                    productBucket.revenue += amount;
-                }
-
-                transactions.add(SellerAnalyticsResponse.TransactionRow.builder()
-                        .transactionId("GD-" + subOrder.getId() + "-" + item.getId())
-                        .orderId(subOrder.getParentOrder().getId())
-                        .subOrderId(subOrder.getId())
-                        .createdAt(subOrder.getParentOrder().getCreatedAt())
-                        .customerName(customerName)
-                        .bookId(book == null ? null : book.getId())
-                        .productName(book == null ? "Không rõ" : book.getTitle())
-                        .quantity(quantity)
-                        .amount(amount)
-                        .paymentMethod("COD")
-                        .build());
-            }
-        }
-
-        double totalRevenue = completedSubOrders.stream()
-                .mapToDouble(subOrder -> safeAmount(subOrder.getSubTotal()))
-                .sum();
-        long completedOrders = completedSubOrders.size();
-        long totalOrders = scopedSubOrders.size();
-        long soldUnits = completedSubOrders.stream()
-                .mapToLong(subOrder -> subOrder.getItems() == null ? 0L : subOrder.getItems().stream().mapToLong(item -> safeQuantity(item.getQuantity())).sum())
-                .sum();
-        double averageOrderValue = completedOrders == 0 ? 0.0 : totalRevenue / completedOrders;
-        double completionRate = totalOrders == 0 ? 0.0 : (completedOrders * 100.0) / totalOrders;
-
-        List<SellerAnalyticsResponse.RevenuePoint> revenueTimeline = revenueBuckets.entrySet().stream()
-                .map(entry -> SellerAnalyticsResponse.RevenuePoint.builder()
-                        .label(entry.getKey().format(DateTimeFormatter.ofPattern("dd/MM")))
-                        .revenue(entry.getValue().revenue)
-                        .orderCount(entry.getValue().orderCount)
-                        .soldUnits(entry.getValue().soldUnits)
-                        .build())
-                .toList();
-
-        double categoryRevenueTotal = categoryBuckets.values().stream()
-                .mapToDouble(bucket -> bucket.revenue)
-                .sum();
-
-        List<SellerAnalyticsResponse.CategoryRevenue> categoryRevenue = categoryBuckets.entrySet().stream()
-                .sorted((left, right) -> Double.compare(right.getValue().revenue, left.getValue().revenue))
-                .map(entry -> SellerAnalyticsResponse.CategoryRevenue.builder()
-                        .categoryName(entry.getKey())
-                        .revenue(entry.getValue().revenue)
-                        .soldUnits(entry.getValue().soldUnits)
-                        .sharePercent(categoryRevenueTotal == 0 ? 0.0 : (entry.getValue().revenue * 100.0) / categoryRevenueTotal)
-                        .build())
-                .toList();
-
-        List<ProductBucket> sortedProductBuckets = productBuckets.values().stream()
-                .sorted(Comparator.comparingLong(ProductBucket::getSoldUnits).reversed()
-                        .thenComparing(Comparator.comparingDouble(ProductBucket::getRevenue).reversed()))
-                .limit(5)
-                .toList();
-
-        long topSoldUnits = sortedProductBuckets.isEmpty() ? 0L : sortedProductBuckets.get(0).getSoldUnits();
-        List<SellerAnalyticsResponse.ProductPerformance> topSellingProducts = sortedProductBuckets.stream()
-                .map(bucket -> bucket.toResponse(topSoldUnits))
-                .toList();
-
-        List<Book> sellerBooks = bookRepository.findBySeller(seller);
-        List<SellerAnalyticsResponse.StockAlert> lowStockProducts = sellerBooks.stream()
-                .sorted(Comparator.comparing((Book book) -> safeStock(book.getStockQuantity()))
-                        .thenComparing(book -> safeText(book.getTitle())))
-                .limit(5)
-                .map(book -> {
-                    long soldForBook = productBuckets.containsKey(book.getId()) ? productBuckets.get(book.getId()).getSoldUnits() : 0L;
-                    int stockQuantity = safeStock(book.getStockQuantity());
-                    return SellerAnalyticsResponse.StockAlert.builder()
-                            .bookId(book.getId())
-                            .title(book.getTitle())
-                            .imageUrl(book.getImageUrl())
-                            .stockQuantity(stockQuantity)
-                            .soldUnits(soldForBook)
-                            .needReorder(stockQuantity <= 5)
-                            .note(stockQuantity <= 5 ? "Cần nhập hàng" : "Theo dõi tồn kho")
-                            .build();
-                })
-                .toList();
-
-        List<SellerAnalyticsResponse.TransactionRow> recentTransactions = transactions.stream()
-                .sorted(Comparator.comparing(SellerAnalyticsResponse.TransactionRow::getCreatedAt).reversed())
-                .limit(10)
-                .toList();
-
-        return SellerAnalyticsResponse.builder()
-                .sellerId(seller.getId())
-                .sellerName(resolveSellerName(seller))
-                .days(effectiveDays)
-                .periodLabel(effectiveDays + " ngày gần nhất")
-                .generatedAt(LocalDateTime.now())
-                .totalRevenue(totalRevenue)
-                .completedOrders(completedOrders)
-                .averageOrderValue(averageOrderValue)
-                .completionRate(completionRate)
-                .soldUnits(soldUnits)
-                .revenueTimeline(revenueTimeline)
-                .categoryRevenue(categoryRevenue)
-                .topSellingProducts(topSellingProducts)
-                .lowStockProducts(lowStockProducts)
-                .recentTransactions(recentTransactions)
-                .build();
-    }
-
-    private double safeAmount(Double value) {
-        return value == null ? 0.0 : value;
-    }
-
-    private int safeQuantity(Integer value) {
-        return value == null ? 0 : value;
-    }
-
-    private int safeStock(Integer value) {
-        return value == null ? 0 : value;
-    }
-
-    private String safeText(String value) {
-        return value == null ? "" : value;
-    }
-
-    private String resolveSellerName(User seller) {
-        if (seller == null) {
-            return null;
-        }
-        return seller.getShopName() == null || seller.getShopName().isBlank()
-                ? seller.getUsername()
-                : seller.getShopName();
-    }
-
-    private String resolveCategoryName(Book book) {
-        if (book == null || book.getCategory() == null || book.getCategory().getName() == null || book.getCategory().getName().isBlank()) {
-            return "Chưa phân loại";
-        }
-        return book.getCategory().getName();
-    }
-
-    private static final class RevenueBucket {
-        private double revenue = 0.0;
-        private long orderCount = 0L;
-        private long soldUnits = 0L;
-    }
-
-    private static final class CategoryBucket {
-        private double revenue = 0.0;
-        private long soldUnits = 0L;
-    }
-
-    private static final class ProductBucket {
-        private final Book book;
-        private long soldUnits = 0L;
-        private double revenue = 0.0;
-
-        private ProductBucket(Book book) {
-            this.book = book;
-        }
-
-        private Long getSoldUnits() {
-            return soldUnits;
-        }
-
-        private double getRevenue() {
-            return revenue;
-        }
-
-        private SellerAnalyticsResponse.ProductPerformance toResponse(long topSoldUnits) {
-            double progressPercent = topSoldUnits == 0 ? 0.0 : (soldUnits * 100.0) / topSoldUnits;
-            return SellerAnalyticsResponse.ProductPerformance.builder()
-                    .bookId(book.getId())
-                    .title(book.getTitle())
-                    .imageUrl(book.getImageUrl())
-                    .stockQuantity(book.getStockQuantity())
-                    .soldUnits(soldUnits)
-                    .revenue(revenue)
-                    .progressPercent(progressPercent)
-                    .build();
-        }
-    }
-
     private SubOrderSummaryResponse toSubOrderSummary(SubOrder subOrder) {
         User seller = subOrder.getSeller();
         String sellerName = seller == null ? null : (seller.getShopName() == null ? seller.getUsername() : seller.getShopName());
@@ -573,5 +366,240 @@ public class OrderService {
                 .status(subOrder.getStatus())
                 .subTotal(subOrder.getSubTotal())
                 .build();
+    }
+
+    /**
+     * Filter buyer orders with flexible filtering options
+     */
+    @Transactional
+    public OrderFilterResponse filterBuyerOrders(Long buyerId, OrderFilterRequest filter) {
+        User buyer = userRepository.findById(buyerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
+
+        if (buyer.getRole() != UserRole.BUYER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a buyer");
+        }
+
+        // Set default pagination values
+        int page = filter.getPage() != null ? filter.getPage() : 0;
+        int pageSize = filter.getPageSize() != null ? filter.getPageSize() : 10;
+        
+        // Validate pagination
+        if (page < 0) page = 0;
+        if (pageSize <= 0 || pageSize > 100) pageSize = 10;
+
+        // Build sort
+        Sort.Direction direction = "DESC".equalsIgnoreCase(filter.getSortDirection()) 
+            ? Sort.Direction.DESC : Sort.Direction.ASC;
+        String sortBy = filter.getSortBy() != null ? filter.getSortBy() : "createdAt";
+        
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(direction, sortBy));
+
+        // Fetch filtered orders
+        Page<Order> pageResult = orderRepository.findByBuyerWithFilters(
+            buyer,
+            filter.getCreatedFrom(),
+            filter.getCreatedTo(),
+            filter.getMinPrice(),
+            filter.getMaxPrice(),
+            pageable
+        );
+
+        // Convert to response DTOs
+        List<OrderSummaryResponse> summaries = pageResult.getContent().stream()
+            .map(this::toOrderSummary)
+            .collect(Collectors.toList());
+
+        return OrderFilterResponse.builder()
+            .orders(summaries)
+            .totalCount(pageResult.getTotalElements())
+            .currentPage(page)
+            .pageSize(pageSize)
+            .totalPages(pageResult.getTotalPages())
+            .build();
+    }
+
+    /**
+     * Filter seller's sub-orders with flexible filtering options
+     */
+    @Transactional
+    public SubOrderFilterResponse filterSellerSubOrders(Long sellerId, SubOrderFilterRequest filter) {
+        User seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+
+        if (seller.getRole() != UserRole.SELLER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
+        }
+
+        // Set default pagination values
+        int page = filter.getPage() != null ? filter.getPage() : 0;
+        int pageSize = filter.getPageSize() != null ? filter.getPageSize() : 10;
+        
+        // Validate pagination
+        if (page < 0) page = 0;
+        if (pageSize <= 0 || pageSize > 100) pageSize = 10;
+
+        // Build sort
+        Sort.Direction direction = "DESC".equalsIgnoreCase(filter.getSortDirection()) 
+            ? Sort.Direction.DESC : Sort.Direction.ASC;
+        String sortBy = filter.getSortBy() != null ? filter.getSortBy() : "id";
+        
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(direction, sortBy));
+
+        // Fetch filtered sub-orders
+        Page<SubOrder> pageResult = subOrderRepository.findBySellerWithFilters(
+            seller,
+            filter.getStatus(),
+            filter.getCreatedFrom(),
+            filter.getCreatedTo(),
+            filter.getMinPrice(),
+            filter.getMaxPrice(),
+            pageable
+        );
+
+        // Convert to response DTOs
+        List<SubOrderSummaryResponse> summaries = pageResult.getContent().stream()
+            .map(this::toSubOrderSummary)
+            .collect(Collectors.toList());
+
+        return SubOrderFilterResponse.builder()
+            .subOrders(summaries)
+            .totalCount(pageResult.getTotalElements())
+            .currentPage(page)
+            .pageSize(pageSize)
+            .totalPages(pageResult.getTotalPages())
+            .build();
+    }
+
+    /**
+     * Search seller's sub-orders by buyer name
+     */
+    @Transactional
+    public List<SubOrderSummaryResponse> searchSellerSubOrdersByBuyer(Long sellerId, String buyerName) {
+        User seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+
+        if (seller.getRole() != UserRole.SELLER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
+        }
+
+        if (buyerName == null || buyerName.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Buyer name cannot be empty");
+        }
+
+        return subOrderRepository.findBySellerAndBuyerNameContaining(seller, buyerName.trim())
+            .stream()
+            .map(this::toSubOrderSummary)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Get orders by status (for buyers)
+     */
+    public List<OrderSummaryResponse> getBuyerOrdersByStatus(Long buyerId, OrderStatus status) {
+        User buyer = userRepository.findById(buyerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
+
+        if (buyer.getRole() != UserRole.BUYER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a buyer");
+        }
+
+        List<Order> orders = orderRepository.findByBuyerOrderByCreatedAtDesc(buyer);
+        
+        return orders.stream()
+            .filter(order -> hasOrderStatus(order, status))
+            .map(this::toOrderSummary)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Get sub-orders by status (for sellers)
+     */
+    public List<SubOrderSummaryResponse> getSellerSubOrdersByStatus(Long sellerId, OrderStatus status) {
+        User seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+
+        if (seller.getRole() != UserRole.SELLER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
+        }
+
+        return subOrderRepository.findBySellerAndStatusOrdered(seller, status)
+            .stream()
+            .map(this::toSubOrderSummary)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Helper: Convert Order to OrderSummaryResponse
+     */
+    private OrderSummaryResponse toOrderSummary(Order order) {
+        OrderStatus overallStatus = determineOverallOrderStatus(order);
+        
+        return OrderSummaryResponse.builder()
+            .orderId(order.getId())
+            .buyerId(order.getBuyer() == null ? null : order.getBuyer().getId())
+            .buyerUsername(order.getBuyer() == null ? null : order.getBuyer().getUsername())
+            .totalAmount(order.getTotalAmount())
+            .createdAt(order.getCreatedAt())
+            .subOrderCount(order.getSubOrders() == null ? 0 : order.getSubOrders().size())
+            .overallStatus(overallStatus)
+            .shippingAddress(order.getShippingAddress())
+            .build();
+    }
+
+    /**
+     * Helper: Determine overall order status based on sub-orders
+     */
+    private OrderStatus determineOverallOrderStatus(Order order) {
+        if (order.getSubOrders() == null || order.getSubOrders().isEmpty()) {
+            return OrderStatus.PENDING_PAYMENT;
+        }
+
+        if (order.getSubOrders().stream().allMatch(so -> so.getStatus() == OrderStatus.CANCELLED)) {
+            return OrderStatus.CANCELLED;
+        }
+
+        // If all sub-orders are completed, order is completed
+        if (order.getSubOrders().stream().allMatch(so -> so.getStatus() == OrderStatus.COMPLETED)) {
+            return OrderStatus.COMPLETED;
+        }
+
+        // If any sub-order is shipping, order is being shipped
+        if (order.getSubOrders().stream().anyMatch(so -> so.getStatus() == OrderStatus.SHIPPING)) {
+            return OrderStatus.SHIPPING;
+        }
+
+        // If any sub-order is processing, order is processing
+        if (order.getSubOrders().stream().anyMatch(so -> so.getStatus() == OrderStatus.PROCESSING)) {
+            return OrderStatus.PROCESSING;
+        }
+
+        return OrderStatus.PENDING_PAYMENT;
+    }
+
+    /**
+     * Helper: Check if order has a specific status (by checking sub-orders)
+     */
+    private boolean hasOrderStatus(Order order, OrderStatus status) {
+        if (order.getSubOrders() == null || order.getSubOrders().isEmpty()) {
+            return status == OrderStatus.PENDING_PAYMENT;
+        }
+
+        if (status == OrderStatus.CANCELLED || status == OrderStatus.COMPLETED || status == OrderStatus.PENDING_PAYMENT) {
+            return order.getSubOrders().stream()
+                .allMatch(subOrder -> subOrder.getStatus() == status);
+        }
+
+        return order.getSubOrders().stream()
+            .anyMatch(subOrder -> subOrder.getStatus() == status);
+    }
+
+    private boolean canBuyerCancelOrder(Order order) {
+        if (order.getSubOrders() == null || order.getSubOrders().isEmpty()) {
+            return true;
+        }
+
+        return order.getSubOrders().stream()
+            .allMatch(subOrder -> subOrder.getStatus() == OrderStatus.PENDING_PAYMENT);
     }
 }

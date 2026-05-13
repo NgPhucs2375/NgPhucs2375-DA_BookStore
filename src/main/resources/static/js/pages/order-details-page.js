@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const orders = await ApiService.Order.getBuyerOrders();
         const list = Array.isArray(orders) ? orders : [];
-        return list.length > 0 ? Number(list[0].id) : null;
+        return list.length > 0 ? Number(list[0].orderId || list[0].id) : null;
     };
 
     const bindPage = async () => {
@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const shipping = totalItems > 0 ? 35000 : 0;
         const shippingDiscount = subtotal >= 250000 ? 15000 : 0;
         const total = Math.max(0, subtotal + shipping - shippingDiscount);
+        const cancelButton = document.getElementById('details-cancel-order-button');
+        const cancelHint = document.getElementById('details-cancel-hint');
+        const canCancel = items.length > 0 && items.every((item) => String(item.subOrderStatus || '').toUpperCase() === 'PENDING_PAYMENT');
 
         const metaEl = document.getElementById('details-order-meta');
         if (metaEl) {
@@ -97,6 +100,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `).join('');
             }
+        }
+
+        if (cancelButton) {
+            cancelButton.disabled = !canCancel;
+            cancelButton.classList.toggle('opacity-50', !canCancel);
+            cancelButton.classList.toggle('cursor-not-allowed', !canCancel);
+            cancelButton.classList.toggle('bg-gray-100', !canCancel);
+            cancelButton.classList.toggle('text-gray-400', !canCancel);
+            cancelButton.classList.toggle('border-gray-200', !canCancel);
+            cancelButton.classList.toggle('bg-red-50', canCancel);
+            cancelButton.classList.toggle('text-red-700', canCancel);
+            cancelButton.classList.toggle('border-red-200', canCancel);
+            cancelButton.textContent = canCancel ? 'Hủy đơn hàng' : 'Không thể hủy';
+        }
+
+        if (cancelHint) {
+            cancelHint.textContent = canCancel
+                ? 'Đơn này đang chờ xác nhận, bạn có thể hủy ngay.'
+                : 'Đơn hàng chỉ có thể hủy khi tất cả phần giao vẫn đang chờ xác nhận.';
+        }
+
+        if (cancelButton) {
+            cancelButton.onclick = async () => {
+                if (!canCancel) return;
+
+                if (!confirm('Bạn chắc chắn muốn hủy đơn hàng này?')) {
+                    return;
+                }
+
+                try {
+                    await ApiService.Order.cancelBuyerOrder(orderId);
+                    alert('Hủy đơn hàng thành công');
+                    location.reload();
+                } catch (error) {
+                    alert('Lỗi hủy đơn hàng: ' + error.message);
+                }
+            };
         }
     };
 

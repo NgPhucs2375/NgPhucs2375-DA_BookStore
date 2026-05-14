@@ -1,5 +1,6 @@
 package com.example.bookstore.service;
 
+import com.example.bookstore.dto.SubOrderStatusUpdateRequest;
 import com.example.bookstore.dto.SubOrderSummaryResponse;
 import com.example.bookstore.dto.SellerAnalyticsResponse;
 import com.example.bookstore.model.Book;
@@ -8,11 +9,7 @@ import com.example.bookstore.model.SubOrder;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.OrderStatus;
 import com.example.bookstore.model.enums.UserRole;
-import com.example.bookstore.repository.BookRepository;
-import com.example.bookstore.repository.CartRepository;
-import com.example.bookstore.repository.OrderRepository;
-import com.example.bookstore.repository.SubOrderRepository;
-import com.example.bookstore.repository.UserRepository;
+import com.example.bookstore.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,6 +50,12 @@ class OrderServiceSecurityAndOwnershipTest {
     @Mock
     private VoucherService voucherService;
 
+    @Mock
+    private OrderItemRepository orderItemRepository;
+
+    @Mock
+    private SubOrderStatusHistoryRepository statusHistoryRepository;
+
     private OrderService orderService;
 
     @BeforeEach
@@ -63,10 +66,11 @@ class OrderServiceSecurityAndOwnershipTest {
             orderRepository,
             subOrderRepository,
             bookRepository,
+            orderItemRepository,
+            statusHistoryRepository,
             notificationService,
             voucherService
         );
-
     }
 
     @Test
@@ -115,9 +119,13 @@ class OrderServiceSecurityAndOwnershipTest {
         when(userRepository.findById(11L)).thenReturn(Optional.of(callerSeller));
         when(subOrderRepository.findById(100L)).thenReturn(Optional.of(subOrder));
 
+        SubOrderStatusUpdateRequest request = SubOrderStatusUpdateRequest.builder()
+            .status(OrderStatus.SHIPPING)
+            .build();
+
         ResponseStatusException ex = assertThrows(
             ResponseStatusException.class,
-            () -> orderService.updateSubOrderStatusForSeller(11L, 100L, OrderStatus.SHIPPING)
+            () -> orderService.updateSubOrderStatusForSeller(11L, 100L, request)
         );
 
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
@@ -145,15 +153,19 @@ class OrderServiceSecurityAndOwnershipTest {
         when(subOrderRepository.findById(200L)).thenReturn(Optional.of(subOrder));
         when(subOrderRepository.save(subOrder)).thenReturn(subOrder);
 
-        SubOrderSummaryResponse response = orderService.updateSubOrderStatusForSeller(33L, 200L, OrderStatus.SHIPPING);
+        SubOrderStatusUpdateRequest request = SubOrderStatusUpdateRequest.builder()
+            .status(OrderStatus.SHIPPING)
+            .build();
+
+        SubOrderSummaryResponse response = orderService.updateSubOrderStatusForSeller(33L, 200L, request);
 
         assertEquals(OrderStatus.SHIPPING, response.getStatus());
         assertEquals(33L, response.getSellerId());
         assertEquals(2L, response.getOrderId());
     }
 
-        @Test
-        void getSellerAnalytics_shouldBuildSummaryFromCompletedOrders() {
+    @Test
+    void getSellerAnalytics_shouldBuildSummaryFromCompletedOrders() {
         User seller = User.builder()
             .id(44L)
             .username("seller-analytics")
@@ -213,5 +225,5 @@ class OrderServiceSecurityAndOwnershipTest {
         assertEquals(1, response.getTopSellingProducts().size());
         assertEquals(1, response.getLowStockProducts().size());
         assertEquals(1, response.getRecentTransactions().size());
-        }
+    }
 }

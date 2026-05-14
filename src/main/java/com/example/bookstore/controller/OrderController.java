@@ -11,6 +11,7 @@ import com.example.bookstore.dto.OrderFilterResponse;
 import com.example.bookstore.dto.OrderSummaryResponse;
 import com.example.bookstore.dto.SubOrderFilterRequest;
 import com.example.bookstore.dto.SubOrderFilterResponse;
+import com.example.bookstore.dto.SubOrderStatusUpdateRequest;
 import com.example.bookstore.model.Order;
 import com.example.bookstore.model.enums.OrderStatus;
 import com.example.bookstore.service.OrderService;
@@ -109,9 +110,9 @@ public class OrderController {
     public SubOrderSummaryResponse updateSubOrderStatus(
             @RequestHeader("X-User-Id") Long sellerId,
             @PathVariable Long subOrderId,
-            @RequestParam OrderStatus status
+            @Valid @RequestBody SubOrderStatusUpdateRequest request
     ) {
-        return orderService.updateSubOrderStatusForSeller(sellerId, subOrderId, status);
+        return orderService.updateSubOrderStatusForSeller(sellerId, subOrderId, request);
     }
 
     @PatchMapping("/me/{orderId}/cancel")

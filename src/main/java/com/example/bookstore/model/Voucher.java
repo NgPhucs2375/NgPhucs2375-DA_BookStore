@@ -21,7 +21,7 @@ public class Voucher {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "voucher_code", nullable = false, unique = true, length = 50)
     private String code;
 
     @Column(name = "name", nullable = false, length = 100)
@@ -41,11 +41,11 @@ public class Voucher {
     private Double maxDiscountAmount;
 
     @Column(name = "start_date", nullable = false)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime startDate;
 
     @Column(name = "end_date", nullable = false)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime endDate;
 
     @Column(name = "usage_limit", nullable = false)
@@ -55,12 +55,11 @@ public class Voucher {
     @Builder.Default
     private Integer usedCount = 0;
 
-    @Column(name = "remaining_quantity", nullable = false)
+    @Column(name = "remaining_quantity")
     private Integer remainingQuantity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "seller_id", nullable = false)
-    @com.fasterxml.jackson.annotation.JsonIgnore
     private User seller;
 
     @Enumerated(EnumType.STRING)

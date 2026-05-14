@@ -1,24 +1,9 @@
 package com.example.bookstore.service;
 
-import com.example.bookstore.dto.CheckoutRequest;
-import com.example.bookstore.dto.CheckoutResponse;
-import com.example.bookstore.dto.OrderDetailResponse;
-import com.example.bookstore.dto.OrderItemDetailResponse;
-import com.example.bookstore.dto.SubOrderSummaryResponse;
-import com.example.bookstore.dto.OrderFilterRequest;
-import com.example.bookstore.dto.OrderFilterResponse;
-import com.example.bookstore.dto.OrderSummaryResponse;
-import com.example.bookstore.dto.SubOrderFilterRequest;
-import com.example.bookstore.dto.SubOrderFilterResponse;
-import com.example.bookstore.dto.SellerAnalyticsResponse;
+import com.example.bookstore.dto.*;
 import com.example.bookstore.model.*;
-import com.example.bookstore.model.enums.ApprovalStatus;
-import com.example.bookstore.model.enums.OrderStatus;
-import com.example.bookstore.model.enums.UserRole;
-import com.example.bookstore.repository.CartRepository;
-import com.example.bookstore.repository.OrderRepository;
-import com.example.bookstore.repository.SubOrderRepository;
-import com.example.bookstore.repository.UserRepository;
+import com.example.bookstore.model.enums.*;
+import com.example.bookstore.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,10 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,9 +26,15 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final OrderRepository orderRepository;
     private final SubOrderRepository subOrderRepository;
-    private final com.example.bookstore.repository.BookRepository bookRepository;
-    private final com.example.bookstore.service.NotificationService notificationService;
+    private final BookRepository bookRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final SubOrderStatusHistoryRepository statusHistoryRepository;
+    private final NotificationService notificationService;
     private final VoucherService voucherService;
+
+    // ========================================================================
+    // CHECKOUT
+    // ========================================================================
 
     @Transactional
     public CheckoutResponse checkoutFromCart(CheckoutRequest request) {
@@ -99,6 +87,7 @@ public class OrderService {
                     .parentOrder(order)
                     .seller(seller)
                     .status(OrderStatus.PENDING_PAYMENT)
+                    .paymentStatus(PaymentStatus.UNPAID)
                     .subTotal(0.0)
                     .build();
 
@@ -116,8 +105,10 @@ public class OrderService {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cart contains unapproved book");
                 }
 
+                // Kiểm tra stock tại thời điểm đặt hàng (chưa trừ)
                 if (book.getStockQuantity() == null || quantity > book.getStockQuantity()) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cart quantity exceeds stock");
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Sản phẩm \"" + book.getTitle() + "\" không đủ hàng. Còn: " + book.getStockQuantity());
                 }
 
                 double unitPrice = book.getPrice() == null ? 0.0 : book.getPrice();
@@ -128,6 +119,7 @@ public class OrderService {
                         .book(book)
                         .unitPrice(unitPrice)
                         .quantity(quantity)
+                        .stockDeducted(false) // Chưa trừ stock
                         .build();
                 orderItems.add(orderItem);
             }
@@ -152,6 +144,14 @@ public class OrderService {
 
         Order saved = orderRepository.save(order);
 
+        // Ghi log trạng thái ban đầu cho mỗi sub_order
+        if (saved.getSubOrders() != null) {
+            for (SubOrder so : saved.getSubOrders()) {
+                logStatusChange(so, null, OrderStatus.PENDING_PAYMENT, buyer, ChangedByRole.SYSTEM,
+                    "Đơn hàng được tạo từ giỏ hàng");
+            }
+        }
+
         // Record Voucher Usage
         if (appliedVoucher != null) {
             voucherService.useVoucher(appliedVoucher, buyer, saved, discountAmount);
@@ -168,6 +168,10 @@ public class OrderService {
                 .subOrderCount(saved.getSubOrders() == null ? 0 : saved.getSubOrders().size())
                 .build();
     }
+
+    // ========================================================================
+    // BUYER ORDER QUERIES
+    // ========================================================================
 
     public List<Order> getBuyerOrders(Long buyerId) {
         User buyer = userRepository.findById(buyerId)
@@ -191,6 +195,10 @@ public class OrderService {
             .collect(Collectors.toList());
     }
 
+    // ========================================================================
+    // BUYER ORDER CANCELLATION
+    // ========================================================================
+
     @Transactional
     public OrderSummaryResponse cancelCurrentBuyerOrder(Long buyerId, Long orderId) {
         User buyer = userRepository.findById(buyerId)
@@ -208,18 +216,23 @@ public class OrderService {
         }
 
         if (!canBuyerCancelOrder(order)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only pending orders can be cancelled");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Chỉ có thể hủy đơn hàng ở trạng thái chờ xử lý");
         }
 
         if (order.getSubOrders() != null) {
             for (SubOrder subOrder : order.getSubOrders()) {
-                subOrder.setStatus(OrderStatus.CANCELLED);
+                cancelSubOrder(subOrder, buyer, ChangedByRole.BUYER, "Người mua yêu cầu hủy đơn hàng #" + orderId);
             }
             subOrderRepository.saveAll(order.getSubOrders());
         }
 
         return toOrderSummary(order);
     }
+
+    // ========================================================================
+    // BUYER ORDER DETAIL
+    // ========================================================================
 
     @Transactional
     public OrderDetailResponse getCurrentBuyerOrderDetail(Long buyerId, Long orderId) {
@@ -285,6 +298,10 @@ public class OrderService {
             .build();
     }
 
+    // ========================================================================
+    // SELLER SUB-ORDER QUERIES
+    // ========================================================================
+
     @Transactional
     public List<SubOrderSummaryResponse> getSellerSubOrders(Long sellerId) {
         User seller = userRepository.findById(sellerId)
@@ -299,8 +316,45 @@ public class OrderService {
                 .toList();
     }
 
+    /**
+     * Lấy chi tiết đầy đủ của một sub-order cho seller
+     */
     @Transactional
-    public SubOrderSummaryResponse updateSubOrderStatusForSeller(Long sellerId, Long subOrderId, OrderStatus status) {
+    public SubOrderDetailResponse getSellerSubOrderDetail(Long sellerId, Long subOrderId) {
+        User seller = userRepository.findById(sellerId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+
+        if (seller.getRole() != UserRole.SELLER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
+        }
+
+        SubOrder subOrder = subOrderRepository.findById(subOrderId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sub order not found"));
+
+        if (subOrder.getSeller() == null || !sellerId.equals(subOrder.getSeller().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller cannot access this sub order");
+        }
+
+        return toSubOrderDetail(subOrder);
+    }
+
+    // ========================================================================
+    // SELLER STATUS UPDATE - STATE MACHINE
+    // ========================================================================
+
+    /**
+     * Cập nhật trạng thái sub-order cho seller với state machine validation.
+     * 
+     * Flow hợp lệ:
+     *   PENDING_PAYMENT -> PROCESSING (xác nhận đơn, trừ stock)
+     *   PROCESSING -> SHIPPING (giao hàng)
+     *   SHIPPING -> COMPLETED (hoàn thành)
+     *   PROCESSING -> CANCELLED (hủy đơn, hoàn stock, hoàn tiền nếu đã thanh toán)
+     *   PENDING_PAYMENT -> CANCELLED (hủy đơn)
+     */
+    @Transactional
+    public SubOrderSummaryResponse updateSubOrderStatusForSeller(Long sellerId, Long subOrderId,
+                                                                   SubOrderStatusUpdateRequest request) {
         User seller = userRepository.findById(sellerId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
 
@@ -315,38 +369,166 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller cannot update this sub order");
         }
 
-        subOrder.setStatus(status);
+        OrderStatus newStatus = request.getStatus();
+        OrderStatus currentStatus = subOrder.getStatus();
+
+        // Validate state transition
+        validateStatusTransition(currentStatus, newStatus, "SELLER");
+
+        // Execute transition with side effects
+        executeStatusTransition(subOrder, newStatus, seller, ChangedByRole.SELLER, request.getNote());
+
         SubOrder saved = subOrderRepository.save(subOrder);
 
-        // Send notification to buyer about sub-order status change
-        try {
-            if (saved.getParentOrder() != null && saved.getParentOrder().getBuyer() != null) {
-                Long buyerId = saved.getParentOrder().getBuyer().getId();
-                com.example.bookstore.dto.NotificationCreateRequest req = new com.example.bookstore.dto.NotificationCreateRequest();
-                req.setUserId(buyerId);
-                req.setType(com.example.bookstore.model.enums.NotificationType.SUB_ORDER_STATUS_CHANGED);
-                req.setTitle("Trạng thái đơn hàng thay đổi");
-                req.setMessage(String.format("Sub-order #%d của đơn #%d đã chuyển sang %s", saved.getId(),
-                        saved.getParentOrder().getId(), status == null ? "UNKNOWN" : status.name()));
-                req.setPayloadJson(String.format("{\"subOrderId\":%d,\"orderId\":%d,\"status\":\"%s\"}",
-                        saved.getId(), saved.getParentOrder().getId(), status == null ? "UNKNOWN" : status.name()));
-                req.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
-
-                // fire-and-forget; NotificationService will persist and enqueue delivery with retry
-                try {
-                    notificationService.createNotification(sellerId, buyerId, req);
-                } catch (Exception ignored) {
-                }
-            }
-        } catch (Exception ignored) {
-        }
+        // Send notification to buyer
+        sendStatusChangeNotification(saved, seller);
 
         return toSubOrderSummary(saved);
     }
 
     /**
-     * Get seller analytics for the dashboard
+     * Seller hủy sub-order (chỉ khi đang ở PROCESSING hoặc PENDING_PAYMENT)
      */
+    @Transactional
+    public SubOrderSummaryResponse cancelSubOrderBySeller(Long sellerId, Long subOrderId, String reason) {
+        User seller = userRepository.findById(sellerId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+
+        if (seller.getRole() != UserRole.SELLER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
+        }
+
+        SubOrder subOrder = subOrderRepository.findById(subOrderId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sub order not found"));
+
+        if (subOrder.getSeller() == null || !sellerId.equals(subOrder.getSeller().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller cannot cancel this sub order");
+        }
+
+        OrderStatus currentStatus = subOrder.getStatus();
+        if (currentStatus != OrderStatus.PENDING_PAYMENT && currentStatus != OrderStatus.PROCESSING) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Chỉ có thể hủy đơn ở trạng thái chờ xử lý hoặc đang xử lý");
+        }
+
+        cancelSubOrder(subOrder, seller, ChangedByRole.SELLER,
+            reason != null ? reason : "Người bán hủy đơn hàng #" + subOrder.getParentOrder().getId());
+
+        SubOrder saved = subOrderRepository.save(subOrder);
+
+        sendStatusChangeNotification(saved, seller);
+
+        return toSubOrderSummary(saved);
+    }
+
+    // ========================================================================
+    // REFUND PROCESSING
+    // ========================================================================
+
+    /**
+     * Xử lý hoàn tiền cho sub-order đã hủy (nếu đã thanh toán)
+     */
+    @Transactional
+    public SubOrderSummaryResponse processRefund(Long sellerId, Long subOrderId, RefundRequest request) {
+        User seller = userRepository.findById(sellerId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+
+        if (seller.getRole() != UserRole.SELLER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
+        }
+
+        SubOrder subOrder = subOrderRepository.findById(subOrderId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sub order not found"));
+
+        if (subOrder.getSeller() == null || !sellerId.equals(subOrder.getSeller().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller cannot refund this sub order");
+        }
+
+        if (subOrder.getStatus() != OrderStatus.CANCELLED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Chỉ có thể hoàn tiền cho đơn đã hủy");
+        }
+
+        if (subOrder.getPaymentStatus() != PaymentStatus.PAID) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Đơn này chưa được thanh toán, không cần hoàn tiền");
+        }
+
+        if (subOrder.getPaymentStatus() == PaymentStatus.REFUNDED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Đơn này đã được hoàn tiền trước đó");
+        }
+
+        Double refundAmount = request.getRefundAmount();
+        if (refundAmount == null || refundAmount <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số tiền hoàn không hợp lệ");
+        }
+
+        if (refundAmount > subOrder.getSubTotal()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Số tiền hoàn không thể lớn hơn tổng giá trị đơn");
+        }
+
+        subOrder.setRefundAmount(refundAmount);
+        subOrder.setRefundReason(request.getReason());
+        subOrder.setRefundedAt(LocalDateTime.now());
+
+        if (refundAmount >= subOrder.getSubTotal()) {
+            subOrder.setPaymentStatus(PaymentStatus.REFUNDED);
+        } else {
+            subOrder.setPaymentStatus(PaymentStatus.PARTIALLY_REFUNDED);
+        }
+
+        SubOrder saved = subOrderRepository.save(subOrder);
+
+        // Ghi log hoàn tiền
+        logStatusChange(saved, saved.getStatus(), saved.getStatus(), seller, ChangedByRole.SELLER,
+            "Hoàn tiền: " + refundAmount + "đ. Lý do: " + (request.getReason() != null ? request.getReason() : ""));
+
+        return toSubOrderSummary(saved);
+    }
+
+    // ========================================================================
+    // STATUS HISTORY
+    // ========================================================================
+
+    /**
+     * Lấy lịch sử thay đổi trạng thái của một sub-order
+     */
+    @Transactional
+    public List<SubOrderDetailResponse.StatusHistoryResponse> getSubOrderStatusHistory(Long sellerId, Long subOrderId) {
+        User seller = userRepository.findById(sellerId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+
+        if (seller.getRole() != UserRole.SELLER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
+        }
+
+        SubOrder subOrder = subOrderRepository.findById(subOrderId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sub order not found"));
+
+        if (subOrder.getSeller() == null || !sellerId.equals(subOrder.getSeller().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller cannot access this sub order");
+        }
+
+        return statusHistoryRepository.findBySubOrderIdOrderByCreatedAtDesc(subOrderId)
+            .stream()
+            .map(h -> SubOrderDetailResponse.StatusHistoryResponse.builder()
+                .historyId(h.getId())
+                .fromStatus(h.getFromStatus() != null ? h.getFromStatus().name() : null)
+                .toStatus(h.getToStatus().name())
+                .changedBy(h.getChangedBy() != null ? h.getChangedBy().getUsername() : null)
+                .changedByRole(h.getChangedByRole() != null ? h.getChangedByRole().name() : null)
+                .note(h.getNote())
+                .createdAt(h.getCreatedAt())
+                .build())
+            .collect(Collectors.toList());
+    }
+
+    // ========================================================================
+    // SELLER ANALYTICS
+    // ========================================================================
+
     @Transactional
     public SellerAnalyticsResponse getSellerAnalytics(Long sellerId, int days) {
         User seller = userRepository.findById(sellerId)
@@ -359,15 +541,12 @@ public class OrderService {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = end.minusDays(days);
 
-        // Fetch sub-orders for the seller in the given period
         List<SubOrder> subOrders = subOrderRepository.findBySellerAndDateRange(seller, start, end);
 
-        // Filter for completed orders for revenue calculation
         List<SubOrder> completedSubOrders = subOrders.stream()
                 .filter(so -> so.getStatus() == OrderStatus.COMPLETED)
                 .toList();
 
-        // Calculate KPI
         double totalRevenue = completedSubOrders.stream()
                 .mapToDouble(SubOrder::getSubTotal)
                 .sum();
@@ -381,7 +560,6 @@ public class OrderService {
                 .mapToLong(OrderItem::getQuantity)
                 .sum();
 
-        // Top Selling Products
         Map<Book, Long> productSales = completedSubOrders.stream()
                 .flatMap(so -> so.getItems().stream())
                 .collect(Collectors.groupingBy(
@@ -410,12 +588,11 @@ public class OrderService {
                             .stockQuantity(book.getStockQuantity())
                             .soldUnits(units)
                             .revenue(revenue)
-                            .progressPercent(0.0) // Can calculate relative to top seller later
+                            .progressPercent(0.0)
                             .build();
                 })
                 .toList();
 
-        // Low Stock Products (Top 5 lowest stock)
         List<SellerAnalyticsResponse.StockAlert> lowStockProducts = bookRepository.findBySeller(seller).stream()
                 .filter(book -> book.getStockQuantity() != null && book.getStockQuantity() < 10)
                 .sorted((b1, b2) -> b1.getStockQuantity().compareTo(b2.getStockQuantity()))
@@ -431,7 +608,6 @@ public class OrderService {
                         .build())
                 .toList();
 
-        // Recent Transactions (Top 10 recent sub-orders)
         List<SellerAnalyticsResponse.TransactionRow> recentTransactions = subOrders.stream()
                 .sorted((so1, so2) -> {
                     LocalDateTime d1 = so1.getParentOrder() != null ? so1.getParentOrder().getCreatedAt() : LocalDateTime.MIN;
@@ -449,7 +625,7 @@ public class OrderService {
                         .productName(item.getBook() != null ? item.getBook().getTitle() : "Unknown")
                         .quantity(item.getQuantity())
                         .amount(item.getUnitPrice() * item.getQuantity())
-                        .paymentMethod("COD") // Defaulting to COD if not specified
+                        .paymentMethod("COD")
                         .build()))
                 .limit(10)
                 .toList();
@@ -468,55 +644,15 @@ public class OrderService {
                 .topSellingProducts(topSellingProducts)
                 .lowStockProducts(lowStockProducts)
                 .recentTransactions(recentTransactions)
-                .revenueTimeline(new ArrayList<>()) // Placeholder
-                .categoryRevenue(new ArrayList<>()) // Placeholder
+                .revenueTimeline(new ArrayList<>())
+                .categoryRevenue(new ArrayList<>())
                 .build();
     }
 
-    private SubOrderSummaryResponse toSubOrderSummary(SubOrder subOrder) {
-        User seller = subOrder.getSeller();
-        String sellerName = seller == null ? null : (seller.getShopName() == null ? seller.getUsername() : seller.getShopName());
+    // ========================================================================
+    // FILTERING & SEARCH
+    // ========================================================================
 
-        User buyer = subOrder.getParentOrder() == null ? null : subOrder.getParentOrder().getBuyer();
-        String buyerUsername = buyer == null ? null : buyer.getUsername();
-
-        int itemCount = 0;
-        List<String> titles = new ArrayList<>();
-        List<OrderItem> items = subOrder.getItems();
-        if (items != null) {
-            for (OrderItem item : items) {
-                int qty = item.getQuantity() == null ? 0 : item.getQuantity();
-                itemCount += qty;
-
-                if (titles.size() < 3) {
-                    Book book = item.getBook();
-                    String title = book == null || book.getTitle() == null ? "Không rõ" : book.getTitle();
-                    titles.add(title);
-                }
-            }
-        }
-
-        String itemSummary = titles.isEmpty() ? null : String.join(", ", titles);
-        if (items != null && items.size() > titles.size()) {
-            itemSummary = itemSummary + " ...";
-        }
-
-        return SubOrderSummaryResponse.builder()
-                .subOrderId(subOrder.getId())
-                .orderId(subOrder.getParentOrder() == null ? null : subOrder.getParentOrder().getId())
-                .sellerId(seller == null ? null : seller.getId())
-                .sellerName(sellerName)
-                .buyerUsername(buyerUsername)
-                .itemSummary(itemSummary)
-                .itemCount(itemCount)
-                .status(subOrder.getStatus())
-                .subTotal(subOrder.getSubTotal())
-                .build();
-    }
-
-    /**
-     * Filter buyer orders with flexible filtering options
-     */
     @Transactional
     public OrderFilterResponse filterBuyerOrders(Long buyerId, OrderFilterRequest filter) {
         User buyer = userRepository.findById(buyerId)
@@ -526,22 +662,16 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a buyer");
         }
 
-        // Set default pagination values
         int page = filter.getPage() != null ? filter.getPage() : 0;
         int pageSize = filter.getPageSize() != null ? filter.getPageSize() : 10;
-        
-        // Validate pagination
         if (page < 0) page = 0;
         if (pageSize <= 0 || pageSize > 100) pageSize = 10;
 
-        // Build sort
-        Sort.Direction direction = "DESC".equalsIgnoreCase(filter.getSortDirection()) 
+        Sort.Direction direction = "DESC".equalsIgnoreCase(filter.getSortDirection())
             ? Sort.Direction.DESC : Sort.Direction.ASC;
         String sortBy = filter.getSortBy() != null ? filter.getSortBy() : "createdAt";
-        
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(direction, sortBy));
 
-        // Fetch filtered orders
         Page<Order> pageResult = orderRepository.findByBuyerWithFilters(
             buyer,
             filter.getCreatedFrom(),
@@ -551,7 +681,6 @@ public class OrderService {
             pageable
         );
 
-        // Convert to response DTOs
         List<OrderSummaryResponse> summaries = pageResult.getContent().stream()
             .map(this::toOrderSummary)
             .collect(Collectors.toList());
@@ -565,9 +694,6 @@ public class OrderService {
             .build();
     }
 
-    /**
-     * Filter seller's sub-orders with flexible filtering options
-     */
     @Transactional
     public SubOrderFilterResponse filterSellerSubOrders(Long sellerId, SubOrderFilterRequest filter) {
         User seller = userRepository.findById(sellerId)
@@ -577,22 +703,16 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
         }
 
-        // Set default pagination values
         int page = filter.getPage() != null ? filter.getPage() : 0;
         int pageSize = filter.getPageSize() != null ? filter.getPageSize() : 10;
-        
-        // Validate pagination
         if (page < 0) page = 0;
         if (pageSize <= 0 || pageSize > 100) pageSize = 10;
 
-        // Build sort
-        Sort.Direction direction = "DESC".equalsIgnoreCase(filter.getSortDirection()) 
+        Sort.Direction direction = "DESC".equalsIgnoreCase(filter.getSortDirection())
             ? Sort.Direction.DESC : Sort.Direction.ASC;
         String sortBy = filter.getSortBy() != null ? filter.getSortBy() : "id";
-        
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(direction, sortBy));
 
-        // Fetch filtered sub-orders
         Page<SubOrder> pageResult = subOrderRepository.findBySellerWithFilters(
             seller,
             filter.getStatus(),
@@ -603,7 +723,6 @@ public class OrderService {
             pageable
         );
 
-        // Convert to response DTOs
         List<SubOrderSummaryResponse> summaries = pageResult.getContent().stream()
             .map(this::toSubOrderSummary)
             .collect(Collectors.toList());
@@ -617,9 +736,6 @@ public class OrderService {
             .build();
     }
 
-    /**
-     * Search seller's sub-orders by buyer name
-     */
     @Transactional
     public List<SubOrderSummaryResponse> searchSellerSubOrdersByBuyer(Long sellerId, String buyerName) {
         User seller = userRepository.findById(sellerId)
@@ -639,9 +755,6 @@ public class OrderService {
             .collect(Collectors.toList());
     }
 
-    /**
-     * Get orders by status (for buyers)
-     */
     public List<OrderSummaryResponse> getBuyerOrdersByStatus(Long buyerId, OrderStatus status) {
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
@@ -651,16 +764,13 @@ public class OrderService {
         }
 
         List<Order> orders = orderRepository.findByBuyerOrderByCreatedAtDesc(buyer);
-        
+
         return orders.stream()
             .filter(order -> hasOrderStatus(order, status))
             .map(this::toOrderSummary)
             .collect(Collectors.toList());
     }
 
-    /**
-     * Get sub-orders by status (for sellers)
-     */
     public List<SubOrderSummaryResponse> getSellerSubOrdersByStatus(Long sellerId, OrderStatus status) {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
@@ -675,77 +785,389 @@ public class OrderService {
             .collect(Collectors.toList());
     }
 
+    // ========================================================================
+    // PRIVATE HELPERS - STATE MACHINE & SIDE EFFECTS
+    // ========================================================================
+
     /**
-     * Helper: Convert Order to OrderSummaryResponse
+     * Validate state transition based on current status and requester role.
      */
+    private void validateStatusTransition(OrderStatus current, OrderStatus target, String role) {
+        switch (current) {
+            case PENDING_PAYMENT:
+                if (target != OrderStatus.PROCESSING && target != OrderStatus.CANCELLED) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Đơn chờ xử lý chỉ có thể chuyển sang Đang xử lý hoặc Hủy");
+                }
+                break;
+            case PROCESSING:
+                if (target != OrderStatus.SHIPPING && target != OrderStatus.CANCELLED) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Đơn đang xử lý chỉ có thể chuyển sang Đang giao hoặc Hủy");
+                }
+                break;
+            case SHIPPING:
+                if (target != OrderStatus.COMPLETED) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Đơn đang giao chỉ có thể chuyển sang Hoàn thành");
+                }
+                break;
+            case COMPLETED:
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Đơn đã hoàn thành không thể thay đổi trạng thái");
+            case CANCELLED:
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Đơn đã hủy không thể thay đổi trạng thái");
+            default:
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Trạng thái không hợp lệ: " + current);
+        }
+    }
+
+    /**
+     * Execute status transition with side effects (stock, timestamps, logging).
+     */
+    private void executeStatusTransition(SubOrder subOrder, OrderStatus newStatus,
+                                          User changedBy, ChangedByRole role, String note) {
+        OrderStatus oldStatus = subOrder.getStatus();
+        subOrder.setStatus(newStatus);
+
+        LocalDateTime now = LocalDateTime.now();
+        switch (newStatus) {
+            case PROCESSING:
+                subOrder.setConfirmedAt(now);
+                // Trừ stock khi xác nhận đơn
+                deductStock(subOrder);
+                break;
+            case SHIPPING:
+                subOrder.setShippedAt(now);
+                break;
+            case COMPLETED:
+                subOrder.setCompletedAt(now);
+                break;
+            case CANCELLED:
+                subOrder.setCancelledAt(now);
+                subOrder.setCancelledBy(role.name());
+                // Hoàn stock nếu đã trừ
+                restoreStock(subOrder);
+                // Xử lý hoàn tiền nếu đã thanh toán
+                if (subOrder.getPaymentStatus() == PaymentStatus.PAID) {
+                    subOrder.setRefundAmount(subOrder.getSubTotal());
+                    subOrder.setRefundReason("Hoàn tiền tự động do hủy đơn");
+                    subOrder.setRefundedAt(now);
+                    subOrder.setPaymentStatus(PaymentStatus.REFUNDED);
+                }
+                break;
+            default:
+                break;
+        }
+
+        // Ghi log thay đổi trạng thái
+        logStatusChange(subOrder, oldStatus, newStatus, changedBy, role, note);
+    }
+
+    /**
+     * Hủy sub-order với đầy đủ side effects
+     */
+    private void cancelSubOrder(SubOrder subOrder, User changedBy, ChangedByRole role, String reason) {
+        OrderStatus oldStatus = subOrder.getStatus();
+        subOrder.setStatus(OrderStatus.CANCELLED);
+        subOrder.setCancelledAt(LocalDateTime.now());
+        subOrder.setCancelledBy(role.name());
+
+        // Hoàn stock nếu đã trừ
+        restoreStock(subOrder);
+
+        // Xử lý hoàn tiền nếu đã thanh toán
+        if (subOrder.getPaymentStatus() == PaymentStatus.PAID) {
+            subOrder.setRefundAmount(subOrder.getSubTotal());
+            subOrder.setRefundReason(reason);
+            subOrder.setRefundedAt(LocalDateTime.now());
+            subOrder.setPaymentStatus(PaymentStatus.REFUNDED);
+        }
+
+        // Ghi log
+        logStatusChange(subOrder, oldStatus, OrderStatus.CANCELLED, changedBy, role, reason);
+    }
+
+    /**
+     * Trừ stock khi xác nhận đơn (PROCESSING)
+     */
+    private void deductStock(SubOrder subOrder) {
+        if (subOrder.getItems() == null) return;
+
+        for (OrderItem item : subOrder.getItems()) {
+            if (Boolean.TRUE.equals(item.getStockDeducted())) {
+                continue; // Đã trừ rồi, không trừ lại
+            }
+
+            Book book = item.getBook();
+            if (book == null) continue;
+
+            int quantity = item.getQuantity() != null ? item.getQuantity() : 0;
+            if (quantity <= 0) continue;
+
+            Integer currentStock = book.getStockQuantity();
+            if (currentStock == null || currentStock < quantity) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Sản phẩm \"" + book.getTitle() + "\" không đủ hàng. Còn: " +
+                    (currentStock != null ? currentStock : 0) + ", cần: " + quantity);
+            }
+
+            book.setStockQuantity(currentStock - quantity);
+            bookRepository.save(book);
+
+            item.setStockDeducted(true);
+            item.setStockDeductedAt(LocalDateTime.now());
+        }
+    }
+
+    /**
+     * Hoàn stock khi hủy đơn (nếu đã trừ)
+     */
+    private void restoreStock(SubOrder subOrder) {
+        if (subOrder.getItems() == null) return;
+
+        for (OrderItem item : subOrder.getItems()) {
+            if (!Boolean.TRUE.equals(item.getStockDeducted())) {
+                continue; // Chưa trừ, không cần hoàn
+            }
+
+            Book book = item.getBook();
+            if (book == null) continue;
+
+            int quantity = item.getQuantity() != null ? item.getQuantity() : 0;
+            if (quantity <= 0) continue;
+
+            Integer currentStock = book.getStockQuantity();
+            book.setStockQuantity((currentStock != null ? currentStock : 0) + quantity);
+            bookRepository.save(book);
+
+            item.setStockDeducted(false);
+            item.setStockDeductedAt(null);
+        }
+    }
+
+    /**
+     * Ghi log thay đổi trạng thái
+     */
+    private void logStatusChange(SubOrder subOrder, OrderStatus fromStatus, OrderStatus toStatus,
+                                  User changedBy, ChangedByRole role, String note) {
+        SubOrderStatusHistory history = SubOrderStatusHistory.builder()
+            .subOrder(subOrder)
+            .fromStatus(fromStatus)
+            .toStatus(toStatus)
+            .changedBy(changedBy)
+            .changedByRole(role)
+            .note(note)
+            .createdAt(LocalDateTime.now())
+            .build();
+        statusHistoryRepository.save(history);
+    }
+
+    /**
+     * Gửi thông báo cho buyer khi trạng thái sub-order thay đổi
+     */
+    private void sendStatusChangeNotification(SubOrder subOrder, User seller) {
+        try {
+            Order parentOrder = subOrder.getParentOrder();
+            if (parentOrder == null || parentOrder.getBuyer() == null) return;
+
+            User buyer = parentOrder.getBuyer();
+            String message = "Đơn hàng #" + parentOrder.getId() +
+                " (mã shop: " + subOrder.getId() + ") đã chuyển sang trạng thái: " +
+                getStatusLabel(subOrder.getStatus());
+
+            NotificationCreateRequest req = NotificationCreateRequest.builder()
+                    .type(NotificationType.SUB_ORDER_STATUS_CHANGED)
+                    .title("Cập nhật đơn hàng")
+                    .message(message)
+                    .build();
+
+            notificationService.createNotification(seller.getId(), buyer.getId(), req);
+        } catch (Exception e) {
+            // Không throw exception nếu gửi notification lỗi
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Kiểm tra buyer có thể hủy order không
+     */
+    private boolean canBuyerCancelOrder(Order order) {
+        if (order.getSubOrders() == null || order.getSubOrders().isEmpty()) return false;
+
+        // Buyer chỉ có thể hủy nếu tất cả sub-orders đều ở PENDING_PAYMENT
+        return order.getSubOrders().stream()
+            .allMatch(so -> so.getStatus() == OrderStatus.PENDING_PAYMENT);
+    }
+
+    /**
+     * Kiểm tra order có sub-order với status cụ thể không
+     */
+    private boolean hasOrderStatus(Order order, OrderStatus status) {
+        if (order.getSubOrders() == null) return false;
+        return order.getSubOrders().stream().anyMatch(so -> so.getStatus() == status);
+    }
+
+    // ========================================================================
+    // PRIVATE HELPERS - DTO CONVERSION
+    // ========================================================================
+
     private OrderSummaryResponse toOrderSummary(Order order) {
-        OrderStatus overallStatus = determineOverallOrderStatus(order);
-        
+        if (order == null) return null;
+
+        int totalItems = 0;
+        int subOrderCount = 0;
+        double totalAmount = order.getTotalAmount() != null ? order.getTotalAmount() : 0.0;
+
+        if (order.getSubOrders() != null) {
+            subOrderCount = order.getSubOrders().size();
+            for (SubOrder so : order.getSubOrders()) {
+                if (so.getItems() != null) {
+                    totalItems += so.getItems().stream()
+                        .mapToInt(item -> item.getQuantity() != null ? item.getQuantity() : 0)
+                        .sum();
+                }
+            }
+        }
+
         return OrderSummaryResponse.builder()
             .orderId(order.getId())
-            .buyerId(order.getBuyer() == null ? null : order.getBuyer().getId())
-            .buyerUsername(order.getBuyer() == null ? null : order.getBuyer().getUsername())
-            .totalAmount(order.getTotalAmount())
-            .createdAt(order.getCreatedAt())
-            .subOrderCount(order.getSubOrders() == null ? 0 : order.getSubOrders().size())
-            .overallStatus(overallStatus)
+            .buyerId(order.getBuyer() != null ? order.getBuyer().getId() : null)
+            .buyerUsername(order.getBuyer() != null ? order.getBuyer().getUsername() : null)
             .shippingAddress(order.getShippingAddress())
+            .totalAmount(totalAmount)
+            .createdAt(order.getCreatedAt())
+            .subOrderCount(subOrderCount)
+            .totalItems(totalItems)
+            .build();
+    }
+
+    private SubOrderSummaryResponse toSubOrderSummary(SubOrder subOrder) {
+        if (subOrder == null) return null;
+
+        Order parentOrder = subOrder.getParentOrder();
+        User buyer = parentOrder != null ? parentOrder.getBuyer() : null;
+        User seller = subOrder.getSeller();
+
+        int itemCount = 0;
+        if (subOrder.getItems() != null) {
+            itemCount = subOrder.getItems().stream()
+                .mapToInt(item -> item.getQuantity() != null ? item.getQuantity() : 0)
+                .sum();
+        }
+
+        return SubOrderSummaryResponse.builder()
+            .subOrderId(subOrder.getId())
+            .orderId(parentOrder != null ? parentOrder.getId() : null)
+            .sellerId(seller != null ? seller.getId() : null)
+            .sellerName(seller != null ? (seller.getShopName() != null ? seller.getShopName() : seller.getUsername()) : null)
+            .buyerId(buyer != null ? buyer.getId() : null)
+            .buyerUsername(buyer != null ? buyer.getUsername() : null)
+            .shippingAddress(parentOrder != null ? parentOrder.getShippingAddress() : null)
+            .status(subOrder.getStatus())
+            .paymentStatus(subOrder.getPaymentStatus())
+            .subTotal(subOrder.getSubTotal())
+            .refundAmount(subOrder.getRefundAmount())
+            .refundReason(subOrder.getRefundReason())
+            .refundedAt(subOrder.getRefundedAt())
+            .confirmedAt(subOrder.getConfirmedAt())
+            .shippedAt(subOrder.getShippedAt())
+            .completedAt(subOrder.getCompletedAt())
+            .cancelledAt(subOrder.getCancelledAt())
+            .cancelledBy(subOrder.getCancelledBy())
+            .createdAt(parentOrder != null ? parentOrder.getCreatedAt() : null)
+            .itemCount(itemCount)
+            .build();
+    }
+
+    private SubOrderDetailResponse toSubOrderDetail(SubOrder subOrder) {
+        if (subOrder == null) return null;
+
+        Order parentOrder = subOrder.getParentOrder();
+        User buyer = parentOrder != null ? parentOrder.getBuyer() : null;
+        User seller = subOrder.getSeller();
+
+        // Convert items
+        List<SubOrderDetailResponse.SubOrderItemResponse> itemResponses = new ArrayList<>();
+        int itemCount = 0;
+        if (subOrder.getItems() != null) {
+            for (OrderItem item : subOrder.getItems()) {
+                Book book = item.getBook();
+                int qty = item.getQuantity() != null ? item.getQuantity() : 0;
+                double unitPrice = item.getUnitPrice() != null ? item.getUnitPrice() : 0.0;
+                itemCount += qty;
+
+                itemResponses.add(SubOrderDetailResponse.SubOrderItemResponse.builder()
+                    .itemId(item.getId())
+                    .bookId(book != null ? book.getId() : null)
+                    .title(book != null ? book.getTitle() : null)
+                    .author(book != null ? book.getAuthor() : null)
+                    .imageUrl(book != null ? book.getImageUrl() : null)
+                    .unitPrice(unitPrice)
+                    .quantity(qty)
+                    .lineTotal(unitPrice * qty)
+                    .stockDeducted(item.getStockDeducted())
+                    .build());
+            }
+        }
+
+        // Convert status history
+        List<SubOrderDetailResponse.StatusHistoryResponse> historyResponses = new ArrayList<>();
+        if (subOrder.getStatusHistories() != null) {
+            historyResponses = subOrder.getStatusHistories().stream()
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .map(h -> SubOrderDetailResponse.StatusHistoryResponse.builder()
+                    .historyId(h.getId())
+                    .fromStatus(h.getFromStatus() != null ? h.getFromStatus().name() : null)
+                    .toStatus(h.getToStatus().name())
+                    .changedBy(h.getChangedBy() != null ? h.getChangedBy().getUsername() : null)
+                    .changedByRole(h.getChangedByRole() != null ? h.getChangedByRole().name() : null)
+                    .note(h.getNote())
+                    .createdAt(h.getCreatedAt())
+                    .build())
+                .collect(Collectors.toList());
+        }
+
+        return SubOrderDetailResponse.builder()
+            .subOrderId(subOrder.getId())
+            .orderId(parentOrder != null ? parentOrder.getId() : null)
+            .sellerId(seller != null ? seller.getId() : null)
+            .sellerName(seller != null ? (seller.getShopName() != null ? seller.getShopName() : seller.getUsername()) : null)
+            .buyerId(buyer != null ? buyer.getId() : null)
+            .buyerUsername(buyer != null ? buyer.getUsername() : null)
+            .shippingAddress(parentOrder != null ? parentOrder.getShippingAddress() : null)
+            .status(subOrder.getStatus())
+            .paymentStatus(subOrder.getPaymentStatus())
+            .subTotal(subOrder.getSubTotal())
+            .refundAmount(subOrder.getRefundAmount())
+            .refundReason(subOrder.getRefundReason())
+            .refundedAt(subOrder.getRefundedAt())
+            .confirmedAt(subOrder.getConfirmedAt())
+            .shippedAt(subOrder.getShippedAt())
+            .completedAt(subOrder.getCompletedAt())
+            .cancelledAt(subOrder.getCancelledAt())
+            .cancelledBy(subOrder.getCancelledBy())
+            .createdAt(parentOrder != null ? parentOrder.getCreatedAt() : null)
+            .itemCount(itemCount)
+            .items(itemResponses)
+            .statusHistory(historyResponses)
             .build();
     }
 
     /**
-     * Helper: Determine overall order status based on sub-orders
+     * Lấy nhãn tiếng Việt cho trạng thái
      */
-    private OrderStatus determineOverallOrderStatus(Order order) {
-        if (order.getSubOrders() == null || order.getSubOrders().isEmpty()) {
-            return OrderStatus.PENDING_PAYMENT;
+    private String getStatusLabel(OrderStatus status) {
+        if (status == null) return "Không xác định";
+        switch (status) {
+            case PENDING_PAYMENT: return "Chờ xử lý";
+            case PROCESSING: return "Đang xử lý";
+            case SHIPPING: return "Đang giao";
+            case COMPLETED: return "Đã hoàn thành";
+            case CANCELLED: return "Đã hủy";
+            default: return status.name();
         }
-
-        if (order.getSubOrders().stream().allMatch(so -> so.getStatus() == OrderStatus.CANCELLED)) {
-            return OrderStatus.CANCELLED;
-        }
-
-        // If all sub-orders are completed, order is completed
-        if (order.getSubOrders().stream().allMatch(so -> so.getStatus() == OrderStatus.COMPLETED)) {
-            return OrderStatus.COMPLETED;
-        }
-
-        // If any sub-order is shipping, order is being shipped
-        if (order.getSubOrders().stream().anyMatch(so -> so.getStatus() == OrderStatus.SHIPPING)) {
-            return OrderStatus.SHIPPING;
-        }
-
-        // If any sub-order is processing, order is processing
-        if (order.getSubOrders().stream().anyMatch(so -> so.getStatus() == OrderStatus.PROCESSING)) {
-            return OrderStatus.PROCESSING;
-        }
-
-        return OrderStatus.PENDING_PAYMENT;
-    }
-
-    /**
-     * Helper: Check if order has a specific status (by checking sub-orders)
-     */
-    private boolean hasOrderStatus(Order order, OrderStatus status) {
-        if (order.getSubOrders() == null || order.getSubOrders().isEmpty()) {
-            return status == OrderStatus.PENDING_PAYMENT;
-        }
-
-        if (status == OrderStatus.CANCELLED || status == OrderStatus.COMPLETED || status == OrderStatus.PENDING_PAYMENT) {
-            return order.getSubOrders().stream()
-                .allMatch(subOrder -> subOrder.getStatus() == status);
-        }
-
-        return order.getSubOrders().stream()
-            .anyMatch(subOrder -> subOrder.getStatus() == status);
-    }
-
-    private boolean canBuyerCancelOrder(Order order) {
-        if (order.getSubOrders() == null || order.getSubOrders().isEmpty()) {
-            return true;
-        }
-
-        return order.getSubOrders().stream()
-            .allMatch(subOrder -> subOrder.getStatus() == OrderStatus.PENDING_PAYMENT);
     }
 }

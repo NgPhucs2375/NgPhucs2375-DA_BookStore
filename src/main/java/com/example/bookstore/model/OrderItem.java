@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "order_items")
 @Data
@@ -35,4 +37,12 @@ public class OrderItem {
 
     @Column(nullable = false)
     private Integer quantity;
+
+    // ===== Stock tracking =====
+    @Column(name = "stock_deducted", nullable = false)
+    @Builder.Default
+    private Boolean stockDeducted = false;
+
+    @Column(name = "stock_deducted_at")
+    private LocalDateTime stockDeductedAt;
 }

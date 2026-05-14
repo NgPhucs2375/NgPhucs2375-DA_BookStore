@@ -18,6 +18,7 @@ public class OrderSummaryResponse {
     private Double totalAmount;
     private LocalDateTime createdAt;
     private Integer subOrderCount;
+    private Integer totalItems;
     private OrderStatus overallStatus; // Determined by sub-orders
     private String shippingAddress;
 }

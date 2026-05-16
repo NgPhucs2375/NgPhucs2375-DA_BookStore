@@ -14,6 +14,7 @@ import com.example.bookstore.service.AuthService;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -134,13 +135,19 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Sai tên đăng nhập hoặc mật khẩu");
         }
 
-        String token = jwtTokenProvider.createToken(authenticated.getId(), authenticated.getRole().name());
-        return ResponseEntity.ok(Map.of(
-            "tokenType", "Bearer",
-            "accessToken", token,
-            "userId", authenticated.getId(),
-            "role", authenticated.getRole().name()
-        ));
+        Long sellerId = authenticated.getRole() == com.example.bookstore.model.enums.UserRole.SELLER
+            ? authenticated.getId()
+            : null;
+        java.util.List<String> roles = java.util.List.of(authenticated.getRole().name());
+        String token = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+
+        java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("tokenType", "Bearer");
+        response.put("accessToken", token);
+        response.put("userId", authenticated.getId());
+        response.put("roles", roles);
+        response.put("sellerId", sellerId);
+        return ResponseEntity.ok(response);
     }
     @GetMapping("/profile/{userId}")
     public UserProfileResponse getProfile(@PathVariable Long userId) {
@@ -148,17 +155,11 @@ public class AuthController {
     }
 
     @PutMapping("/profile/{userId}")
+    @PreAuthorize("hasPermission(#userId, 'User', 'update')")
     public ResponseEntity<?> updateProfile(
         @PathVariable Long userId,
-        @Valid @RequestBody UserProfileUpdateRequest request,
-        jakarta.servlet.http.HttpServletRequest httpRequest // Lấy request để check Token
+        @Valid @RequestBody UserProfileUpdateRequest request
     ) {
-        // 1 Chống vượt quyền (IDOR) 
-        // So sánh ID trong token với ID userId trên URL, nếu khác nhau thì từ chối
-        Long currentUserId = (Long) httpRequest.getAttribute("CURRENT_USER_ID");
-        if (currentUserId == null || !currentUserId.equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Bạn không có quyền truy cập hồ sơ của người khác!");
-        }
 
         // 2 Chống thêm các thể html 
         if (request.getShopName() != null) {

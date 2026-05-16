@@ -104,6 +104,10 @@ public class SellerShopService {
     public SellerShopResponse changeStatus(Long sellerId, ApprovalStatus status) {
         SellerShop shop = shopRepository.findBySellerId(sellerId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng của bạn."));
+
+        if (status == ApprovalStatus.APPROVED && shop.getApprovalStatus() != ApprovalStatus.APPROVED) {
+            throw new RuntimeException("Chỉ admin mới có quyền duyệt cửa hàng.");
+        }
         
         shop.setApprovalStatus(status);
         SellerShop updatedShop = shopRepository.save(shop);

@@ -16,6 +16,14 @@ import java.util.List;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByBuyer(User buyer);
 
+              @Query("""
+                                          SELECT CASE WHEN COUNT(o) > 0 THEN TRUE ELSE FALSE END
+                                          FROM Order o
+                                          WHERE o.id = :orderId
+                                                 AND o.buyer.id = :buyerId
+                                          """)
+              boolean existsByIdAndBuyerId(@Param("orderId") Long orderId, @Param("buyerId") Long buyerId);
+
     List<Order> findByBuyerOrderByCreatedAtDesc(User buyer);
 
     /**

@@ -15,13 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,61 +47,29 @@ class OrderServiceSecurityAndOwnershipTest {
     }
 
     @Test
-    void getCurrentBuyerOrders_shouldRejectNonBuyer() {
-        User seller = User.builder()
+    void getCurrentBuyerOrders_shouldReturnOrdersForBuyer() {
+        User buyer = User.builder()
             .id(2L)
-            .username("seller")
+            .username("buyer")
             .passwordHash("x")
-            .role(UserRole.SELLER)
+            .role(UserRole.BUYER)
             .build();
 
-        when(userRepository.findById(2L)).thenReturn(Optional.of(seller));
+        Order order = Order.builder()
+            .id(10L)
+            .buyer(buyer)
+            .totalAmount(100000.0)
+            .shippingAddress("HCM")
+            .build();
 
-        ResponseStatusException ex = assertThrows(
-            ResponseStatusException.class,
-            () -> orderService.getCurrentBuyerOrders(2L)
-        );
+        when(userRepository.findById(2L)).thenReturn(Optional.of(buyer));
+        when(orderRepository.findByBuyerOrderByCreatedAtDesc(buyer)).thenReturn(java.util.List.of(order));
 
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertEquals(1, orderService.getCurrentBuyerOrders(2L).size());
     }
 
     @Test
-    void updateSubOrderStatusForSeller_shouldRejectOwnershipMismatch() {
-        User callerSeller = User.builder()
-            .id(11L)
-            .username("seller-a")
-            .passwordHash("x")
-            .role(UserRole.SELLER)
-            .build();
-
-        User realOwner = User.builder()
-            .id(22L)
-            .username("seller-b")
-            .passwordHash("x")
-            .role(UserRole.SELLER)
-            .build();
-
-        SubOrder subOrder = SubOrder.builder()
-            .id(100L)
-            .seller(realOwner)
-            .status(OrderStatus.PROCESSING)
-            .subTotal(120000.0)
-            .parentOrder(Order.builder().id(1L).build())
-            .build();
-
-        when(userRepository.findById(11L)).thenReturn(Optional.of(callerSeller));
-        when(subOrderRepository.findById(100L)).thenReturn(Optional.of(subOrder));
-
-        ResponseStatusException ex = assertThrows(
-            ResponseStatusException.class,
-            () -> orderService.updateSubOrderStatusForSeller(11L, 100L, OrderStatus.SHIPPING)
-        );
-
-        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-    }
-
-    @Test
-    void updateSubOrderStatusForSeller_shouldUpdateWhenOwnerMatches() {
+    void updateSubOrderStatusForSeller_shouldUpdateStatus() {
         User owner = User.builder()
             .id(33L)
             .username("seller-ok")
@@ -130,5 +95,39 @@ class OrderServiceSecurityAndOwnershipTest {
         assertEquals(OrderStatus.SHIPPING, response.getStatus());
         assertEquals(33L, response.getSellerId());
         assertEquals(2L, response.getOrderId());
+    }
+
+    @Test
+    void cancelCurrentBuyerOrder_shouldCancelSubOrdersWhenOrderIsPending() {
+        User buyer = User.builder()
+            .id(44L)
+            .username("buyer-ok")
+            .passwordHash("x")
+            .role(UserRole.BUYER)
+            .build();
+
+        SubOrder subOrder = SubOrder.builder()
+            .id(301L)
+            .status(OrderStatus.PENDING_PAYMENT)
+            .seller(User.builder().id(55L).username("seller").passwordHash("x").role(UserRole.SELLER).build())
+            .subTotal(45000.0)
+            .parentOrder(Order.builder().id(9L).buyer(buyer).build())
+            .build();
+
+        Order order = Order.builder()
+            .id(9L)
+            .buyer(buyer)
+            .totalAmount(45000.0)
+            .shippingAddress("Hanoi")
+            .subOrders(java.util.List.of(subOrder))
+            .build();
+
+        when(userRepository.findById(44L)).thenReturn(Optional.of(buyer));
+        when(orderRepository.findById(9L)).thenReturn(Optional.of(order));
+        when(subOrderRepository.saveAll(order.getSubOrders())).thenReturn(order.getSubOrders());
+
+        orderService.cancelCurrentBuyerOrder(44L, 9L);
+
+        assertEquals(OrderStatus.CANCELLED, subOrder.getStatus());
     }
 }

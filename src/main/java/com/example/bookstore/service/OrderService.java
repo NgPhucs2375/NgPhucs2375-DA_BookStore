@@ -155,10 +155,6 @@ public class OrderService {
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
 
-        if (buyer.getRole() != UserRole.BUYER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a buyer");
-        }
-
         return orderRepository.findByBuyerOrderByCreatedAtDesc(buyer);
     }
 
@@ -178,16 +174,8 @@ public class OrderService {
         User buyer = userRepository.findById(buyerId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
 
-        if (buyer.getRole() != UserRole.BUYER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a buyer");
-        }
-
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
-
-        if (order.getBuyer() == null || !buyerId.equals(order.getBuyer().getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Buyer cannot modify this order");
-        }
 
         if (!canBuyerCancelOrder(order)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only pending orders can be cancelled");
@@ -208,16 +196,8 @@ public class OrderService {
         User buyer = userRepository.findById(buyerId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
 
-        if (buyer.getRole() != UserRole.BUYER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a buyer");
-        }
-
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
-
-        if (order.getBuyer() == null || !buyerId.equals(order.getBuyer().getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Buyer cannot access this order");
-        }
 
         List<OrderItemDetailResponse> items = new ArrayList<>();
         int totalItems = 0;
@@ -272,10 +252,6 @@ public class OrderService {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
 
-        if (seller.getRole() != UserRole.SELLER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
-        }
-
         return subOrderRepository.findBySellerOrderByIdDesc(seller).stream()
             .map(this::toSubOrderSummary)
                 .toList();
@@ -286,16 +262,8 @@ public class OrderService {
         User seller = userRepository.findById(sellerId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
 
-        if (seller.getRole() != UserRole.SELLER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
-        }
-
         SubOrder subOrder = subOrderRepository.findById(subOrderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sub order not found"));
-
-        if (subOrder.getSeller() == null || !sellerId.equals(subOrder.getSeller().getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller cannot update this sub order");
-        }
 
         subOrder.setStatus(status);
         SubOrder saved = subOrderRepository.save(subOrder);
@@ -375,10 +343,6 @@ public class OrderService {
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
 
-        if (buyer.getRole() != UserRole.BUYER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a buyer");
-        }
-
         // Set default pagination values
         int page = filter.getPage() != null ? filter.getPage() : 0;
         int pageSize = filter.getPageSize() != null ? filter.getPageSize() : 10;
@@ -425,10 +389,6 @@ public class OrderService {
     public SubOrderFilterResponse filterSellerSubOrders(Long sellerId, SubOrderFilterRequest filter) {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
-
-        if (seller.getRole() != UserRole.SELLER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
-        }
 
         // Set default pagination values
         int page = filter.getPage() != null ? filter.getPage() : 0;
@@ -478,10 +438,6 @@ public class OrderService {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
 
-        if (seller.getRole() != UserRole.SELLER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
-        }
-
         if (buyerName == null || buyerName.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Buyer name cannot be empty");
         }
@@ -499,10 +455,6 @@ public class OrderService {
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
 
-        if (buyer.getRole() != UserRole.BUYER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a buyer");
-        }
-
         List<Order> orders = orderRepository.findByBuyerOrderByCreatedAtDesc(buyer);
         
         return orders.stream()
@@ -517,10 +469,6 @@ public class OrderService {
     public List<SubOrderSummaryResponse> getSellerSubOrdersByStatus(Long sellerId, OrderStatus status) {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
-
-        if (seller.getRole() != UserRole.SELLER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a seller");
-        }
 
         return subOrderRepository.findBySellerAndStatusOrdered(seller, status)
             .stream()

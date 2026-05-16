@@ -18,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
@@ -30,74 +32,85 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/checkout")
+    @PreAuthorize("isAuthenticated()")
     public CheckoutResponse checkout(@Valid @RequestBody CheckoutRequest request) {
         return orderService.checkoutFromCart(request);
     }
 
     @PostMapping("/me/checkout")
+        @PreAuthorize("hasRole('BUYER')")
     public CheckoutResponse checkoutForCurrentBuyer(
-            @RequestHeader("X-User-Id") Long buyerId,
+            Authentication authentication,
             @Valid @RequestBody CheckoutMeRequest request
     ) {
-        // Transitional user context before JWT is integrated.
+        Long buyerId = currentUserId(authentication);
         return orderService.checkoutFromCurrentBuyer(buyerId, request.getShippingAddress());
     }
 
     @GetMapping("/buyer/{buyerId}")
+    @PreAuthorize("hasPermission(#buyerId, 'User', 'read')")
     public List<Order> getBuyerOrders(@PathVariable Long buyerId) {
         return orderService.getBuyerOrders(buyerId);
     }
 
     @GetMapping("/me")
-    public List<Order> getCurrentBuyerOrders(@RequestHeader("X-User-Id") Long buyerId) {
+    @PreAuthorize("hasRole('BUYER')")
+    public List<Order> getCurrentBuyerOrders(Authentication authentication) {
+        Long buyerId = currentUserId(authentication);
         return orderService.getCurrentBuyerOrders(buyerId);
     }
 
     @PostMapping("/me/filter/summary")
-    public List<OrderSummaryResponse> getCurrentBuyerOrderSummaries(@RequestHeader("X-User-Id") Long buyerId) {
+    @PreAuthorize("hasRole('BUYER')")
+    public List<OrderSummaryResponse> getCurrentBuyerOrderSummaries(Authentication authentication) {
+        Long buyerId = currentUserId(authentication);
         return orderService.getCurrentBuyerOrderSummaries(buyerId);
     }
 
     @GetMapping("/me/{orderId}")
+    @PreAuthorize("hasPermission(#orderId, 'Order', 'read')")
     public OrderDetailResponse getCurrentBuyerOrderDetail(
-            @RequestHeader("X-User-Id") Long buyerId,
+            Authentication authentication,
             @PathVariable Long orderId
     ) {
+        Long buyerId = currentUserId(authentication);
         return orderService.getCurrentBuyerOrderDetail(buyerId, orderId);
     }
 
     @GetMapping("/seller/{sellerId}/sub-orders")
+    @PreAuthorize("hasPermission(#sellerId, 'User', 'read')")
     public List<SubOrderSummaryResponse> getSellerSubOrders(
             @PathVariable Long sellerId,
-            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId
+            Authentication authentication
     ) {
-        if (currentUserId != null && !currentUserId.equals(sellerId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller cannot access other seller orders");
-        }
         return orderService.getSellerSubOrders(sellerId);
     }
 
     @GetMapping("/seller/me/sub-orders")
-    public List<SubOrderSummaryResponse> getCurrentSellerSubOrders(
-            @RequestHeader("X-User-Id") Long sellerId
-    ) {
+    @PreAuthorize("hasRole('SELLER')")
+    public List<SubOrderSummaryResponse> getCurrentSellerSubOrders(Authentication authentication) {
+        Long sellerId = currentSellerId(authentication);
         return orderService.getSellerSubOrders(sellerId);
     }
 
     @PatchMapping("/sub-orders/{subOrderId}/status")
+    @PreAuthorize("hasPermission(#subOrderId, 'SubOrder', 'status')")
     public SubOrderSummaryResponse updateSubOrderStatus(
-            @RequestHeader("X-User-Id") Long sellerId,
+            Authentication authentication,
             @PathVariable Long subOrderId,
             @RequestParam OrderStatus status
     ) {
+        Long sellerId = currentSellerId(authentication);
         return orderService.updateSubOrderStatusForSeller(sellerId, subOrderId, status);
     }
 
     @PatchMapping("/me/{orderId}/cancel")
+    @PreAuthorize("hasPermission(#orderId, 'Order', 'cancel')")
     public OrderSummaryResponse cancelCurrentBuyerOrder(
-            @RequestHeader("X-User-Id") Long buyerId,
+            Authentication authentication,
             @PathVariable Long orderId
     ) {
+        Long buyerId = currentUserId(authentication);
         return orderService.cancelCurrentBuyerOrder(buyerId, orderId);
     }
 
@@ -107,10 +120,12 @@ public class OrderController {
      * Example: GET /api/orders/me/filter?page=0&pageSize=10&sortBy=createdAt&sortDirection=DESC
      */
     @PostMapping("/me/filter")
+        @PreAuthorize("hasRole('BUYER')")
     public OrderFilterResponse filterMyOrders(
-            @RequestHeader("X-User-Id") Long buyerId,
+            Authentication authentication,
             @RequestBody(required = false) OrderFilterRequest filter
     ) {
+        Long buyerId = currentUserId(authentication);
         if (filter == null) {
             filter = new OrderFilterRequest();
         }
@@ -123,10 +138,12 @@ public class OrderController {
      * Example: GET /api/orders/me/status/COMPLETED
      */
     @GetMapping("/me/status/{status}")
+        @PreAuthorize("hasRole('BUYER')")
     public List<OrderSummaryResponse> getMyOrdersByStatus(
-            @RequestHeader("X-User-Id") Long buyerId,
+            Authentication authentication,
             @PathVariable OrderStatus status
     ) {
+        Long buyerId = currentUserId(authentication);
         return orderService.getBuyerOrdersByStatus(buyerId, status);
     }
 
@@ -136,10 +153,12 @@ public class OrderController {
      * Example: POST /api/orders/seller/me/filter
      */
     @PostMapping("/seller/me/filter")
+    @PreAuthorize("hasRole('SELLER')")
     public SubOrderFilterResponse filterMySubOrders(
-            @RequestHeader("X-User-Id") Long sellerId,
+            Authentication authentication,
             @RequestBody(required = false) SubOrderFilterRequest filter
     ) {
+        Long sellerId = currentSellerId(authentication);
         if (filter == null) {
             filter = new SubOrderFilterRequest();
         }
@@ -152,10 +171,12 @@ public class OrderController {
      * Example: GET /api/orders/seller/me/status/CONFIRMED
      */
     @GetMapping("/seller/me/status/{status}")
+    @PreAuthorize("hasRole('SELLER')")
     public List<SubOrderSummaryResponse> getMySubOrdersByStatus(
-            @RequestHeader("X-User-Id") Long sellerId,
+            Authentication authentication,
             @PathVariable OrderStatus status
     ) {
+        Long sellerId = currentSellerId(authentication);
         return orderService.getSellerSubOrdersByStatus(sellerId, status);
     }
 
@@ -165,10 +186,28 @@ public class OrderController {
      * Example: GET /api/orders/seller/me/search?buyerName=john
      */
     @GetMapping("/seller/me/search")
+    @PreAuthorize("hasRole('SELLER')")
     public List<SubOrderSummaryResponse> searchMySubOrdersByBuyer(
-            @RequestHeader("X-User-Id") Long sellerId,
+            Authentication authentication,
             @RequestParam(required = true) String buyerName
     ) {
+        Long sellerId = currentSellerId(authentication);
         return orderService.searchSellerSubOrdersByBuyer(sellerId, buyerName);
+    }
+
+    private Long currentUserId(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal principal) {
+            return principal.userId();
+        }
+
+        return null;
+    }
+
+    private Long currentSellerId(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal principal) {
+            return principal.sellerId() != null ? principal.sellerId() : principal.userId();
+        }
+
+        return null;
     }
 }

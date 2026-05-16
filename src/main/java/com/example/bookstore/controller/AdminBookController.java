@@ -3,12 +3,11 @@ package com.example.bookstore.controller;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.service.BookService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @CrossOrigin("*")
@@ -20,34 +19,22 @@ public class AdminBookController {
 
     // Lấy danh sách sách chờ duyệt (PENDING)
     @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getPendingBooks(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            HttpServletRequest request
+            @RequestParam(defaultValue = "20") int size
     ) {
-        // Kiểm tra Role Admin
-        String role = (String) request.getAttribute("CURRENT_USER_ROLE");
-        if (!"ADMIN".equals(role)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Truy cập bị từ chối: Chỉ Admin mới có quyền xem danh sách này!");
-        }
-
         Page<Book> pendingBooks = bookService.getPendingBooksForAdmin(page, size);
         return ResponseEntity.ok(pendingBooks);
     }
 
     // Duyệt hoặc từ chối sách
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateBookStatus(
             @PathVariable Long id,
-            @RequestParam ApprovalStatus status, // Truyền status lên URL, ví dụ: ?status=APPROVED
-            HttpServletRequest request
+            @RequestParam ApprovalStatus status // Truyền status lên URL, ví dụ: ?status=APPROVED
     ) {
-        // PENTESTER SHIELD: Kiểm tra Role Admin
-        String role = (String) request.getAttribute("CURRENT_USER_ROLE");
-        if (!"ADMIN".equals(role)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Truy cập bị từ chối: Chỉ Admin mới có quyền duyệt sách!");
-        }
-
         try {
             Book updatedBook = bookService.changeBookApprovalStatus(id, status);
             return ResponseEntity.ok(updatedBook);

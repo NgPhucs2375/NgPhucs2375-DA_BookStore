@@ -117,11 +117,6 @@ public class BookService {
         Book existingBook = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
 
-        // Pentester Shield: Chống IDOR
-        if (!existingBook.getSeller().getId().equals(sellerId)) {
-            throw new RuntimeException("IDOR Alert: Bạn không có quyền sửa sách của người khác!");
-        }
-
         // Cập nhật thông tin an toàn
         if (bookDetails.getTitle() != null) existingBook.setTitle(bookDetails.getTitle());
         if (bookDetails.getDescription() != null) existingBook.setDescription(bookDetails.getDescription());
@@ -139,11 +134,6 @@ public class BookService {
     public String uploadAndVerifyCoverImage(Long bookId, MultipartFile file, Long sellerId) throws java.io.IOException {
         Book existingBook = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
-
-        // Chống IDOR
-        if (!existingBook.getSeller().getId().equals(sellerId)) {
-            throw new RuntimeException("Từ chối truy cập");
-        }
 
         // Chống RCE bằng cách check File Signature
         org.apache.tika.Tika tika = new org.apache.tika.Tika();
@@ -179,11 +169,6 @@ public class BookService {
     public void deleteBookForSeller(Long bookId, Long sellerId) {
         Book existingBook = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
-
-        // Pentester Shield: Chống IDOR
-        if (!existingBook.getSeller().getId().equals(sellerId)) {
-            throw new RuntimeException("IDOR Alert: Đừng hòng xóa sách của tiệm khác nha mậy!");
-        }
 
         bookRepository.delete(existingBook);
     }

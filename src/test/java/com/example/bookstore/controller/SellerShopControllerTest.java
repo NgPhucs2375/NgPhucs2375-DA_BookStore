@@ -3,6 +3,7 @@ package com.example.bookstore.controller;
 import com.example.bookstore.dto.SellerShopResponse;
 import com.example.bookstore.dto.SellerShopUpsertRequest;
 import com.example.bookstore.model.enums.ApprovalStatus;
+import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.service.SellerShopService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -62,7 +64,10 @@ class SellerShopControllerTest {
 
         mockMvc.perform(post("/api/seller/me/shop")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("X-User-Id", "1")
+                .principal(new UsernamePasswordAuthenticationToken(
+                    new JwtAuthenticatedPrincipal(1L, java.util.List.of("SELLER"), 1L),
+                    null
+                ))
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(100))
@@ -78,7 +83,10 @@ class SellerShopControllerTest {
 
         mockMvc.perform(post("/api/seller/me/shop")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("X-User-Id", "1")
+                .principal(new UsernamePasswordAuthenticationToken(
+                    new JwtAuthenticatedPrincipal(1L, java.util.List.of("SELLER"), 1L),
+                    null
+                ))
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest());
     }
@@ -113,7 +121,10 @@ class SellerShopControllerTest {
 
         mockMvc.perform(patch("/api/seller/me/shop/status")
                 .param("status", "APPROVED")
-                .header("X-User-Id", "1"))
+                .principal(new UsernamePasswordAuthenticationToken(
+                    new JwtAuthenticatedPrincipal(1L, java.util.List.of("SELLER"), 1L),
+                    null
+                )))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.approvalStatus").value("APPROVED"));
     }

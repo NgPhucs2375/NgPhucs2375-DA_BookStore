@@ -3,8 +3,7 @@ package com.example.bookstore.controller;
 import com.example.bookstore.dto.ChangePasswordDTO;
 import com.example.bookstore.dto.UserAddressDTO;
 import com.example.bookstore.dto.UserProfileDTO;
-import com.example.bookstore.model.User;
-import com.example.bookstore.repository.UserRepository;
+import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.service.BuyerProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,29 +12,28 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+
 @Controller
 @RequestMapping("/buyer/profile")
+@PreAuthorize("hasRole('BUYER')")
 @RequiredArgsConstructor
 public class BuyerProfileController {
 
     private final BuyerProfileService buyerProfileService;
-    private final UserRepository userRepository;
 
-    // Get current user ID from authentication
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getName() != null) {
-            String username = auth.getName();
-            User user = userRepository.findByUsername(username);
-            if (user != null) {
-                return user.getId();
-            }
+        if (auth != null && auth.getPrincipal() instanceof JwtAuthenticatedPrincipal principal) {
+            return principal.userId();
         }
-        // Fallback to first user for development
-        return userRepository.findAll().stream().findFirst().map(User::getId).orElse(1L);
+
+        throw new ResponseStatusException(UNAUTHORIZED, "Vui lòng đăng nhập");
     }
 
     // ==================== UI PAGES ====================

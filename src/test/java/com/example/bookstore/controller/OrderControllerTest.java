@@ -2,6 +2,7 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.CheckoutMeRequest;
 import com.example.bookstore.dto.CheckoutResponse;
+import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -52,7 +54,11 @@ class OrderControllerTest {
         when(orderService.checkoutFromCurrentBuyer(eq(1L), eq("Q1, HCM"))).thenReturn(response);
 
         mockMvc.perform(post("/api/orders/me/checkout")
-                .header("X-User-Id", "1")
+                .principal(new UsernamePasswordAuthenticationToken(
+                    new JwtAuthenticatedPrincipal(1L, java.util.List.of("BUYER"), null),
+                    null,
+                    java.util.List.of()
+                ))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -64,7 +70,12 @@ class OrderControllerTest {
     void shouldGetCurrentBuyerOrders() throws Exception {
         when(orderService.getCurrentBuyerOrders(1L)).thenReturn(java.util.List.of());
 
-        mockMvc.perform(get("/api/orders/me").header("X-User-Id", "1"))
+        mockMvc.perform(get("/api/orders/me")
+                .principal(new UsernamePasswordAuthenticationToken(
+                    new JwtAuthenticatedPrincipal(1L, java.util.List.of("BUYER"), null),
+                    null,
+                    java.util.List.of()
+                )))
             .andExpect(status().isOk());
     }
 }

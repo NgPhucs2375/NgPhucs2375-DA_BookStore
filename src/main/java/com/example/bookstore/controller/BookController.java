@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.example.bookstore.repository.BookRepository;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.security.SecurityUtils;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -112,16 +114,15 @@ public class BookController {
      * Dùng cho trang quản lý kho - S03
      */
     @GetMapping("/seller/me")
+    @PreAuthorize("hasRole('SELLER')")
     public Page<Book> getSellerBooks(
-            HttpServletRequest request,
+            Authentication authentication,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        // Lấy ID từ Attribute cho giống mấy hàm Add Update - Đồng bộ với logic mới
-        Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
-
+        Long sellerId = currentSellerId(authentication);
         if (sellerId == null) return Page.empty();
 
         String keyword = (q == null || q.trim().isEmpty()) ? null : q.trim();
@@ -140,11 +141,12 @@ public class BookController {
     // --- API add new book cho Seller - S03 ---
     // @RequestBody : khi gui 1 cuc dl Json chua thong tin sach SB auto nan JSON do thanh 1 Doi tuong Object Book in Java tinh nang nay same FromBody trong .Net API
     @PostMapping({"", "/seller"})
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<?> createBookForSeller(
             @RequestBody Book book,
-            HttpServletRequest request
+            Authentication authentication
     ) {
-        Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
+        Long sellerId = currentSellerId(authentication);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bạn cần đăng nhập để thực hiện hành động này");
         }
@@ -168,11 +170,12 @@ public class BookController {
 
     // API Update book cho Seller - S03
     @PutMapping({"/{id}", "/seller/{id}"})
+    @PreAuthorize("hasRole('SELLER') and hasPermission(#id, 'Book', 'update')")
     public ResponseEntity<?> updateBookForSeller(
             @PathVariable Long id,
             @RequestBody Book bookDetails,
-            HttpServletRequest request) {
-        Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
+            Authentication authentication) {
+        Long sellerId = currentSellerId(authentication);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -197,11 +200,12 @@ public class BookController {
 
     // API upload ảnh cho sách - S03
     @PostMapping({"/{id}/upload-cover", "/seller/{id}/upload-cover"})
+    @PreAuthorize("hasRole('SELLER') and hasPermission(#id, 'Book', 'update')")
     public ResponseEntity<?> upLoadBookCover(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file,
-            HttpServletRequest request) {
-        Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
+            Authentication authentication) {
+        Long sellerId = currentSellerId(authentication);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -216,11 +220,12 @@ public class BookController {
 
     // Thêm API xóa sách cho Seller (S03)
     @DeleteMapping({"/{id}", "/seller/{id}"})
+    @PreAuthorize("hasRole('SELLER') and hasPermission(#id, 'Book', 'delete')")
     public ResponseEntity<?> deleteBookForSeller(
             @PathVariable Long id,
-            HttpServletRequest request
+            Authentication authentication
     ) {
-        Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
+        Long sellerId = currentSellerId(authentication);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -237,6 +242,13 @@ public class BookController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", e.getMessage()));
 
         }
+    }
+
+    private Long currentSellerId(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof JwtAuthenticatedPrincipal principal) {
+            return principal.sellerId() != null ? principal.sellerId() : principal.userId();
+        }
+        return null;
     }
 
     private Sort resolveSort(String sort) {

@@ -3,9 +3,12 @@ package com.example.bookstore.controller;
 import com.example.bookstore.dto.NotificationItemResponse;
 import com.example.bookstore.dto.NotificationListResponse;
 import com.example.bookstore.dto.UnreadCountResponse;
+import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.service.NotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -80,10 +83,11 @@ public class NotificationController {
     }
 
     private Long resolveCurrentUserId(HttpServletRequest request) {
-        Object currentUserId = request.getAttribute("CURRENT_USER_ID");
-        if (!(currentUserId instanceof Long userId)) {
-            throw new ResponseStatusException(UNAUTHORIZED, "User is not authenticated");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof JwtAuthenticatedPrincipal jwtPrincipal) {
+            return jwtPrincipal.userId();
         }
-        return userId;
+
+        throw new ResponseStatusException(UNAUTHORIZED, "User is not authenticated");
     }
 }

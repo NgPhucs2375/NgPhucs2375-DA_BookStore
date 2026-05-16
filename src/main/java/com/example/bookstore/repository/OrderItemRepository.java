@@ -3,8 +3,10 @@ package com.example.bookstore.repository;
 import com.example.bookstore.model.OrderItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import com.example.bookstore.model.enums.OrderStatus;
 
@@ -19,8 +21,30 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     @Query("SELECT o.subOrder.parentOrder.id, o.book.id FROM OrderItem o WHERE o.subOrder.parentOrder IS NOT NULL")
     List<Object[]> findAllOrderBookPairs();
 
-    // New: only include order items from sub-orders with provided statuses (e.g., COMPLETED)
+    /**
+     * Only include order items from sub-orders with provided statuses (e.g., COMPLETED)
+     */
     @Query("SELECT o.subOrder.parentOrder.id, o.book.id FROM OrderItem o WHERE o.subOrder.parentOrder IS NOT NULL AND o.subOrder.status IN :statuses")
-    List<Object[]> findAllOrderBookPairsByStatuses(List<OrderStatus> statuses);
+    List<Object[]> findAllOrderBookPairsByStatuses(@Param("statuses") List<OrderStatus> statuses);
+
+    /**
+     * SLIDING WINDOW: Fetch order book pairs created within the last N days
+     * with specific statuses. This prevents loading all-time data and causing OOM.
+     * 
+     * @param statuses Order statuses to include (e.g., PROCESSING, COMPLETED)
+     * @param fromDate Lower bound of date range (typically: now - 30 days)
+     * @return List of (OrderId, BookId) pairs for pair mining
+     */
+    @Query("""
+            SELECT o.subOrder.parentOrder.id, o.book.id 
+            FROM OrderItem o 
+            WHERE o.subOrder.parentOrder IS NOT NULL 
+            AND o.subOrder.status IN :statuses 
+            AND o.subOrder.parentOrder.createdAt >= :fromDate
+            """)
+    List<Object[]> findOrderBookPairsByStatusesAndDateRange(
+            @Param("statuses") List<OrderStatus> statuses,
+            @Param("fromDate") LocalDateTime fromDate
+    );
 
 }

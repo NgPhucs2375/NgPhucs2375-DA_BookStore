@@ -17,6 +17,22 @@ import java.util.List;
 public interface SubOrderRepository extends JpaRepository<SubOrder, Long> {
     List<SubOrder> findBySeller(User seller);
 
+              @Query("""
+                                          SELECT CASE WHEN COUNT(so) > 0 THEN TRUE ELSE FALSE END
+                                          FROM SubOrder so
+                                          WHERE so.id = :subOrderId
+                                                 AND so.seller.id = :sellerId
+                                          """)
+              boolean existsByIdAndSellerId(@Param("subOrderId") Long subOrderId, @Param("sellerId") Long sellerId);
+
+              @Query("""
+                                          SELECT CASE WHEN COUNT(so) > 0 THEN TRUE ELSE FALSE END
+                                          FROM SubOrder so
+                                          WHERE so.id = :subOrderId
+                                                 AND so.parentOrder.buyer.id = :buyerId
+                                          """)
+              boolean existsByIdAndBuyerId(@Param("subOrderId") Long subOrderId, @Param("buyerId") Long buyerId);
+
     List<SubOrder> findBySellerOrderByIdDesc(User seller);
 
     List<SubOrder> findBySellerAndStatus(User seller, OrderStatus status);

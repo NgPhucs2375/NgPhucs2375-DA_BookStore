@@ -18,6 +18,17 @@ public interface BookRepository extends JpaRepository<Book, Long>{
 
     List<Book> findBySeller(User seller);
 
+    @Query("SELECT b.approvalStatus FROM Book b WHERE b.id = :bookId")
+    ApprovalStatus findApprovalStatusById(@Param("bookId") Long bookId);
+
+    @Query("""
+            SELECT CASE WHEN COUNT(b) > 0 THEN TRUE ELSE FALSE END
+            FROM Book b
+            WHERE b.id = :bookId
+              AND b.seller.id = :sellerId
+            """)
+    boolean existsByIdAndSellerId(@Param("bookId") Long bookId, @Param("sellerId") Long sellerId);
+
     // S02: Lấy sách theo trạng thái (Có phân trang cho Admin)
     Page<Book> findByApprovalStatus(ApprovalStatus approvalStatus, Pageable pageable);
 

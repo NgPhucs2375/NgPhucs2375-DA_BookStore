@@ -23,6 +23,19 @@ public interface BookRepository extends JpaRepository<Book, Long>{
 
     List<Book> findByApprovalStatus(ApprovalStatus approvalStatus);
 
+    // 🆕 NEW: Các phương thức hỗ trợ Admin quản lý
+    List<Book> findByIsActive(boolean isActive);
+
+    Page<Book> findByIsActive(boolean isActive, Pageable pageable);
+
+    Page<Book> findByApprovalStatusAndIsActive(
+            ApprovalStatus status,
+            boolean isActive,
+            Pageable pageable
+    );
+
+    Page<Book> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+
         @Query("""
             SELECT b FROM Book b
             LEFT JOIN b.category c

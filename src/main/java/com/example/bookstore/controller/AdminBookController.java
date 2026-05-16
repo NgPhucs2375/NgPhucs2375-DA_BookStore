@@ -55,4 +55,93 @@ public class AdminBookController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    /**
+     * Xóa sách
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteBook(
+            @PathVariable Long id,
+            HttpServletRequest request
+    ) {
+        String role = (String) request.getAttribute("CURRENT_USER_ROLE");
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Truy cập bị từ chối!");
+        }
+
+        try {
+            bookService.deleteBook(id);
+            return ResponseEntity.ok("Xóa sách thành công");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Cập nhật thông tin sách
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateBook(
+            @PathVariable Long id,
+            @RequestBody com.example.bookstore.dto.BookUpdateDto dto,
+            HttpServletRequest request
+    ) {
+        String role = (String) request.getAttribute("CURRENT_USER_ROLE");
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Truy cập bị từ chối!");
+        }
+
+        try {
+            Book updatedBook = bookService.updateBookByAdmin(id, dto);
+            return ResponseEntity.ok(updatedBook);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Khóa sách (không cho phép hiển thị)
+     */
+    @PutMapping("/{id}/lock")
+    public ResponseEntity<?> lockBook(
+            @PathVariable Long id,
+            HttpServletRequest request
+    ) {
+        String role = (String) request.getAttribute("CURRENT_USER_ROLE");
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Truy cập bị từ chối!");
+        }
+
+        try {
+            Book book = bookService.lockBook(id);
+            return ResponseEntity.ok(book);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Mở khóa sách
+     */
+    @PutMapping("/{id}/unlock")
+    public ResponseEntity<?> unlockBook(
+            @PathVariable Long id,
+            HttpServletRequest request
+    ) {
+        String role = (String) request.getAttribute("CURRENT_USER_ROLE");
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Truy cập bị từ chối!");
+        }
+
+        try {
+            Book book = bookService.unlockBook(id);
+            return ResponseEntity.ok(book);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

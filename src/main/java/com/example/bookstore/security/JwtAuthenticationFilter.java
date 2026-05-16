@@ -46,27 +46,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // 2. Nếu có userId và chưa được xác thực trong Context hiện tại
-        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        // 2. Nếu có userId 
+        if (userId != null) {
             User user = userRepository.findById(userId).orElse(null);
 
             if (user != null) {
-                // QUAN TRỌNG: Thêm tiền tố ROLE_ để khớp với .hasRole() trong SecurityConfig
-                String roleName = "ROLE_" + user.getRole().name();
-
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        user, // Gửi nguyên object User hoặc userId tùy bạn
-                        null,
-                        List.of(new SimpleGrantedAuthority(roleName))
-                );
-
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // 3. Thiết lập thông tin xác thực vào Security Context
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                // Lưu thêm ID vào Attribute để dễ dàng lấy ra ở Controller qua @RequestAttribute
+                // Luôn set attribute để Controller sử dụng
                 request.setAttribute("CURRENT_USER_ID", user.getId());
+                request.setAttribute("CURRENT_USER_ROLE", user.getRole().name());
+
+                // Chỉ set Authentication nếu chưa có (Stateless app thường null mỗi request)
+                if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                    String roleName = "ROLE_" + user.getRole().name();
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            user,
+                            null,
+                            List.of(new SimpleGrantedAuthority(roleName))
+                    );
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
         }
 

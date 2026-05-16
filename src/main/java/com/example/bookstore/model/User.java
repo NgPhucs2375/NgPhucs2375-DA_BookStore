@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -52,26 +54,41 @@ public class User {
         inverseJoinColumns = @JoinColumn(name = "category_id")
     )
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Category> favoriteCategories = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "seller")
     @JsonIgnore
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Book> books = new ArrayList<>();
 
     @OneToMany(mappedBy = "seller")
     @JsonIgnore
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<SubOrder> subOrders = new ArrayList<>();
 
     @OneToOne(mappedBy = "buyer")
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Cart cart;
+
+    @Column(nullable = false, columnDefinition = "BIT DEFAULT 1")
+    @Builder.Default
+    private boolean isActive = true;  // true = hoạt động, false = khóa
 
     @PrePersist
     public void onCreate() {
         if (role == null) {
             role = UserRole.BUYER;
+        }
+        if (isActive == false) {
+            isActive = true;
         }
     }
 }

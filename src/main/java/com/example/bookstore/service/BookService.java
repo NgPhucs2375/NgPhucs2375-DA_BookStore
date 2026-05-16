@@ -1,5 +1,6 @@
 package com.example.bookstore.service;
 
+import com.example.bookstore.dto.BookUpdateDto;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.ApprovalStatus;
@@ -41,9 +42,13 @@ public class BookService {
         return bookRepository.findById(id).orElse(null);
     }
 
-    // Function Delete 1 book by id
-    public void deleteBoook(Long id) {
-        bookRepository.deleteById(id);
+    /**
+     * Xóa sách (Admin)
+     */
+    public void deleteBook(Long bookId) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+        bookRepository.deleteById(bookId);
     }
 
     // Function Update info 1 book
@@ -63,6 +68,58 @@ public class BookService {
         }
         // return null if can't find id
         return null;
+    }
+
+    /**
+     * Cập nhật thông tin sách (Admin)
+     */
+    public Book updateBookByAdmin(Long bookId, BookUpdateDto dto) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+
+        if (dto.getTitle() != null && !dto.getTitle().isEmpty()) {
+            book.setTitle(dto.getTitle());
+        }
+        if (dto.getAuthor() != null && !dto.getAuthor().isEmpty()) {
+            book.setAuthor(dto.getAuthor());
+        }
+        if (dto.getDescription() != null) {
+            book.setDescription(dto.getDescription());
+        }
+        if (dto.getPrice() != null) {
+            book.setPrice(dto.getPrice());
+        }
+        if (dto.getStockQuantity() != null) {
+            book.setStockQuantity(dto.getStockQuantity());
+        }
+        if (dto.getPublisher() != null) {
+            book.setPublisher(dto.getPublisher());
+        }
+        if (dto.getPublishYear() != null) {
+            book.setPublishYear(dto.getPublishYear());
+        }
+
+        return bookRepository.save(book);
+    }
+
+    /**
+     * Khóa sách
+     */
+    public Book lockBook(Long bookId) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+        book.setActive(false);
+        return bookRepository.save(book);
+    }
+
+    /**
+     * Mở khóa sách
+     */
+    public Book unlockBook(Long bookId) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+        book.setActive(true);
+        return bookRepository.save(book);
     }
     // API dành cho admin S02
     // 1. lấy danh sách chờ duyệt

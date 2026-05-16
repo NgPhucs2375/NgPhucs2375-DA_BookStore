@@ -72,9 +72,12 @@ public class AuthController {
 //    /api/auth/login
     @PostMapping("/login")
     public ResponseEntity<String> login(@Valid @RequestBody AuthLoginRequest request){
-        boolean isValid = authService.login(request.getUsername(), request.getPassword());
+        User user = authService.authenticateUser(request.getUsername(), request.getPassword());
 
-        if(isValid){
+        if(user != null){
+            if (!user.isActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Tài khoản bị từ chối đăng nhập");
+            }
             return ResponseEntity.ok("Đăng nhập thành công");
         }
         else {
@@ -87,6 +90,10 @@ public class AuthController {
         User authenticated = authService.authenticateUser(request.getUsername(), request.getPassword());
         if (authenticated == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Sai tên đăng nhập hoặc mật khẩu");
+        }
+
+        if (!authenticated.isActive()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Tài khoản bị từ chối đăng nhập");
         }
 
         String token = jwtTokenProvider.createToken(authenticated.getId(), authenticated.getRole().name());

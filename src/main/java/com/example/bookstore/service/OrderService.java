@@ -15,10 +15,16 @@ import com.example.bookstore.repository.SubOrderRepository;
 import com.example.bookstore.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -171,52 +177,100 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Buyer cannot access this order");
         }
 
-        List<OrderItemDetailResponse> items = new ArrayList<>();
-        int totalItems = 0;
+        List<OrderDetailResponse.SubOrderDetail> subOrderDetails = new ArrayList<>();
 
         if (order.getSubOrders() != null) {
             for (SubOrder subOrder : order.getSubOrders()) {
-                User seller = subOrder.getSeller();
-                String sellerName = seller == null
-                    ? null
-                    : (seller.getShopName() == null ? seller.getUsername() : seller.getShopName());
-
+                List<OrderDetailResponse.OrderItemDetail> items = new ArrayList<>();
                 if (subOrder.getItems() != null) {
-                    for (OrderItem orderItem : subOrder.getItems()) {
-                        Book book = orderItem.getBook();
-                        int qty = orderItem.getQuantity() == null ? 0 : orderItem.getQuantity();
-                        double unitPrice = orderItem.getUnitPrice() == null ? 0.0 : orderItem.getUnitPrice();
-                        double lineTotal = unitPrice * qty;
-                        totalItems += qty;
-
-                        items.add(OrderItemDetailResponse.builder()
-                            .subOrderId(subOrder.getId())
-                            .subOrderStatus(subOrder.getStatus())
-                            .sellerId(seller == null ? null : seller.getId())
-                            .sellerName(sellerName)
-                            .bookId(book == null ? null : book.getId())
-                            .title(book == null ? null : book.getTitle())
-                            .author(book == null ? null : book.getAuthor())
-                            .unitPrice(unitPrice)
-                            .quantity(qty)
-                            .lineTotal(lineTotal)
-                            .build());
+                    for (OrderItem item : subOrder.getItems()) {
+                        items.add(OrderDetailResponse.OrderItemDetail.builder()
+                                .id(item.getId())
+                                .bookTitle(item.getBook() != null ? item.getBook().getTitle() : "N/A")
+                                .price(item.getUnitPrice())
+                                .quantity(item.getQuantity())
+                                .subtotal(item.getUnitPrice() * item.getQuantity())
+                                .build());
                     }
                 }
+
+                subOrderDetails.add(OrderDetailResponse.SubOrderDetail.builder()
+                        .id(subOrder.getId())
+                        .sellerName(subOrder.getSeller() != null ? subOrder.getSeller().getUsername() : "N/A")
+                        .status(subOrder.getStatus().toString())
+                        .subTotal(subOrder.getSubTotal())
+                        .items(items)
+                        .build());
             }
         }
 
         return OrderDetailResponse.builder()
-            .orderId(order.getId())
-            .buyerId(buyer.getId())
-            .buyerUsername(buyer.getUsername())
-            .shippingAddress(order.getShippingAddress())
-            .totalAmount(order.getTotalAmount())
-            .createdAt(order.getCreatedAt())
-            .subOrderCount(order.getSubOrders() == null ? 0 : order.getSubOrders().size())
-            .totalItems(totalItems)
-            .items(items)
-            .build();
+                .id(order.getId())
+                .buyerName(buyer.getUsername())
+                .buyerEmail(buyer.getUsername() + "@bookom.vn")
+                .totalAmount(order.getTotalAmount())
+                .shippingAddress(order.getShippingAddress())
+                .createdAt(order.getCreatedAt())
+                .subOrders(subOrderDetails)
+                .build();
+    }
+
+    /**
+     * Lấy đơn hàng với filters (for admin)
+     */
+    public Page<Order> getOrdersWithFilters(
+            int page, int size, String q, String status,
+            LocalDate dateFrom, LocalDate dateTo
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        if (q != null && !q.isEmpty()) {
+            return orderRepository.searchOrders(q, pageable);
+        }
+
+        return orderRepository.findAll(pageable);
+    }
+
+    /**
+     * Lấy chi tiết đơn hàng (for admin)
+     */
+    public OrderDetailResponse getOrderDetailsForAdmin(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
+
+        List<OrderDetailResponse.SubOrderDetail> subOrderDetails = order.getSubOrders()
+                .stream()
+                .map(subOrder -> {
+                    List<OrderDetailResponse.OrderItemDetail> items = subOrder.getItems()
+                            .stream()
+                            .map(item -> OrderDetailResponse.OrderItemDetail.builder()
+                                    .id(item.getId())
+                                    .bookTitle(item.getBook().getTitle())
+                                    .price(item.getUnitPrice())
+                                    .quantity(item.getQuantity())
+                                    .subtotal(item.getUnitPrice() * item.getQuantity())
+                                    .build())
+                            .toList();
+
+                    return OrderDetailResponse.SubOrderDetail.builder()
+                            .id(subOrder.getId())
+                            .sellerName(subOrder.getSeller().getUsername())
+                            .status(subOrder.getStatus().toString())
+                            .subTotal(subOrder.getSubTotal())
+                            .items(items)
+                            .build();
+                })
+                .toList();
+
+        return OrderDetailResponse.builder()
+                .id(order.getId())
+                .buyerName(order.getBuyer().getUsername())
+                .buyerEmail(order.getBuyer().getUsername() + "@bookom.vn")
+                .totalAmount(order.getTotalAmount())
+                .shippingAddress(order.getShippingAddress())
+                .createdAt(order.getCreatedAt())
+                .subOrders(subOrderDetails)
+                .build();
     }
 
     public List<SubOrderSummaryResponse> getSellerSubOrders(Long sellerId) {

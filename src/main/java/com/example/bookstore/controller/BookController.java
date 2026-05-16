@@ -75,7 +75,7 @@ public class BookController {
     // API delete book by id
     @DeleteMapping("/{id}")
     public void deleteBook(@PathVariable Long id) {
-        bookService.deleteBoook(id);
+        bookService.deleteBook(id);
     }
 
     // API update

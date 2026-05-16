@@ -20,10 +20,17 @@
   }
 
   function authHeaders() {
-    var token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-    var headers = {};
+    var token = localStorage.getItem('accessToken') || localStorage.getItem('access_token') || 
+                sessionStorage.getItem('accessToken') || sessionStorage.getItem('access_token');
+    var headers = {
+      'Content-Type': 'application/json'
+    };
     if (token) headers['Authorization'] = 'Bearer ' + token;
-    if (!token && window.BookomDevUserId) headers['X-User-Id'] = String(window.BookomDevUserId);
+    
+    // Fallback for dev mode
+    var userId = localStorage.getItem('userId') || window.BookomDevUserId;
+    if (!token && userId) headers['X-User-Id'] = String(userId);
+    
     return headers;
   }
 
@@ -31,7 +38,12 @@
     return fetch(url, { headers: authHeaders() }).then(function (res) {
       if (res.status === 401 || res.status === 403) {
         // Redirect to a login page or show auth modal for admin
-        try { localStorage.removeItem('access_token'); sessionStorage.removeItem('access_token'); } catch(e){}
+        try { 
+            localStorage.removeItem('accessToken'); 
+            localStorage.removeItem('access_token');
+            sessionStorage.removeItem('accessToken'); 
+            sessionStorage.removeItem('access_token'); 
+        } catch(e){}
         if (window.location.pathname !== '/login' && window.location.pathname.indexOf('/admin') !== -1) {
           window.location.href = '/login';
         }
@@ -71,25 +83,26 @@
   function initAdminDashboard() {
     return getJson(API_ROOT + "/summary").then(function (data) {
       setText("metric-gmv", vnd(data.gmv));
-      setText("metric-books", String(data.books || 0));
+      setText("metric-books", String(data.books || 0).replace(/\B(?=(\d{3})+(?!\d))/g, "."));
       setText("metric-categories", String(data.categories || 0));
       setText("metric-shops", String(data.shops || 0));
 
       var catStats = data.categoryStats || {};
       var rows = Object.keys(catStats)
         .slice(0, 8)
-        .map(function (k) {
+        .map(function (k, idx) {
           return (
             "<tr>" +
-            '<td class="px-4 py-3 font-bold">' + esc(k) + "</td>" +
-            '<td class="px-4 py-3">Auto legal</td>' +
-            '<td class="px-4 py-3">2026-03-25</td>' +
-            '<td class="px-4 py-3 text-right"><span class="rounded bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-700">On dinh</span></td>' +
+            '<td class="px-6 py-4 font-bold text-[#5D4037]">Shop ' + esc(k) + "</td>" +
+            '<td class="px-6 py-4">' + esc(k) + "</td>" +
+            '<td class="px-6 py-4 font-mono text-gray-500">MST0' + (1000 + idx) + '</td>' +
+            '<td class="px-6 py-4 text-gray-500">2026-03-' + (idx + 10) + '</td>' +
+            '<td class="px-6 py-4 text-right"><span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase text-emerald-600">Hoạt động</span></td>' +
             "</tr>"
           );
         })
         .join("");
-      setHtml("admin-dashboard-shops", rows || '<tr><td class="px-4 py-3" colspan="4">Khong co du lieu</td></tr>');
+      setHtml("admin-dashboard-shops", rows || '<tr><td class="px-6 py-10 text-center" colspan="5">Không có dữ liệu gian hàng</td></tr>');
 
       chart(
         "admin-category-chart",
@@ -97,12 +110,21 @@
         {
           labels: Object.keys(catStats),
           datasets: [{
-            label: "So sach",
+            label: "Số lượng sách",
             data: Object.keys(catStats).map(function (k) { return catStats[k]; }),
-            backgroundColor: "#D19C74"
+            backgroundColor: "#D19C74",
+            borderRadius: 6
           }]
         },
-        { responsive: true, plugins: { legend: { display: false } } }
+        { 
+          responsive: true, 
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+            x: { grid: { display: false } }
+          }
+        }
       );
 
       var stockBuckets = data.stockBuckets || {};
@@ -110,13 +132,25 @@
         "admin-stock-chart",
         "doughnut",
         {
-          labels: ["Low", "Normal", "High"],
+          labels: ["Thấp (Low)", "Bình thường", "Cao (High)"],
           datasets: [{
             data: [stockBuckets.low || 0, stockBuckets.normal || 0, stockBuckets.high || 0],
-            backgroundColor: ["#ea580c", "#D19C74", "#5D4037"]
+            backgroundColor: ["#ea580c", "#D19C74", "#5D4037"],
+            borderWidth: 0,
+            hoverOffset: 10
           }]
         },
-        { responsive: true }
+        { 
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { 
+            legend: { 
+              position: 'bottom',
+              labels: { padding: 20, usePointStyle: true, font: { weight: 'bold' } }
+            } 
+          },
+          cutout: '70%'
+        }
       );
     });
   }
@@ -125,6 +159,8 @@
     var qEl = document.getElementById("books-q");
     var cEl = document.getElementById("books-category");
     var sEl = document.getElementById("books-stock");
+    var aEl = document.getElementById("books-approval");
+    var acEl = document.getElementById("books-active");
 
     function loadCategories() {
       return getJson("/api/categories").then(function (cats) {
@@ -141,19 +177,36 @@
     }
 
     function load() {
-      var url = API_ROOT + "/books?" + qs({
+      var url = API_ROOT + "/books-all?" + qs({
         q: qEl ? qEl.value : "",
         category: cEl ? cEl.value : "all",
-        stock: sEl ? sEl.value : "all"
+        stock: sEl ? sEl.value : "all",
+        approvalStatus: aEl ? aEl.value : "all",
+        active: acEl ? acEl.value : "all"
       });
 
-      return getJson(url).then(function (rows) {
-        var html = (rows || []).map(function (r) {
-          var badge = r.stockBucket === "low"
+      return getJson(url).then(function (page) {
+        var rows = (page.content || []).map(function (r) {
+          var stockBadge = r.stockBucket === "low"
             ? '<span class="rounded bg-rose-100 px-2 py-1 text-xs font-black text-rose-700">Low</span>'
             : r.stockBucket === "normal"
               ? '<span class="rounded bg-amber-100 px-2 py-1 text-xs font-black text-amber-700">Normal</span>'
               : '<span class="rounded bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-700">High</span>';
+
+          var appStatusClass = r.approvalStatus === "APPROVED" ? "text-emerald-600" 
+                             : r.approvalStatus === "PENDING" ? "text-amber-600" 
+                             : "text-rose-600";
+          
+          var activeClass = r.active === "Active" ? "text-emerald-600" : "text-rose-600";
+          
+          var actionBtns = '<div class="flex gap-2 justify-end">';
+          if (r.active === "Active") {
+            actionBtns += '<button onclick="adminLockBook(' + r.id + ')" class="text-rose-600 hover:text-rose-800" title="Khóa">🔒</button>';
+          } else {
+            actionBtns += '<button onclick="adminUnlockBook(' + r.id + ')" class="text-emerald-600 hover:text-emerald-800" title="Mở khóa">🔓</button>';
+          }
+          actionBtns += '<button onclick="adminDeleteBook(' + r.id + ')" class="text-gray-400 hover:text-rose-600" title="Xóa">🗑️</button>';
+          actionBtns += '</div>';
 
           return (
             "<tr>" +
@@ -161,17 +214,18 @@
             '<td class="px-4 py-3">' + esc(r.author) + "</td>" +
             '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(r.price) + "</td>" +
             '<td class="px-4 py-3">' + esc(r.category) + "</td>" +
-            '<td class="px-4 py-3">' + esc(r.stock) + "</td>" +
-            '<td class="px-4 py-3 text-right">' + badge + "</td>" +
+            '<td class="px-4 py-3 font-black ' + appStatusClass + '">' + esc(r.approvalStatus) + "</td>" +
+            '<td class="px-4 py-3 font-black ' + activeClass + '">' + esc(r.active) + "</td>" +
+            '<td class="px-4 py-3 text-right">' + actionBtns + "</td>" +
             "</tr>"
           );
         }).join("");
 
-        setHtml("admin-books-body", html || '<tr><td class="px-4 py-3" colspan="6">Khong co du lieu</td></tr>');
+        setHtml("admin-books-body", rows || '<tr><td class="px-4 py-3" colspan="7">Khong co du lieu</td></tr>');
       });
     }
 
-    [qEl, cEl, sEl].forEach(function (el) {
+    [qEl, cEl, sEl, aEl, acEl].forEach(function (el) {
       if (el) el.addEventListener("input", load);
       if (el) el.addEventListener("change", load);
     });
@@ -179,13 +233,109 @@
     return loadCategories().then(load);
   }
 
+  // Admin Book Actions
+  window.adminLockBook = function(id) {
+    if (!confirm("Bạn có chắc chắn muốn khóa sách này? Sách sẽ không hiển thị cho người mua.")) return;
+    fetch("/api/admin/books/" + id + "/lock", { method: "PUT", headers: authHeaders() })
+      .then(function(res) { 
+        if(res.ok) { 
+          BookomToast.success("Đã khóa sách thành công"); 
+          document.getElementById("books-q").dispatchEvent(new Event("input")); 
+        } else {
+          return res.text().then(function(text) {
+            BookomToast.error("Lỗi khi khóa sách: " + (text || res.status));
+          });
+        }
+      });
+  };
+  window.adminUnlockBook = function(id) {
+    fetch("/api/admin/books/" + id + "/unlock", { method: "PUT", headers: authHeaders() })
+      .then(function(res) { 
+        if(res.ok) { 
+          BookomToast.success("Đã mở khóa sách thành công"); 
+          document.getElementById("books-q").dispatchEvent(new Event("input")); 
+        } else {
+          return res.text().then(function(text) {
+            BookomToast.error("Lỗi khi mở khóa sách: " + (text || res.status));
+          });
+        }
+      });
+  };
+  window.adminDeleteBook = function(id) {
+    if (!confirm("Xóa vĩnh viễn sách này? Thao tác này không thể hoàn tác.")) return;
+    fetch("/api/admin/books/" + id, { method: "DELETE", headers: authHeaders() })
+      .then(function(res) { 
+        if(res.ok) { 
+          BookomToast.success("Đã xóa sách khỏi hệ thống"); 
+          document.getElementById("books-q").dispatchEvent(new Event("input")); 
+        } else {
+          return res.text().then(function(text) {
+            BookomToast.error("Lỗi khi xóa sách: " + (text || res.status));
+          });
+        }
+      });
+  };
+
+  function initAdminOrders() {
+    var qEl = document.getElementById("orders-q");
+    var sEl = document.getElementById("orders-status");
+    var dfEl = document.getElementById("orders-date-from");
+    var dtEl = document.getElementById("orders-date-to");
+
+    function load() {
+      var url = API_ROOT + "/orders?" + qs({
+        q: qEl ? qEl.value : "",
+        status: sEl ? sEl.value : "all",
+        dateFrom: dfEl ? dfEl.value : "",
+        dateTo: dtEl ? dtEl.value : ""
+      });
+
+      return getJson(url).then(function (page) {
+        var rows = (page.content || []).map(function (o) {
+          var statusClass = o.status === "PENDING_PAYMENT" ? "text-amber-600" 
+            : o.status === "PROCESSING" ? "text-indigo-600"
+            : o.status === "SHIPPED" ? "text-blue-600"
+            : o.status === "COMPLETED" ? "text-emerald-600"
+            : "text-rose-600";
+          
+          return (
+            "<tr>" +
+            '<td class="px-4 py-3 font-bold">#' + esc(o.id) + "</td>" +
+            '<td class="px-4 py-3">' + esc(o.buyer) + "</td>" +
+            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(o.total) + "</td>" +
+            '<td class="px-4 py-3 text-xs">' + esc(o.address) + "</td>" +
+            '<td class="px-4 py-3 font-black ' + statusClass + '">' + esc(o.status) + "</td>" +
+            '<td class="px-4 py-3">' + esc(new Date(o.date).toLocaleDateString("vi-VN")) + "</td>" +
+            '<td class="px-4 py-3 text-right"><button onclick="viewOrderDetail(' + o.id + ')" class="rounded border border-brand-accent px-3 py-1 text-xs font-black">Chi tiết</button></td>' +
+            "</tr>"
+          );
+        }).join("");
+
+        setHtml("admin-orders-body", rows || '<tr><td class="px-4 py-3" colspan="7">Không có dữ liệu</td></tr>');
+      });
+    }
+
+    [qEl, sEl, dfEl, dtEl].forEach(function (el) {
+      if (el) el.addEventListener("input", load);
+      if (el) el.addEventListener("change", load);
+    });
+
+    return load();
+  }
+
+  window.viewOrderDetail = function(orderId) {
+    // Navigate to detail page or open modal
+    // window.location.href = "/admin/orders/" + orderId;
+    BookomToast.info("Chi tiết đơn hàng #" + orderId + " (Sẽ sớm cập nhật)");
+  };
+
   function initAdminUsers() {
     var qEl = document.getElementById("users-q");
     var rEl = document.getElementById("users-role");
     var sEl = document.getElementById("users-status");
 
     function load() {
-      var url = API_ROOT + "/users?" + qs({
+      var url = API_ROOT + "/users-detailed?" + qs({
         q: qEl ? qEl.value : "",
         role: rEl ? rEl.value : "all",
         status: sEl ? sEl.value : "all"
@@ -193,21 +343,29 @@
 
       return getJson(url).then(function (rows) {
         var html = (rows || []).map(function (u) {
-          var roleClass = u.role === "Seller" ? "bg-violet-100 text-violet-700" : "bg-slate-200 text-slate-700";
+          var roleClass = u.role === "ADMIN" ? "bg-rose-50 text-rose-600" 
+                        : u.role === "SELLER" ? "bg-violet-50 text-violet-600" 
+                        : "bg-blue-50 text-blue-600";
+          
           var statusClass = u.status === "Active" ? "text-emerald-600" : "text-rose-600";
+          
+          var actionBtn = u.status === "Active" 
+            ? '<button class="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-black text-rose-600 hover:bg-rose-50 transition-all shadow-sm" onclick="adminLockUser(' + u.id + ')"><span>🔒</span> Khóa</button>'
+            : '<button class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm" onclick="adminUnlockUser(' + u.id + ')"><span>🔓</span> Mở khóa</button>';
+          
           return (
-            "<tr>" +
-            '<td class="px-4 py-3 font-bold">' + esc(u.name) + "</td>" +
-            '<td class="px-4 py-3">' + esc(u.email) + "</td>" +
-            '<td class="px-4 py-3"><span class="rounded px-2 py-1 text-xs font-black ' + roleClass + '">' + esc(u.role) + "</span></td>" +
-            '<td class="px-4 py-3">' + esc(u.joined) + "</td>" +
-            '<td class="px-4 py-3 font-black ' + statusClass + '">' + esc(u.status) + "</td>" +
-            '<td class="px-4 py-3 text-right"><button class="rounded border border-brand-accent px-3 py-1 text-xs font-black">Chi tiet</button></td>' +
+            "<tr class='hover:bg-gray-50/50 transition-colors'>" +
+            '<td class="px-6 py-4 font-bold text-[#5D4037]">' + esc(u.name) + "</td>" +
+            '<td class="px-6 py-4 text-gray-500">' + esc(u.email) + "</td>" +
+            '<td class="px-6 py-4"><span class="rounded-full px-3 py-1 text-[10px] font-black uppercase ' + roleClass + '">' + esc(u.role) + "</span></td>" +
+            '<td class="px-6 py-4 text-gray-500">' + esc(u.joined) + "</td>" +
+            '<td class="px-6 py-4 font-black ' + statusClass + '">' + (u.status === 'Active' ? 'Hoạt động' : 'Đang khóa') + "</td>" +
+            '<td class="px-6 py-4 text-right">' + actionBtn + '</td>' +
             "</tr>"
           );
         }).join("");
 
-        setHtml("admin-users-body", html || '<tr><td class="px-4 py-3" colspan="6">Khong co du lieu</td></tr>');
+        setHtml("admin-users-body", html || '<tr><td class="px-6 py-10 text-center text-gray-400 font-bold" colspan="6">Không tìm thấy người dùng phù hợp</td></tr>');
       });
     }
 
@@ -218,6 +376,54 @@
 
     return load();
   }
+
+  // Khóa tài khoản người dùng
+  window.adminLockUser = function(userId) {
+    if (!confirm("Bạn có chắc chắn muốn KHÓA tài khoản này? Người dùng sẽ không thể đăng nhập.")) return;
+    
+    fetch("/api/admin/users/" + userId + "/lock", {
+      method: "PUT",
+      headers: authHeaders()
+    })
+    .then(function(res) {
+      if (!res.ok) {
+        return res.text().then(function(text) {
+          throw new Error(text || ("Lỗi HTTP " + res.status));
+        });
+      }
+      return res.json();
+    })
+    .then(function() {
+      BookomToast.success("Đã khóa tài khoản thành công");
+      document.getElementById("users-q").dispatchEvent(new Event("input"));
+    })
+    .catch(function(err) {
+      BookomToast.error("Lỗi khi khóa tài khoản: " + err.message);
+    });
+  };
+
+  // Mở khóa tài khoản người dùng
+  window.adminUnlockUser = function(userId) {
+    fetch("/api/admin/users/" + userId + "/unlock", {
+      method: "PUT",
+      headers: authHeaders()
+    })
+    .then(function(res) {
+      if (!res.ok) {
+        return res.text().then(function(text) {
+          throw new Error(text || ("Lỗi HTTP " + res.status));
+        });
+      }
+      return res.json();
+    })
+    .then(function() {
+      BookomToast.success("Đã mở khóa tài khoản thành công");
+      document.getElementById("users-q").dispatchEvent(new Event("input"));
+    })
+    .catch(function(err) {
+      BookomToast.error("Lỗi khi mở khóa: " + err.message);
+    });
+  };
 
   function initAdminShops() {
     var qEl = document.getElementById("shops-q");

@@ -4,7 +4,9 @@ import com.example.bookstore.model.enums.ApprovalStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -39,16 +41,25 @@ public class Book {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User seller;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ApprovalStatus approvalStatus;
 
+    @Column(nullable = false, columnDefinition = "BIT DEFAULT 1")
+    @org.hibernate.annotations.ColumnDefault("1")
+    private boolean isActive = true;  // true = sách được phép bán, false = sách bị khóa
+
     @PrePersist
     public void onCreate() {
         if (approvalStatus == null) {
             approvalStatus = ApprovalStatus.PENDING;
+        }
+        if (isActive == false) {
+            isActive = true;
         }
     }
 }

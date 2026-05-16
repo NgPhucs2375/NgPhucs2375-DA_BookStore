@@ -47,6 +47,7 @@ public class SecurityConfig {
                         // Protected routes dựa trên Role (write operations)
                         .requestMatchers("/api/seller/**").hasRole("SELLER")
                         .requestMatchers("/api/panel/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         // Yêu cầu đăng nhập cho Carts và Orders
                         .requestMatchers("/api/carts/**", "/api/orders/**").authenticated()

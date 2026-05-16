@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const buildCard = (book) => {
         const coverUrl = book.imageUrl ? book.imageUrl : 'https://via.placeholder.com/400x560?text=No+Cover';
         return `
-            <article class="bg-white rounded-[1.75rem] p-4 border border-brand-accent shadow-sm hover:shadow-lg transition-all group h-full flex flex-col">
+            <article class="bg-white rounded-[1.75rem] p-4 border border-brand-accent shadow-sm hover:shadow-lg transition-all group h-full flex flex-col" data-detail-url="/book/${book.id}">
                 <a href="/book/${book.id}" class="block relative overflow-hidden rounded-[1.25rem] border border-brand-accent bg-brand-cream mb-4">
                     <div class="aspect-3/4 overflow-hidden">
                         <img src="${coverUrl}" alt="${escapeHtml(book.title || '')}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://via.placeholder.com/400x560?text=Error'" />
@@ -545,6 +545,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     resultsGrid.addEventListener('click', (event) => {
+        const card = event.target.closest('.product-card[data-detail-url], article[data-detail-url]');
+        if (card && !event.target.closest('button, a, input, label, select, textarea')) {
+            window.location.href = card.getAttribute('data-detail-url');
+            return;
+        }
+
         const wishlistButton = event.target.closest('button[data-toggle-wishlist="true"]');
         if (wishlistButton) {
             event.preventDefault();

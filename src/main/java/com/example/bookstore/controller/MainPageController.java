@@ -1,13 +1,25 @@
 package com.example.bookstore.controller;
 
+import com.example.bookstore.model.enums.ApprovalStatus;
+import com.example.bookstore.repository.BookRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class MainPageController {
 
+    @Autowired
+    private BookRepository bookRepository;
+
     @GetMapping("/")
-    public String home() {
+    public String home(Model model) {
+        // Load approved books for display (limit to 20)
+        Pageable pageable = PageRequest.of(0, 20);
+        model.addAttribute("books", bookRepository.findByApprovalStatus(ApprovalStatus.APPROVED, pageable).getContent());
         return "main/index";
     }
 
@@ -17,7 +29,10 @@ public class MainPageController {
     }
 
     @GetMapping("/main/discovery")
-    public String discovery() {
+    public String discovery(Model model) {
+        // Load approved books for discovery page
+        Pageable pageable = PageRequest.of(0, 20);
+        model.addAttribute("books", bookRepository.findByApprovalStatus(ApprovalStatus.APPROVED, pageable).getContent());
         return "main/Discovery_Page";
     }
 

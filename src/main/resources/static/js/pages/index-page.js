@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
             : `<div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3 leading-snug">${title}</div>`;
 
         return `
-            <a href="${detailUrl}" class="product-card group cursor-pointer h-full">
+            <a href="${detailUrl}" data-detail-url="${detailUrl}" class="product-card group cursor-pointer h-full">
                 <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
                     <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
                         ${coverHtml}
@@ -394,6 +394,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     booksGrid.addEventListener('click', (event) => {
+        const card = event.target.closest('.product-card[data-detail-url]');
+        if (card && !event.target.closest('button, a, input, label, select, textarea')) {
+            window.location.href = card.getAttribute('data-detail-url');
+            return;
+        }
+
         const wishlistButton = event.target.closest('button[data-toggle-wishlist="true"]');
         if (wishlistButton) {
             event.preventDefault();
@@ -473,4 +479,46 @@ document.addEventListener('DOMContentLoaded', () => {
             accountText.textContent = 'Quan ly';
         }
     }
+
+    // ===== 3D Tilt Effect for Product Cards =====
+    const cards = document.querySelectorAll('.product-card');
+
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateX = ((y - centerY) / centerY) * -6; // Max rotation 6 degrees
+            const rotateY = ((x - centerX) / centerX) * 6;  // Max rotation 6 degrees
+
+            card.style.setProperty('--rotateX', `${rotateY}deg`);
+            card.style.setProperty('--rotateY', `${rotateX}deg`);
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.setProperty('--rotateX', '0deg');
+            card.style.setProperty('--rotateY', '0deg');
+        });
+    });
+
+    // Navigate to detail page on card click (excluding buttons/links)
+    booksGrid?.addEventListener('click', (event) => {
+        const card = event.target.closest('.product-card[data-detail-url]');
+        if (!card) {
+            return;
+        }
+
+        if (event.target.closest('button, a, input, label, select, textarea')) {
+            return;
+        }
+
+        const detailUrl = card.getAttribute('data-detail-url');
+        if (detailUrl) {
+            window.location.href = detailUrl;
+        }
+    });
 });

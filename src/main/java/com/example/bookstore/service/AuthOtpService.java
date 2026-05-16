@@ -1,13 +1,11 @@
 package com.example.bookstore.service;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.http.HttpStatus;
 
 @Service
 public class AuthOtpService {

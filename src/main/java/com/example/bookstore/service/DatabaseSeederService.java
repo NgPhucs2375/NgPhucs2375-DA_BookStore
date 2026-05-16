@@ -164,7 +164,7 @@ public class DatabaseSeederService {
     private List<User> seedUsers(SeedResult result) {
         AtomicInteger added = new AtomicInteger(0);
 
-        User admin = ensureUser("admin@gmail.com", UserRole.ADMIN, "admin123", null, null, added);
+        ensureUser("admin@gmail.com", UserRole.ADMIN, "admin123", null, null, added);
         User sellerNhaNam = ensureUser(
                 "shop_nha_nam@gmail.com",
                 UserRole.SELLER,
@@ -263,7 +263,12 @@ public class DatabaseSeederService {
                 Book book = new Book();
                 book.setTitle(title);
                 book.setAuthor(author);
-                book.setPublishYear(data[3].replace("\"", "").trim());
+                String publishYearRaw = data[3].replace("\"", "").trim();
+                try {
+                    book.setPublishYear(Integer.parseInt(publishYearRaw));
+                } catch (NumberFormatException ex) {
+                    book.setPublishYear(null);
+                }
                 book.setPublisher(data[6].replace("\"", "").trim());
                 book.setImageUrl(data[7].replace("\"", "").trim());
 

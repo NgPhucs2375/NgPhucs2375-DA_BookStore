@@ -2,7 +2,6 @@ package com.example.bookstore.repository;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.User;
-import com.example.bookstore.model.OrderItem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -65,8 +64,8 @@ public interface BookRepository extends JpaRepository<Book, Long>{
             @Param("author") String author,
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice,
-            @Param("publishYearFrom") String publishYearFrom,
-            @Param("publishYearTo") String publishYearTo,
+            @Param("publishYearFrom") Integer publishYearFrom,
+            @Param("publishYearTo") Integer publishYearTo,
             @Param("status") ApprovalStatus status,
             Pageable pageable
         );

@@ -34,7 +34,7 @@ public class Book {
     @Column(length = 500)
     private String imageUrl; // link ảnh lấy từ CSV
     private String publisher;  // Nhà xuất bản
-    private String publishYear; // Năm xuất bản
+    private Integer publishYear; // Năm xuất bản
 
     @ManyToOne
     @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS

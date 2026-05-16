@@ -1,8 +1,14 @@
-package com.example.bookstore.service.recommendation.fpgrowth;
+package com.example.bookstore.service.recommendation.pairmining;
 
 import java.util.*;
 
-public class FPGrowthAlgorithm {
+/**
+ * Lightweight pair-mining algorithm for 'bought together' suggestions.
+ * NOTE: This intentionally performs frequent-pair counting (size=2 itemsets)
+ * and then derives simple association rules (A -> B) with confidence/lift filters.
+ * It is NOT a full FP-Growth tree implementation; name reflects actual behavior.
+ */
+public class PairMiningAlgorithm {
 
     private final double minSupport;
     private final double minConfidence;
@@ -11,7 +17,7 @@ public class FPGrowthAlgorithm {
     private int totalTransactions;
     private Map<Long, Integer> itemFrequencies;
 
-    public FPGrowthAlgorithm(double minSupport, double minConfidence, double minLift) {
+    public PairMiningAlgorithm(double minSupport, double minConfidence, double minLift) {
         this.minSupport = minSupport;
         this.minConfidence = minConfidence;
         this.minLift = minLift;
@@ -20,19 +26,19 @@ public class FPGrowthAlgorithm {
     public Map<Long, List<AssociationRule>> mineRules(List<List<Long>> transactions) {
         this.totalTransactions = transactions.size();
         this.minSupportCount = Math.max(1, (int) Math.ceil(minSupport * totalTransactions));
-        
-        // 1. Tính tần suất từng item (1-itemset)
+
+        // 1. Count single-item frequencies (support)
         this.itemFrequencies = new HashMap<>();
         for (List<Long> tx : transactions) {
             for (Long item : new HashSet<>(tx)) {
                 itemFrequencies.put(item, itemFrequencies.getOrDefault(item, 0) + 1);
             }
         }
-        
-        // Loại bỏ item không đạt min_support
+
+        // Remove items below min support
         itemFrequencies.entrySet().removeIf(entry -> entry.getValue() < minSupportCount);
-        
-        // 2. Chuyển đổi và sắp xếp transactions theo tần suất giảm dần
+
+        // 2. Filter and sort transactions by item frequency
         List<List<Long>> sortedTransactions = new ArrayList<>();
         for (List<Long> tx : transactions) {
             List<Long> filteredTx = new ArrayList<>();
@@ -40,7 +46,7 @@ public class FPGrowthAlgorithm {
                 if (itemFrequencies.containsKey(item)) filteredTx.add(item);
             }
             if (filteredTx.isEmpty()) continue;
-            
+
             filteredTx.sort((a, b) -> {
                 int cmp = Integer.compare(itemFrequencies.get(b), itemFrequencies.get(a));
                 return cmp != 0 ? cmp : a.compareTo(b);
@@ -48,11 +54,7 @@ public class FPGrowthAlgorithm {
             sortedTransactions.add(filteredTx);
         }
 
-        // 3. Vì 'thường mua cùng nhau' đối với sản phẩm cụ thể là luật kết hợp dạng: A -> B 
-        // (từ sản phẩm hiện tại A, suggest sản phẩm B). Cấu trúc FP-tree cho pair/triple mining trong Java có thể viết qua Count Matrix hoặc đệ quy. 
-        // Thay vì viết FP-Tree Node đệ quy hàng trăm dòng (dễ gây lỗi bộ nhớ), ta đếm cặp (Frequent Itemset size=2)
-        // Đây cũng là phần cốt lõi của việc rút trích association rule: Confidence = Support(A,B)/Support(A)
-        
+        // 3. Count co-occurrences for all pairs (A,B) in each transaction
         Map<Long, Map<Long, Integer>> coOccurrenceMap = new HashMap<>();
         for (List<Long> tx : sortedTransactions) {
             for (int i = 0; i < tx.size(); i++) {
@@ -61,34 +63,32 @@ public class FPGrowthAlgorithm {
                 for (int j = i + 1; j < tx.size(); j++) {
                     Long itemB = tx.get(j);
                     coOccurrenceMap.putIfAbsent(itemB, new HashMap<>());
-                    
-                    // Cập nhật A -> B
+
                     coOccurrenceMap.get(itemA).put(itemB, coOccurrenceMap.get(itemA).getOrDefault(itemB, 0) + 1);
-                    // Cập nhật B -> A
                     coOccurrenceMap.get(itemB).put(itemA, coOccurrenceMap.get(itemB).getOrDefault(itemA, 0) + 1);
                 }
             }
         }
 
-        // 4. Tạo Association Rules (Luật kết hợp)
+        // 4. Build simple association rules A -> B using pair counts
         Map<Long, List<AssociationRule>> rulesMap = new HashMap<>();
-        
+
         for (Map.Entry<Long, Map<Long, Integer>> entryA : coOccurrenceMap.entrySet()) {
             Long antecedent = entryA.getKey();
             double supportA = (double) itemFrequencies.get(antecedent) / totalTransactions;
-            
+
             List<AssociationRule> rules = new ArrayList<>();
             for (Map.Entry<Long, Integer> entryB : entryA.getValue().entrySet()) {
                 Long consequent = entryB.getKey();
                 int coOccurCount = entryB.getValue();
-                
-                if (coOccurCount < minSupportCount) continue; // Phải thỏa mãn minSupport
-                
+
+                if (coOccurCount < minSupportCount) continue;
+
                 double supportAB = (double) coOccurCount / totalTransactions;
                 double supportB = (double) itemFrequencies.get(consequent) / totalTransactions;
-                
+
                 double confidence = supportAB / supportA;
-                
+
                 if (confidence >= minConfidence) {
                     double lift = confidence / supportB;
                     if (lift >= minLift) {
@@ -96,16 +96,15 @@ public class FPGrowthAlgorithm {
                     }
                 }
             }
-            
-            // Sort rules: Lift giảm dần, Confidence giảm dần
+
             rules.sort((r1, r2) -> {
                 int cmp = Double.compare(r2.getLift(), r1.getLift());
                 return cmp != 0 ? cmp : Double.compare(r2.getConfidence(), r1.getConfidence());
             });
-            
+
             rulesMap.put(antecedent, rules);
         }
-        
+
         return rulesMap;
     }
 }

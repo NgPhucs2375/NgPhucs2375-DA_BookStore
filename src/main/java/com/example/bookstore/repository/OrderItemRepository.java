@@ -6,16 +6,21 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import com.example.bookstore.model.enums.OrderStatus;
 
 @Repository
 public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
     /**
-     * Lấy danh sách các cặp (OrderId, BookId) để xây dựng Baskets cho thuật toán FP-Growth.
+     * Lấy danh sách các cặp (OrderId, BookId) để xây dựng Baskets cho thuật toán pair-mining (frequent pairs).
      * Mỗi Order có thể có nhiều SubOrder, mỗi SubOrder có nhiều OrderItem (cuốn sách).
      * Bằng cách join này, ta gộp tất cả sách mua trong cùng 1 lần thanh toán thành 1 giỏ hàng (basket).
      */
     @Query("SELECT o.subOrder.parentOrder.id, o.book.id FROM OrderItem o WHERE o.subOrder.parentOrder IS NOT NULL")
     List<Object[]> findAllOrderBookPairs();
+
+    // New: only include order items from sub-orders with provided statuses (e.g., COMPLETED)
+    @Query("SELECT o.subOrder.parentOrder.id, o.book.id FROM OrderItem o WHERE o.subOrder.parentOrder IS NOT NULL AND o.subOrder.status IN :statuses")
+    List<Object[]> findAllOrderBookPairsByStatuses(List<OrderStatus> statuses);
 
 }

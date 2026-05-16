@@ -13,6 +13,7 @@
     const totalEl = document.getElementById('cart-summary-total');
     const itemsLabelEl = document.getElementById('cart-summary-items-label');
     const checkoutBtn = document.getElementById('cart-checkout-btn');
+    const recommendationsGrid = document.getElementById('cart-recommendations-grid');
 
     if (!liveContainer) {
         return;
@@ -57,7 +58,7 @@
                     <div class="p-5 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-0 border-b border-brand-accent/50 hover:bg-brand-cream/30 transition" data-item-id="${item.itemId}">
                         <div class="flex items-start gap-4 w-full md:w-5/12">
                             <div class="mt-4"><input type="checkbox" class="cart-checkbox row-checkbox" checked></div>
-                            <div class="w-20 aspect-[3/4] bg-[#2c3e50] border-2 border-white shadow-md flex-shrink-0 flex items-center justify-center text-white text-center font-bold text-[8px] uppercase p-1">
+                            <div class="w-20 aspect-3/4 bg-[#2c3e50] border-2 border-white shadow-md shrink-0 flex items-center justify-center text-white text-center font-bold text-[8px] uppercase p-1">
                                 BOOK
                             </div>
                             <div class="flex flex-col justify-center gap-1">
@@ -152,6 +153,61 @@
         await ApiService.Cart.removeItem(userId, itemId);
     };
 
+    const addToCart = async (bookId, quantity = 1) => {
+        const { userId, role } = ApiService.getAuth();
+        if (!userId || role !== 'BUYER') {
+            alert('Vui lòng đăng nhập tài khoản BUYER để thêm vào giỏ hàng.');
+            window.location.href = '/main/auth';
+            return;
+        }
+
+        await ApiService.Cart.addItem(userId, { bookId: Number(bookId), quantity });
+    };
+
+    const renderRecommendations = (books) => {
+        if (!recommendationsGrid) {
+            return;
+        }
+
+        if (!Array.isArray(books) || books.length === 0) {
+            recommendationsGrid.innerHTML = '<div class="col-span-full rounded-2xl border border-dashed border-brand-accent bg-brand-cream/30 px-5 py-6 text-sm text-gray-500 font-semibold">Chưa có gợi ý phù hợp.</div>';
+            return;
+        }
+
+        recommendationsGrid.innerHTML = books.slice(0, 6).map((book) => `
+            <article class="product-card group relative h-full flex flex-col bg-white rounded-xl p-3 shadow-soft border border-brand-accent cursor-pointer" data-detail-url="/book/${book.id}">
+                <div class="relative w-full aspect-3/4 bg-brand-cream rounded-lg mb-3 flex items-center justify-center overflow-hidden border border-brand-accent">
+                    <img src="${book.imageUrl || 'https://via.placeholder.com/240x320?text=No+Cover'}" alt="${book.title || ''}" class="book-cover w-full h-full object-cover transition-transform duration-500" onerror="this.src='https://via.placeholder.com/240x320?text=Error'" />
+                </div>
+                <div class="flex flex-col grow">
+                    <h3 class="text-xs md:text-sm font-bold text-brand-dark leading-snug mb-1 line-clamp-2 group-hover:text-brand-biscuit transition-colors">${book.title || 'Không rõ'}</h3>
+                    <div class="text-[10px] text-gray-500 mb-2 line-clamp-1">${book.author || 'Đang cập nhật'}</div>
+                    <div class="mt-auto flex items-center justify-between gap-2">
+                        <span class="text-brand-orange font-black text-sm">${formatVnd(book.price)}</span>
+                        <button type="button" data-add-to-cart-recommendation="true" data-book-id="${book.id}" class="w-9 h-9 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </article>
+        `).join('');
+    };
+
+    const loadRecommendations = async () => {
+        if (!recommendationsGrid) {
+            return;
+        }
+
+        recommendationsGrid.innerHTML = '<div class="col-span-full rounded-2xl border border-dashed border-brand-accent bg-brand-cream/30 px-5 py-6 text-sm text-gray-500 font-semibold">Đang tải gợi ý sản phẩm...</div>';
+
+        try {
+            const books = await ApiService.Book.bestSellers(6);
+            renderRecommendations(Array.isArray(books) ? books : []);
+        } catch (error) {
+            recommendationsGrid.innerHTML = '<div class="col-span-full rounded-2xl border border-dashed border-red-200 bg-red-50 px-5 py-6 text-sm text-red-600 font-semibold">Không tải được gợi ý sản phẩm.</div>';
+        }
+    };
+
     liveContainer.addEventListener('click', async (event) => {
         const button = event.target.closest('button[data-action]');
         if (!button) {
@@ -197,6 +253,39 @@
         }
     });
 
+    recommendationsGrid?.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-add-to-cart-recommendation="true"]');
+        if (button) {
+            event.preventDefault();
+            event.stopPropagation();
+            const bookId = button.getAttribute('data-book-id');
+            if (!bookId) {
+                return;
+            }
+
+            try {
+                await addToCart(bookId, 1);
+                await fetchCart();
+                if (window.UIEnhancements && window.UIEnhancements.ToastService) {
+                    window.UIEnhancements.ToastService.success('Đã thêm sản phẩm vào giỏ hàng.');
+                }
+            } catch (error) {
+                if (window.UIEnhancements && window.UIEnhancements.ApiErrorHandler) {
+                    window.UIEnhancements.ApiErrorHandler.handle(error, 'Thêm vào giỏ hàng thất bại.');
+                } else {
+                    const message = error?.message || 'Thêm vào giỏ hàng thất bại.';
+                    alert(message);
+                }
+            }
+            return;
+        }
+
+        const card = event.target.closest('.product-card[data-detail-url]');
+        if (card && !event.target.closest('button, a, input, label, select, textarea')) {
+            window.location.href = card.getAttribute('data-detail-url');
+        }
+    });
+
     document.getElementById('selectAll')?.addEventListener('change', (e) => {
         const checked = e.target.checked;
         document.querySelectorAll('.shop-checkbox, .row-checkbox').forEach((cb) => {
@@ -215,4 +304,6 @@
         if (fallback2) fallback2.classList.add('hidden');
         updateSummary({ totalItems: 0, totalAmount: 0 });
     });
+
+    loadRecommendations();
 })();

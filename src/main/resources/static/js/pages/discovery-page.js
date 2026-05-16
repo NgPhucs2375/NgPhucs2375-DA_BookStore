@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bookGrid.innerHTML = books.map((book) => {
                 const coverUrl = book.imageUrl ? book.imageUrl : 'https://via.placeholder.com/150x200?text=No+Cover';
                 return `
-                    <a href="/book/${book.id}" class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
+                    <a href="/book/${book.id}" data-detail-url="/book/${book.id}" class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
                         <div class="relative w-full aspect-3/4 bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
                             <img src="${coverUrl}" alt="${book.title}" class="book-cover w-full h-full object-cover shadow-md transition-transform duration-500" onerror="this.src='https://via.placeholder.com/150x200?text=Error'"/>
                             <div class="absolute bottom-3 left-3 right-3 flex justify-between gap-2">
@@ -362,6 +362,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     bookGrid.addEventListener('click', (event) => {
+        const card = event.target.closest('.product-card[data-detail-url]');
+        if (card && !event.target.closest('button, a, input, label, select, textarea')) {
+            window.location.href = card.getAttribute('data-detail-url');
+            return;
+        }
+
         const wishlistButton = event.target.closest('button[data-toggle-wishlist="true"]');
         if (wishlistButton) {
             event.preventDefault();

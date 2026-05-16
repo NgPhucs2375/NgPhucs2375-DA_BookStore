@@ -39,6 +39,22 @@
 
     const formatVnd = (value) => ApiService.formatVND(Math.max(0, Number(value) || 0));
 
+    const escapeHtml = (value) => String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const formatAddressSummary = (address) => [
+        address?.recipientName,
+        address?.recipientPhone,
+        address?.addressLine,
+        address?.ward,
+        address?.district,
+        address?.province
+    ].filter((part) => part && String(part).trim()).join(' • ');
+
     const getHeadersForProfile = () => {
         const auth = ApiService.getAuth();
         const headers = { 'Content-Type': 'application/json', 'X-User-Id': auth.userId || '' };
@@ -88,11 +104,11 @@
         itemsEl.innerHTML = Array.from(grouped.values()).map((shop) => {
             const rows = shop.rows.map((item) => `
                 <div class="flex gap-4 mb-4">
-                    <div class="relative w-16 aspect-[3/4] bg-[#2c3e50] border border-gray-200 rounded shadow-sm flex-shrink-0 flex items-center justify-center">
+                    <div class="relative w-16 aspect-3/4 bg-[#2c3e50] border border-gray-200 rounded shadow-sm shrink-0 flex items-center justify-center">
                         <span class="text-white font-bold text-[7px] text-center px-1">BOOK</span>
                         <span class="absolute -top-2 -right-2 bg-brand-orange text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">x${item.quantity}</span>
                     </div>
-                    <div class="flex flex-col flex-grow justify-center">
+                    <div class="flex flex-col grow justify-center">
                         <h4 class="font-bold text-brand-dark text-xs leading-snug mb-1 line-clamp-2">${item.title || 'Không rõ'}</h4>
                         <p class="text-[10px] text-gray-500 font-medium mb-1">Tác giả: ${item.author || '-'}</p>
                         <div class="font-bold text-brand-dark text-sm">${formatVnd(item.lineTotal)}</div>
@@ -135,19 +151,20 @@
     };
 
     const deriveAddress = () => {
-        const manual = (addressDetailInput?.value || '').trim();
-        if (manual) {
-            return { addressLine: manual, addressId: null };
+        const selected = document.querySelector('input[name="address"]:checked');
+        if (selected) {
+            const addressLine = selected.getAttribute('data-address-summary') || '';
+            const addrId = selected.getAttribute('data-address-id') || null;
+            if (addressLine) {
+                return { addressLine, addressId: addrId ? Number(addrId) : null };
+            }
         }
 
-        const selected = document.querySelector('input[name="address"]:checked');
-        if (!selected) return { addressLine: '', addressId: null };
-
-        const addrId = selected.getAttribute('data-address-id') || null;
-        const label = document.querySelector(`label[for="${selected.id}"]`);
-        const textNode = label?.querySelector('.text-sm.text-gray-600.font-medium.leading-relaxed');
-        const addressLine = (textNode?.textContent || '').replace(/\s+/g, ' ').trim();
-        return { addressLine, addressId: addrId ? Number(addrId) : null };
+        const recipientName = (fullnameInput?.value || '').trim();
+        const recipientPhone = (phoneInput?.value || '').trim();
+        const manualAddress = (addressDetailInput?.value || '').trim();
+        const addressLine = [recipientName, recipientPhone, manualAddress].filter(Boolean).join(' • ');
+        return { addressLine, addressId: null };
     };
 
     const fetchAddresses = async () => {
@@ -156,26 +173,44 @@
             const res = await fetch('/buyer/profile/api/addresses', { headers });
             if (!res.ok) return;
             const addresses = await res.json();
-            if (!Array.isArray(addresses) || !addresses.length) return;
+            if (!Array.isArray(addresses) || !addresses.length) {
+                addressesContainer.innerHTML = '<div class="rounded-xl border border-dashed border-brand-accent bg-brand-cream/30 px-4 py-6 text-sm text-gray-500 font-medium">Bạn chưa có địa chỉ nào. Hãy lưu địa chỉ ở khung bên dưới để tiếp tục thanh toán.</div>';
+                return;
+            }
+
+            const checkedId = document.querySelector('input[name="address"]:checked')?.getAttribute('data-address-id');
+            const defaultAddress = addresses.find((addr) => addr.isDefault) || addresses[0];
 
             // render addresses
             addressesContainer.innerHTML = addresses.map((addr, idx) => `
                 <div class="relative">
-                    <input type="radio" name="address" id="address_addr_${addr.id || idx}" data-address-id="${addr.id || ''}" class="radio-card-input" ${addr.isDefault ? 'checked' : ''}>
+                    <input type="radio" name="address" id="address_addr_${addr.id || idx}" data-address-id="${addr.id || ''}" data-address-summary="${escapeHtml(formatAddressSummary(addr))}" class="radio-card-input" ${(String(addr.id) === String(checkedId) || (!checkedId && defaultAddress && defaultAddress.id === addr.id)) ? 'checked' : ''}>
                     <label for="address_addr_${addr.id || idx}" class="radio-card-label bg-white p-4 rounded-xl">
                         <div class="radio-circle mt-1 mr-4"></div>
-                        <div class="flex-grow">
+                        <div class="grow">
                             <div class="flex items-center gap-3 mb-1">
                                 <h3 class="font-bold text-brand-dark text-base">${addr.recipientName || ''}</h3>
                                 <span class="text-gray-400 font-medium text-sm">|</span>
                                 <span class="font-bold text-gray-600 text-sm">${addr.recipientPhone || ''}</span>
                                 ${addr.isDefault ? '<span class="bg-brand-orange text-white text-[10px] font-black px-2 py-0.5 rounded ml-auto uppercase shadow-sm">Mặc Định</span>' : ''}
                             </div>
-                            <div class="text-sm text-gray-600 font-medium leading-relaxed">${(addr.addressLine || '')}</div>
+                            <div class="text-sm text-gray-600 font-medium leading-relaxed">${[addr.addressLine, addr.ward, addr.district, addr.province].filter(Boolean).join(', ')}</div>
+                            <div class="text-[11px] text-gray-400 mt-1">${addr.addressType || 'Địa chỉ giao hàng'}</div>
                         </div>
                     </label>
                 </div>
             `).join('');
+
+            const selectedRadio = document.querySelector('input[name="address"]:checked');
+            if (selectedRadio) {
+                const selectedAddress = addresses.find((addr) => String(addr.id) === String(selectedRadio.getAttribute('data-address-id')))
+                    || defaultAddress;
+                if (selectedAddress) {
+                    if (fullnameInput) fullnameInput.value = selectedAddress.recipientName || '';
+                    if (phoneInput) phoneInput.value = selectedAddress.recipientPhone || '';
+                    if (addressDetailInput) addressDetailInput.value = selectedAddress.addressLine || '';
+                }
+            }
         } catch (e) {
             // ignore
         }
@@ -213,6 +248,19 @@
             console.error(err);
             alert(err?.message || 'Lưu địa chỉ thất bại');
         }
+    });
+
+    addressesContainer?.addEventListener('change', (event) => {
+        const radio = event.target.closest('input[name="address"]');
+        if (!radio) {
+            return;
+        }
+
+        const summary = radio.getAttribute('data-address-summary') || '';
+        const parts = summary.split(' • ');
+        if (fullnameInput && parts[0]) fullnameInput.value = parts[0] || '';
+        if (phoneInput && parts[1]) phoneInput.value = parts[1] || '';
+        if (addressDetailInput && parts.length > 2) addressDetailInput.value = parts.slice(2).join(' • ');
     });
 
     const setDefaultAddress = async (addressId) => {

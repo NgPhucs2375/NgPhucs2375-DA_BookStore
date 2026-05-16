@@ -58,8 +58,8 @@ public class BookController {
         Pageable pageable = PageRequest.of(page, size, resolveSort(sort));
         String keyword = (q == null || q.isBlank()) ? null : q.trim();
         String authorKeyword = (author == null || author.isBlank()) ? null : author.trim();
-        String yearFrom = (publishYearFrom == null || publishYearFrom.isBlank()) ? null : publishYearFrom.trim();
-        String yearTo = (publishYearTo == null || publishYearTo.isBlank()) ? null : publishYearTo.trim();
+        Integer yearFrom = parseYearBound(publishYearFrom);
+        Integer yearTo = parseYearBound(publishYearTo);
         return bookRepository.searchApprovedBooks(
                 keyword,
                 categoryId,
@@ -71,6 +71,13 @@ public class BookController {
                 ApprovalStatus.APPROVED,
                 pageable
         );
+    }
+
+    private Integer parseYearBound(String rawYear) {
+        if (rawYear == null || rawYear.isBlank()) {
+            return null;
+        }
+        return Integer.valueOf(rawYear.trim());
     }
 
     @GetMapping("/suggestions")

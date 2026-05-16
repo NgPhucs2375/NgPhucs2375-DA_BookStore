@@ -1,4 +1,4 @@
-package com.example.bookstore.service.recommendation.fpgrowth;
+package com.example.bookstore.service.recommendation.pairmining;
 
 public class AssociationRule {
     private final Long antecedent;

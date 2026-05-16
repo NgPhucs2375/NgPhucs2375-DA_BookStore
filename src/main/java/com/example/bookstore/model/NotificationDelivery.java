@@ -156,6 +156,7 @@ public class NotificationDelivery {
      *   - Metrics: avg attempts per delivery
      */
     @Column(name = "attempt_count", nullable = false)
+    @Builder.Default
     private Integer attemptCount = 0;
     
     /**

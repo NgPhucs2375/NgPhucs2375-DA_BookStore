@@ -28,15 +28,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // 1. Lấy JWT từ Header Authorization
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        String token = null;
         Long userId = null;
         List<String> roles = List.of();
         Long sellerId = null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
+            String token = authHeader.substring(7);
             try {
                 userId = jwtTokenProvider.extractUserId(token);
                 roles = jwtTokenProvider.extractRoles(token);
@@ -48,31 +46,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // 2. Nếu có userId và chưa được xác thực trong Context hiện tại
-        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-            for (String role : roles) {
-                if (role != null && !role.isBlank()) {
-                    String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-                    authorities.add(new SimpleGrantedAuthority(authority));
-                }
-            }
-
+        if (userId != null) {
             JwtAuthenticatedPrincipal principal = new JwtAuthenticatedPrincipal(userId, roles, sellerId);
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    principal,
-                    null,
-                    authorities
-            );
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                List<SimpleGrantedAuthority> authorities = mapAuthorities(principal.roles());
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        principal,
+                        null,
+                        authorities
+                );
 
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-            // 3. Thiết lập thông tin xác thực vào Security Context
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
-        // 4. Luôn gọi doFilter để chuyển request cho Filter tiếp theo (hoặc Controller)
         filterChain.doFilter(request, response);
+    }
+
+    private List<SimpleGrantedAuthority> mapAuthorities(List<String> roles) {
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        for (String role : roles) {
+            if (role != null && !role.isBlank()) {
+                String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+                authorities.add(new SimpleGrantedAuthority(authority));
+            }
+        }
+        return authorities;
     }
 }

@@ -7,8 +7,7 @@ import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.service.BuyerProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -27,20 +26,16 @@ public class BuyerProfileController {
 
     private final BuyerProfileService buyerProfileService;
 
-    private Long getCurrentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof JwtAuthenticatedPrincipal principal) {
-            return principal.userId();
-        }
-
+    private Long getCurrentUserId(JwtAuthenticatedPrincipal principal) {
+        if (principal != null) return principal.userId();
         throw new ResponseStatusException(UNAUTHORIZED, "Vui lòng đăng nhập");
     }
 
     // ==================== UI PAGES ====================
 
     @GetMapping("/dashboard")
-    public String profileDashboard(Model model) {
-        Long userId = getCurrentUserId();
+    public String profileDashboard(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal, Model model) {
+        Long userId = getCurrentUserId(principal);
         UserProfileDTO profile = buyerProfileService.getUserProfile(userId);
         List<UserAddressDTO> addresses = buyerProfileService.getUserAddresses(userId);
         List<?> securityEvents = buyerProfileService.getSecurityEvents(userId);
@@ -53,32 +48,32 @@ public class BuyerProfileController {
     }
 
     @GetMapping("/edit")
-    public String editProfile(Model model) {
-        Long userId = getCurrentUserId();
+    public String editProfile(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal, Model model) {
+        Long userId = getCurrentUserId(principal);
         UserProfileDTO profile = buyerProfileService.getUserProfile(userId);
         model.addAttribute("profile", profile);
         return "buyer/Buyer_Profile_Edit";
     }
 
     @GetMapping("/addresses")
-    public String manageAddresses(Model model) {
-        Long userId = getCurrentUserId();
+    public String manageAddresses(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal, Model model) {
+        Long userId = getCurrentUserId(principal);
         List<UserAddressDTO> addresses = buyerProfileService.getUserAddresses(userId);
         model.addAttribute("addresses", addresses);
         return "buyer/Buyer_Address_Management";
     }
 
     @GetMapping("/account-settings")
-    public String accountSettings(Model model) {
-        Long userId = getCurrentUserId();
+    public String accountSettings(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal, Model model) {
+        Long userId = getCurrentUserId(principal);
         UserProfileDTO profile = buyerProfileService.getUserProfile(userId);
         model.addAttribute("profile", profile);
         return "buyer/Buyer_Account_Settings";
     }
 
     @GetMapping("/security")
-    public String securitySettings(Model model) {
-        Long userId = getCurrentUserId();
+    public String securitySettings(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal, Model model) {
+        Long userId = getCurrentUserId(principal);
         List<?> securityEvents = buyerProfileService.getSecurityEvents(userId);
         model.addAttribute("securityEvents", securityEvents);
         return "buyer/Buyer_Security_Settings";
@@ -89,16 +84,16 @@ public class BuyerProfileController {
     // Profile Management
     @GetMapping("/api/profile")
     @ResponseBody
-    public ResponseEntity<UserProfileDTO> getProfile() {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<UserProfileDTO> getProfile(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
+        Long userId = getCurrentUserId(principal);
         UserProfileDTO profile = buyerProfileService.getUserProfile(userId);
         return ResponseEntity.ok(profile);
     }
 
     @PostMapping("/api/profile/update")
     @ResponseBody
-    public ResponseEntity<UserProfileDTO> updateProfile(@RequestBody UserProfileDTO profileDTO) {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<UserProfileDTO> updateProfile(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal, @RequestBody UserProfileDTO profileDTO) {
+        Long userId = getCurrentUserId(principal);
         UserProfileDTO updated = buyerProfileService.updateUserProfile(userId, profileDTO);
         return ResponseEntity.ok(updated);
     }
@@ -106,16 +101,16 @@ public class BuyerProfileController {
     // Address Management
     @GetMapping("/api/addresses")
     @ResponseBody
-    public ResponseEntity<List<UserAddressDTO>> getAddresses() {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<List<UserAddressDTO>> getAddresses(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
+        Long userId = getCurrentUserId(principal);
         List<UserAddressDTO> addresses = buyerProfileService.getUserAddresses(userId);
         return ResponseEntity.ok(addresses);
     }
 
     @PostMapping("/api/addresses/create")
     @ResponseBody
-    public ResponseEntity<UserAddressDTO> createAddress(@RequestBody UserAddressDTO addressDTO) {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<UserAddressDTO> createAddress(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal, @RequestBody UserAddressDTO addressDTO) {
+        Long userId = getCurrentUserId(principal);
         UserAddressDTO created = buyerProfileService.createUserAddress(userId, addressDTO);
         return ResponseEntity.ok(created);
     }
@@ -123,25 +118,26 @@ public class BuyerProfileController {
     @PostMapping("/api/addresses/{addressId}/update")
     @ResponseBody
     public ResponseEntity<UserAddressDTO> updateAddress(
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
             @PathVariable Long addressId,
             @RequestBody UserAddressDTO addressDTO) {
-        Long userId = getCurrentUserId();
+        Long userId = getCurrentUserId(principal);
         UserAddressDTO updated = buyerProfileService.updateUserAddress(userId, addressId, addressDTO);
         return ResponseEntity.ok(updated);
     }
 
     @PostMapping("/api/addresses/{addressId}/delete")
     @ResponseBody
-    public ResponseEntity<String> deleteAddress(@PathVariable Long addressId) {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<String> deleteAddress(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal, @PathVariable Long addressId) {
+        Long userId = getCurrentUserId(principal);
         buyerProfileService.deleteUserAddress(userId, addressId);
         return ResponseEntity.ok("Address deleted successfully");
     }
 
     @PostMapping("/api/addresses/{addressId}/set-default")
     @ResponseBody
-    public ResponseEntity<String> setDefaultAddress(@PathVariable Long addressId) {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<String> setDefaultAddress(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal, @PathVariable Long addressId) {
+        Long userId = getCurrentUserId(principal);
         buyerProfileService.setDefaultAddress(userId, addressId);
         return ResponseEntity.ok("Default address set successfully");
     }
@@ -149,8 +145,8 @@ public class BuyerProfileController {
     // Security Management
     @PostMapping("/api/security/change-password")
     @ResponseBody
-    public ResponseEntity<String> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO) {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<String> changePassword(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal, @RequestBody ChangePasswordDTO changePasswordDTO) {
+        Long userId = getCurrentUserId(principal);
         try {
             buyerProfileService.changePassword(userId, changePasswordDTO);
             return ResponseEntity.ok("Password changed successfully");
@@ -161,8 +157,8 @@ public class BuyerProfileController {
 
     @GetMapping("/api/security/events")
     @ResponseBody
-    public ResponseEntity<?> getSecurityEvents() {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<?> getSecurityEvents(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
+        Long userId = getCurrentUserId(principal);
         List<?> events = buyerProfileService.getSecurityEvents(userId);
         return ResponseEntity.ok(events);
     }

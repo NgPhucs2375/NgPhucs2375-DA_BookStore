@@ -42,4 +42,69 @@ public class AdminBookController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    /**
+     * Xóa sách
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteBook(
+            @PathVariable Long id
+    ) {
+        try {
+            bookService.deleteBook(id);
+            return ResponseEntity.ok("Xóa sách thành công");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Cập nhật thông tin sách
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateBook(
+            @PathVariable Long id,
+            @RequestBody com.example.bookstore.dto.BookUpdateDto dto
+    ) {
+        try {
+            Book updatedBook = bookService.updateBookByAdmin(id, dto);
+            return ResponseEntity.ok(updatedBook);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Khóa sách (không cho phép hiển thị)
+     */
+    @PutMapping("/{id}/lock")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> lockBook(
+            @PathVariable Long id
+    ) {
+        try {
+            Book book = bookService.lockBook(id);
+            return ResponseEntity.ok(book);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Mở khóa sách
+     */
+    @PutMapping("/{id}/unlock")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> unlockBook(
+            @PathVariable Long id
+    ) {
+        try {
+            Book book = bookService.unlockBook(id);
+            return ResponseEntity.ok(book);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

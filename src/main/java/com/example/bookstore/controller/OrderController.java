@@ -15,11 +15,9 @@ import com.example.bookstore.model.enums.OrderStatus;
 import com.example.bookstore.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.List;
 
@@ -40,10 +38,10 @@ public class OrderController {
     @PostMapping("/me/checkout")
         @PreAuthorize("hasRole('BUYER')")
     public CheckoutResponse checkoutForCurrentBuyer(
-            Authentication authentication,
+            @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @Valid @RequestBody CheckoutMeRequest request
     ) {
-        Long buyerId = currentUserId(authentication);
+        Long buyerId = currentUserId(principal);
         return orderService.checkoutFromCurrentBuyer(buyerId, request.getShippingAddress());
     }
 
@@ -55,62 +53,61 @@ public class OrderController {
 
     @GetMapping("/me")
     @PreAuthorize("hasRole('BUYER')")
-    public List<Order> getCurrentBuyerOrders(Authentication authentication) {
-        Long buyerId = currentUserId(authentication);
+    public List<Order> getCurrentBuyerOrders(@AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal) {
+        Long buyerId = currentUserId(principal);
         return orderService.getCurrentBuyerOrders(buyerId);
     }
 
     @PostMapping("/me/filter/summary")
     @PreAuthorize("hasRole('BUYER')")
-    public List<OrderSummaryResponse> getCurrentBuyerOrderSummaries(Authentication authentication) {
-        Long buyerId = currentUserId(authentication);
+    public List<OrderSummaryResponse> getCurrentBuyerOrderSummaries(@AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal) {
+        Long buyerId = currentUserId(principal);
         return orderService.getCurrentBuyerOrderSummaries(buyerId);
     }
 
     @GetMapping("/me/{orderId}")
     @PreAuthorize("hasPermission(#orderId, 'Order', 'read')")
     public OrderDetailResponse getCurrentBuyerOrderDetail(
-            Authentication authentication,
+            @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @PathVariable Long orderId
     ) {
-        Long buyerId = currentUserId(authentication);
+        Long buyerId = currentUserId(principal);
         return orderService.getCurrentBuyerOrderDetail(buyerId, orderId);
     }
 
     @GetMapping("/seller/{sellerId}/sub-orders")
     @PreAuthorize("hasPermission(#sellerId, 'User', 'read')")
     public List<SubOrderSummaryResponse> getSellerSubOrders(
-            @PathVariable Long sellerId,
-            Authentication authentication
+            @PathVariable Long sellerId
     ) {
         return orderService.getSellerSubOrders(sellerId);
     }
 
     @GetMapping("/seller/me/sub-orders")
     @PreAuthorize("hasRole('SELLER')")
-    public List<SubOrderSummaryResponse> getCurrentSellerSubOrders(Authentication authentication) {
-        Long sellerId = currentSellerId(authentication);
+    public List<SubOrderSummaryResponse> getCurrentSellerSubOrders(@AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal) {
+        Long sellerId = currentSellerId(principal);
         return orderService.getSellerSubOrders(sellerId);
     }
 
     @PatchMapping("/sub-orders/{subOrderId}/status")
     @PreAuthorize("hasPermission(#subOrderId, 'SubOrder', 'status')")
     public SubOrderSummaryResponse updateSubOrderStatus(
-            Authentication authentication,
+            @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @PathVariable Long subOrderId,
             @RequestParam OrderStatus status
     ) {
-        Long sellerId = currentSellerId(authentication);
+        Long sellerId = currentSellerId(principal);
         return orderService.updateSubOrderStatusForSeller(sellerId, subOrderId, status);
     }
 
     @PatchMapping("/me/{orderId}/cancel")
     @PreAuthorize("hasPermission(#orderId, 'Order', 'cancel')")
     public OrderSummaryResponse cancelCurrentBuyerOrder(
-            Authentication authentication,
+            @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @PathVariable Long orderId
     ) {
-        Long buyerId = currentUserId(authentication);
+        Long buyerId = currentUserId(principal);
         return orderService.cancelCurrentBuyerOrder(buyerId, orderId);
     }
 
@@ -122,10 +119,10 @@ public class OrderController {
     @PostMapping("/me/filter")
         @PreAuthorize("hasRole('BUYER')")
     public OrderFilterResponse filterMyOrders(
-            Authentication authentication,
+            @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @RequestBody(required = false) OrderFilterRequest filter
     ) {
-        Long buyerId = currentUserId(authentication);
+        Long buyerId = currentUserId(principal);
         if (filter == null) {
             filter = new OrderFilterRequest();
         }
@@ -140,10 +137,10 @@ public class OrderController {
     @GetMapping("/me/status/{status}")
         @PreAuthorize("hasRole('BUYER')")
     public List<OrderSummaryResponse> getMyOrdersByStatus(
-            Authentication authentication,
+            @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @PathVariable OrderStatus status
     ) {
-        Long buyerId = currentUserId(authentication);
+        Long buyerId = currentUserId(principal);
         return orderService.getBuyerOrdersByStatus(buyerId, status);
     }
 
@@ -155,10 +152,10 @@ public class OrderController {
     @PostMapping("/seller/me/filter")
     @PreAuthorize("hasRole('SELLER')")
     public SubOrderFilterResponse filterMySubOrders(
-            Authentication authentication,
+            @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @RequestBody(required = false) SubOrderFilterRequest filter
     ) {
-        Long sellerId = currentSellerId(authentication);
+        Long sellerId = currentSellerId(principal);
         if (filter == null) {
             filter = new SubOrderFilterRequest();
         }
@@ -173,10 +170,10 @@ public class OrderController {
     @GetMapping("/seller/me/status/{status}")
     @PreAuthorize("hasRole('SELLER')")
     public List<SubOrderSummaryResponse> getMySubOrdersByStatus(
-            Authentication authentication,
+            @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @PathVariable OrderStatus status
     ) {
-        Long sellerId = currentSellerId(authentication);
+        Long sellerId = currentSellerId(principal);
         return orderService.getSellerSubOrdersByStatus(sellerId, status);
     }
 
@@ -188,23 +185,23 @@ public class OrderController {
     @GetMapping("/seller/me/search")
     @PreAuthorize("hasRole('SELLER')")
     public List<SubOrderSummaryResponse> searchMySubOrdersByBuyer(
-            Authentication authentication,
+            @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @RequestParam(required = true) String buyerName
     ) {
-        Long sellerId = currentSellerId(authentication);
+        Long sellerId = currentSellerId(principal);
         return orderService.searchSellerSubOrdersByBuyer(sellerId, buyerName);
     }
 
-    private Long currentUserId(Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal principal) {
+    private Long currentUserId(com.example.bookstore.security.JwtAuthenticatedPrincipal principal) {
+        if (principal != null) {
             return principal.userId();
         }
 
         return null;
     }
 
-    private Long currentSellerId(Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal principal) {
+    private Long currentSellerId(com.example.bookstore.security.JwtAuthenticatedPrincipal principal) {
+        if (principal != null) {
             return principal.sellerId() != null ? principal.sellerId() : principal.userId();
         }
 

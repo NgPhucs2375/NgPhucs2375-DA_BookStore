@@ -6,17 +6,13 @@ import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.service.SellerShopService;
 import jakarta.validation.Valid;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-
-import java.security.Principal;
+ 
 
 @RestController
 @RequestMapping("/api")
@@ -31,8 +27,8 @@ public class SellerShopController {
 
     @GetMapping("/seller/me/shop")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<SellerShopResponse> getMyShop(HttpServletRequest request) {
-        Long sellerId = getCurrentSellerId(request);
+    public ResponseEntity<SellerShopResponse> getMyShop(@org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
+        Long sellerId = getCurrentSellerId(principal);
         SellerShopResponse response = shopService.getMyShop(sellerId);
         return ResponseEntity.ok(response);
     }
@@ -41,9 +37,9 @@ public class SellerShopController {
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<SellerShopResponse> createMyShop(
             @Valid @RequestBody SellerShopUpsertRequest request,
-            HttpServletRequest httpRequest
+            @org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal
     ) {
-        Long sellerId = getCurrentSellerId(httpRequest);
+        Long sellerId = getCurrentSellerId(principal);
         SellerShopResponse response = shopService.createMyShop(sellerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -52,9 +48,9 @@ public class SellerShopController {
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<SellerShopResponse> updateMyShop(
             @Valid @RequestBody SellerShopUpsertRequest request,
-            HttpServletRequest httpRequest
+            @org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal
     ) {
-        Long sellerId = getCurrentSellerId(httpRequest);
+        Long sellerId = getCurrentSellerId(principal);
         SellerShopResponse response = shopService.updateMyShop(sellerId, request);
         return ResponseEntity.ok(response);
     }
@@ -63,17 +59,17 @@ public class SellerShopController {
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<SellerShopResponse> changeStatus(
             @RequestParam ApprovalStatus status,
-            HttpServletRequest httpRequest
+            @org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal
     ) {
-        Long sellerId = getCurrentSellerId(httpRequest);
+        Long sellerId = getCurrentSellerId(principal);
         SellerShopResponse response = shopService.changeStatus(sellerId, status);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/seller/me/shop")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<Void> deleteMyShop(HttpServletRequest request) {
-        Long sellerId = getCurrentSellerId(request);
+    public ResponseEntity<Void> deleteMyShop(@org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
+        Long sellerId = getCurrentSellerId(principal);
         shopService.deleteMyShop(sellerId);
         return ResponseEntity.noContent().build();
     }
@@ -92,24 +88,11 @@ public class SellerShopController {
     // HELPER METHODS
     // ==========================================
 
-    private Long getCurrentSellerId(HttpServletRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof JwtAuthenticatedPrincipal jwtPrincipal) {
-            if (jwtPrincipal.sellerId() != null) {
-                return jwtPrincipal.sellerId();
-            }
-            return jwtPrincipal.userId();
+    private Long getCurrentSellerId(JwtAuthenticatedPrincipal principal) {
+        if (principal != null) {
+            if (principal.sellerId() != null) return principal.sellerId();
+            return principal.userId();
         }
-
-        Principal principal = request.getUserPrincipal();
-        if (principal instanceof org.springframework.security.core.Authentication requestAuthentication
-                && requestAuthentication.getPrincipal() instanceof JwtAuthenticatedPrincipal jwtPrincipal) {
-            if (jwtPrincipal.sellerId() != null) {
-                return jwtPrincipal.sellerId();
-            }
-            return jwtPrincipal.userId();
-        }
-
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
     }
 }

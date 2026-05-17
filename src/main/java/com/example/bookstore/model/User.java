@@ -6,9 +6,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -19,8 +19,8 @@ import java.util.Set;
 @Entity // Đánh dấu đây là 1 bảng trong DB
 @Table(name="users") // Tên bảng dưới Database sẽ là 'users'
 @Data
-@ToString(exclude = {"favoriteCategories", "wishlistBooks", "books", "subOrders", "notifications", "addresses", "securityEvents", "cart"})
-@EqualsAndHashCode(of = "id")
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor // Tự tạo Constructor không tham số
 @AllArgsConstructor // Tự tạo Constructor có đủ tham số
 @Builder
@@ -80,6 +80,8 @@ public class User {
         inverseJoinColumns = @JoinColumn(name = "category_id")
     )
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Category> favoriteCategories = new LinkedHashSet<>();
 
     @ManyToMany
@@ -96,11 +98,15 @@ public class User {
     @OneToMany(mappedBy = "seller")
     @JsonIgnore
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Book> books = new ArrayList<>();
 
     @OneToMany(mappedBy = "seller")
     @JsonIgnore
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<SubOrder> subOrders = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -120,7 +126,13 @@ public class User {
 
     @OneToOne(mappedBy = "buyer")
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Cart cart;
+
+    @Column(nullable = false, columnDefinition = "BIT DEFAULT 1")
+    @Builder.Default
+    private boolean isActive = true;  // true = hoạt động, false = khóa
 
     @PrePersist
     public void onCreate() {

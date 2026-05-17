@@ -10,34 +10,42 @@ public class PanelPageController {
 
     @GetMapping("/admin")
     public String adminDashboard(Model model) {
-        model.addAttribute("pageTitle", "Tong quan san");
-        model.addAttribute("pageSubtitle", "Dieu huong bang Thymeleaf Fragments");
+        model.addAttribute("pageTitle", "Tổng quan hệ thống");
+        model.addAttribute("pageSubtitle", "Theo dõi hoạt động kinh doanh toàn sàn");
         model.addAttribute("activeMenu", "admin-dashboard");
         return "admin/Admin";
     }
 
     @GetMapping("/admin/users")
     public String adminUsers(Model model) {
-        model.addAttribute("pageTitle", "Quan ly nguoi dung");
-        model.addAttribute("pageSubtitle", "Loc theo ten, vai tro, trang thai");
+        model.addAttribute("pageTitle", "Quản lý người dùng");
+        model.addAttribute("pageSubtitle", "Lọc theo tên, vai trò và trạng thái tài khoản");
         model.addAttribute("activeMenu", "admin-users");
         return "admin/Admin_Users";
     }
 
     @GetMapping("/admin/books")
     public String adminBooks(Model model) {
-        model.addAttribute("pageTitle", "Kiem duyet sach");
-        model.addAttribute("pageSubtitle", "Loc theo ten, danh muc, ton kho");
+        model.addAttribute("pageTitle", "Kiểm duyệt sản phẩm");
+        model.addAttribute("pageSubtitle", "Phê duyệt sách mới và quản lý nội dung");
         model.addAttribute("activeMenu", "admin-books");
         return "admin/Admin_Books";
     }
 
     @GetMapping("/admin/shops")
     public String adminShops(Model model) {
-        model.addAttribute("pageTitle", "Xet duyet gian hang");
-        model.addAttribute("pageSubtitle", "Tim kiem theo ten shop, chu shop, MST");
+        model.addAttribute("pageTitle", "Xét duyệt gian hàng");
+        model.addAttribute("pageSubtitle", "Quản lý đối tác và thông tin pháp lý");
         model.addAttribute("activeMenu", "admin-shops");
         return "admin/Admin_Shops";
+    }
+
+    @GetMapping("/admin/orders")
+    public String adminOrders(Model model) {
+        model.addAttribute("pageTitle", "Quản lý đơn hàng");
+        model.addAttribute("pageSubtitle", "Xem toàn bộ đơn hàng trên hệ thống");
+        model.addAttribute("activeMenu", "admin-orders");
+        return "admin/Admin_Orders";
     }
 
     @GetMapping("/seller/dashboard")

@@ -8,7 +8,7 @@ import com.example.bookstore.repository.BookRepository;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -116,13 +116,12 @@ public class BookController {
     @GetMapping("/seller/me")
     @PreAuthorize("hasRole('SELLER')")
     public Page<Book> getSellerBooks(
-            Authentication authentication,
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-
-        Long sellerId = currentSellerId(authentication);
+        Long sellerId = currentSellerId(principal);
         if (sellerId == null) return Page.empty();
 
         String keyword = (q == null || q.trim().isEmpty()) ? null : q.trim();
@@ -144,9 +143,9 @@ public class BookController {
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<?> createBookForSeller(
             @RequestBody Book book,
-            Authentication authentication
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
     ) {
-        Long sellerId = currentSellerId(authentication);
+        Long sellerId = currentSellerId(principal);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bạn cần đăng nhập để thực hiện hành động này");
         }
@@ -174,8 +173,8 @@ public class BookController {
     public ResponseEntity<?> updateBookForSeller(
             @PathVariable Long id,
             @RequestBody Book bookDetails,
-            Authentication authentication) {
-        Long sellerId = currentSellerId(authentication);
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
+        Long sellerId = currentSellerId(principal);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -204,8 +203,8 @@ public class BookController {
     public ResponseEntity<?> upLoadBookCover(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file,
-            Authentication authentication) {
-        Long sellerId = currentSellerId(authentication);
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
+        Long sellerId = currentSellerId(principal);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -223,9 +222,9 @@ public class BookController {
     @PreAuthorize("hasRole('SELLER') and hasPermission(#id, 'Book', 'delete')")
     public ResponseEntity<?> deleteBookForSeller(
             @PathVariable Long id,
-            Authentication authentication
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
     ) {
-        Long sellerId = currentSellerId(authentication);
+        Long sellerId = currentSellerId(principal);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -244,8 +243,8 @@ public class BookController {
         }
     }
 
-    private Long currentSellerId(Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() instanceof JwtAuthenticatedPrincipal principal) {
+    private Long currentSellerId(JwtAuthenticatedPrincipal principal) {
+        if (principal != null) {
             return principal.sellerId() != null ? principal.sellerId() : principal.userId();
         }
         return null;

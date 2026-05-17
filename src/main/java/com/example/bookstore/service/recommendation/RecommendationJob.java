@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * RecommendationJob: Background job for computing association rules from customer purchase patterns.
@@ -56,8 +55,6 @@ public class RecommendationJob {
         logger.info("[RecommendationJob] Starting precompute job with {} day sliding window...", SLIDING_WINDOW_DAYS);
         
         try {
-            LocalDateTime startTime = System.nanoTime() / 1_000_000_000.0 > 0 ? LocalDateTime.now().minusDays(SLIDING_WINDOW_DAYS) : LocalDateTime.now();
-            
             // Step 1: Fetch order-book pairs within sliding window
             logger.debug("[RecommendationJob] Fetching order-book pairs from last {} days...", SLIDING_WINDOW_DAYS);
             LocalDateTime windowStart = LocalDateTime.now().minusDays(SLIDING_WINDOW_DAYS);

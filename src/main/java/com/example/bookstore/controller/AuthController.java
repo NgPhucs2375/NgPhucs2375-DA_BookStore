@@ -118,9 +118,12 @@ public class AuthController {
 //    /api/auth/login
     @PostMapping("/login")
     public ResponseEntity<String> login(@Valid @RequestBody AuthLoginRequest request){
-        boolean isValid = authService.login(request.getUsername(), request.getPassword());
+        User user = authService.authenticateUser(request.getUsername(), request.getPassword());
 
-        if(isValid){
+        if(user != null){
+            if (!user.isActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Tài khoản bị từ chối đăng nhập");
+            }
             return ResponseEntity.ok("Đăng nhập thành công");
         }
         else {
@@ -135,7 +138,11 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Sai tên đăng nhập hoặc mật khẩu");
         }
 
-        Long sellerId = authenticated.getRole() == com.example.bookstore.model.enums.UserRole.SELLER
+        if (!authenticated.isActive()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Tài khoản bị từ chối đăng nhập");
+        }
+
+        Long sellerId = authenticated.getRole() == UserRole.SELLER
             ? authenticated.getId()
             : null;
         java.util.List<String> roles = java.util.List.of(authenticated.getRole().name());
@@ -145,6 +152,7 @@ public class AuthController {
         response.put("tokenType", "Bearer");
         response.put("accessToken", token);
         response.put("userId", authenticated.getId());
+        response.put("role", authenticated.getRole().name());
         response.put("roles", roles);
         response.put("sellerId", sellerId);
         return ResponseEntity.ok(response);

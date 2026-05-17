@@ -2,11 +2,17 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.Category;
+import com.example.bookstore.model.Order;
 import com.example.bookstore.model.User;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.CategoryRepository;
+import com.example.bookstore.repository.OrderRepository;
 import com.example.bookstore.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +41,9 @@ public class PanelController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     private static String safe(String value) {
         return value == null ? "" : value.trim();
@@ -280,5 +289,134 @@ public class PanelController {
         response.put("categoryRevenue", categoryRevenue);
         response.put("orderStatusCounts", orderStatusCounts);
         return response;
+    }
+
+    /**
+     * 🆕 NEW: Lấy danh sách người dùng chi tiết với trạng thái active/lock
+     * GET /api/panel/users-detailed?q=&role=all&status=all
+     */
+    @GetMapping("/users-detailed")
+    public List<Map<String, Object>> getUsersDetailed(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status
+    ) {
+        return userRepository.findAll().stream()
+                .filter(u -> q == null || q.isEmpty() || 
+                        lower(u.getUsername()).contains(lower(q)))
+                .filter(u -> role == null || role.equals("all") || 
+                        u.getRole().toString().equalsIgnoreCase(role))
+                .filter(u -> status == null || status.equals("all") ||
+                        (status.equals("Active") && u.isActive()) ||
+                        (status.equals("Inactive") && !u.isActive()))
+                .map(u -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("id", u.getId());
+                    map.put("name", u.getUsername());
+                    map.put("email", u.getUsername() + "@bookom.vn");
+                    map.put("role", u.getRole().toString());
+                    map.put("status", u.isActive() ? "Active" : "Inactive");
+                    map.put("joined", "2026-02-01");
+                    map.put("action", u.isActive() ? "lock" : "unlock");
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lấy tất cả sách (với filter trạng thái duyệt và hoạt động)
+     */
+    @GetMapping("/books-all")
+    public Page<Map<String, Object>> getAllBooksForAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String approvalStatus,
+            @RequestParam(required = false) String active
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<Book> books = bookRepository.findAll();
+
+        List<Map<String, Object>> filtered = books.stream()
+                .filter(b -> q == null || q.isEmpty() ||
+                        lower(b.getTitle()).contains(lower(q)) ||
+                        lower(b.getAuthor()).contains(lower(q)))
+                .filter(b -> approvalStatus == null || approvalStatus.equals("all") ||
+                        b.getApprovalStatus().toString().equals(approvalStatus))
+                .filter(b -> active == null || active.equals("all") ||
+                        (active.equals("active") && b.isActive()) ||
+                        (active.equals("locked") && !b.isActive()))
+                .map(b -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("id", b.getId());
+                    map.put("title", b.getTitle());
+                    map.put("author", b.getAuthor());
+                    map.put("price", b.getPrice());
+                    map.put("category", b.getCategory() != null ? b.getCategory().getName() : "N/A");
+                    map.put("stock", b.getStockQuantity());
+                    map.put("approvalStatus", b.getApprovalStatus().toString());
+                    map.put("active", b.isActive() ? "Active" : "Locked");
+                    map.put("seller", b.getSeller() != null ? b.getSeller().getUsername() : "System");
+                    return map;
+                })
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), filtered.size());
+        
+        List<Map<String, Object>> paged = (start > filtered.size()) 
+            ? new ArrayList<>() 
+            : filtered.subList(start, end);
+
+        return new PageImpl<>(paged, pageable, filtered.size());
+    }
+
+    /**
+     * Lấy đơn hàng cho admin
+     */
+    @GetMapping("/orders")
+    public Page<Map<String, Object>> getOrdersForAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<Order> orders = orderRepository.findAll();
+
+        List<Map<String, Object>> filtered = orders.stream()
+                .map(o -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("id", o.getId());
+                    map.put("buyer", o.getBuyer() != null ? o.getBuyer().getUsername() : "Unknown");
+                    map.put("total", o.getTotalAmount());
+                    map.put("address", o.getShippingAddress());
+                    map.put("date", o.getCreatedAt());
+                    // Get first sub-order status as main status
+                    String orderStatus = o.getSubOrders() == null || o.getSubOrders().isEmpty()
+                            ? "N/A"
+                            : o.getSubOrders().get(0).getStatus().toString();
+                    map.put("status", orderStatus);
+                    return map;
+                })
+                .filter(m -> q == null || q.isEmpty() || 
+                        String.valueOf(m.get("id")).contains(q) || 
+                        lower(String.valueOf(m.get("buyer"))).contains(lower(q)))
+                .filter(m -> status == null || status.equals("all") || 
+                        String.valueOf(m.get("status")).equals(status))
+                // Note: Date filtering can be added here if needed, 
+                // but for now keeping it simple as per initial requirements
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), filtered.size());
+        
+        List<Map<String, Object>> paged = (start > filtered.size()) 
+            ? new ArrayList<>() 
+            : filtered.subList(start, end);
+
+        return new PageImpl<>(paged, pageable, filtered.size());
     }
 }

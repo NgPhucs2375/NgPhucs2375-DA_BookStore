@@ -1,12 +1,14 @@
 package com.example.bookstore.model;
 
 import com.example.bookstore.model.enums.ApprovalStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.DynamicUpdate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -18,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @NoArgsConstructor // Auto tạo Constructor không tham số
 @AllArgsConstructor // Auto tao Constructor co tham so
 @DynamicUpdate // hỗ trợ để update động
-
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // auto tang id theo index
@@ -36,8 +38,9 @@ public class Book {
     private String publisher;  // Nhà xuất bản
     private String publishYear; // Năm xuất bản
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS
+    @BatchSize(size = 50)
     private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)

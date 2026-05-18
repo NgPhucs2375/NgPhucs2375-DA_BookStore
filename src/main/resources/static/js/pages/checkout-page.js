@@ -32,11 +32,6 @@
     let currentCart = null;
     let appliedCoupon = null;
 
-    const COUPONS = {
-        'BOOKOM15K': { type: 'fixed', amount: 15000, desc: 'BOOKOM15K (Giảm 15.000đ)' },
-        'SAVE10': { type: 'percent', amount: 10, desc: 'SAVE10 (Giảm 10%)' }
-    };
-
     const formatVnd = (value) => ApiService.formatVND(Math.max(0, Number(value) || 0));
 
     const getHeadersForProfile = () => {
@@ -111,9 +106,8 @@
         const shopDiscount = 0;
 
         let voucherDiscount = 0;
-        if (appliedCoupon) {
-            if (appliedCoupon.type === 'fixed') voucherDiscount = appliedCoupon.amount;
-            if (appliedCoupon.type === 'percent') voucherDiscount = Math.round(subtotal * (appliedCoupon.amount / 100));
+        if (appliedCoupon && appliedCoupon.discountAmount) {
+            voucherDiscount = appliedCoupon.discountAmount;
         }
 
         const total = Math.max(0, subtotal + shippingFee - shopDiscount - voucherDiscount);
@@ -125,6 +119,18 @@
         if (shopDiscountEl) shopDiscountEl.textContent = `-${formatVnd(shopDiscount)}`;
         if (voucherDiscountEl) voucherDiscountEl.textContent = `-${formatVnd(voucherDiscount)}`;
         if (totalEl) totalEl.textContent = formatVnd(total);
+
+        // Show original price crossed out if voucher applied
+        const originalPriceEl = document.getElementById('checkout-original-total');
+        if (originalPriceEl) {
+            if (voucherDiscount > 0) {
+                originalPriceEl.textContent = formatVnd(subtotal + shippingFee - shopDiscount);
+                originalPriceEl.classList.remove('hidden');
+            } else {
+                originalPriceEl.classList.add('hidden');
+            }
+        }
+
         if (placeOrderBtn) {
             placeOrderBtn.disabled = totalItems === 0;
             placeOrderBtn.classList.toggle('opacity-60', totalItems === 0);
@@ -238,17 +244,31 @@
         updateSummary(cart);
     };
 
-    // coupon handlers
-    applyCouponBtn?.addEventListener('click', (e) => {
+    // coupon handlers - real API validation
+    applyCouponBtn?.addEventListener('click', async (e) => {
         const code = (couponInput?.value || '').trim().toUpperCase();
         if (!code) return alert('Nhập mã khuyến mãi');
-        const rule = COUPONS[code];
-        if (!rule) return alert('Mã không hợp lệ hoặc đã hết hạn');
-        appliedCoupon = { ...rule, code };
-        appliedCouponText.textContent = rule.desc;
-        appliedCouponWrap.classList.remove('hidden');
-        clearCouponBtn?.classList.remove('hidden');
-        updateSummary(currentCart || {});
+        const subtotal = Number(currentCart?.totalAmount || 0);
+        if (subtotal <= 0) return alert('Giỏ hàng trống, không thể áp dụng mã');
+
+        try {
+            applyCouponBtn.disabled = true;
+            applyCouponBtn.textContent = '...';
+            const result = await ApiService.Voucher.validate(code, subtotal);
+            appliedCoupon = result;
+            const desc = result.discountType === 'PERCENTAGE'
+                ? `${result.code} (Giảm ${result.discountValue}% = ${ApiService.formatVND(result.discountAmount)})`
+                : `${result.code} (Giảm ${ApiService.formatVND(result.discountAmount)})`;
+            appliedCouponText.textContent = desc;
+            appliedCouponWrap.classList.remove('hidden');
+            clearCouponBtn?.classList.remove('hidden');
+            updateSummary(currentCart || {});
+        } catch (err) {
+            alert(err.message || 'Mã không hợp lệ hoặc đã hết hạn');
+        } finally {
+            applyCouponBtn.disabled = false;
+            applyCouponBtn.textContent = 'Áp Dụng';
+        }
     });
 
     removeAppliedCouponBtn?.addEventListener('click', () => {

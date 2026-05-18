@@ -18,6 +18,8 @@ public interface BookRepository extends JpaRepository<Book, Long>{
     List<Book> findByTitleContaining(String title);
 
     List<Book> findBySeller(User seller);
+    @Query("SELECT b FROM Book b LEFT JOIN FETCH b.category WHERE b.seller = :seller")
+    List<Book> findBySellerWithCategory(@Param("seller") User seller);
 
     // S02: Lấy sách theo trạng thái (Có phân trang cho Admin)
     Page<Book> findByApprovalStatus(ApprovalStatus approvalStatus, Pageable pageable);
@@ -142,4 +144,34 @@ public interface BookRepository extends JpaRepository<Book, Long>{
             @Param("categoryId") Long categoryId,
             Pageable pageable
         );
+
+    /**
+     * Tìm sách của seller với JOIN FETCH để tránh N+1 queries
+     * Bao gồm tất cả trạng thái: PENDING, APPROVED, REJECTED
+     * Sử dụng JOIN FETCH để load category và seller cùng lúc
+     */
+
+    @Query("""
+        SELECT DISTINCT b FROM Book b
+        LEFT JOIN FETCH b.category c
+        LEFT JOIN FETCH b.seller s
+        WHERE b.seller.id = :sellerId
+          AND (
+            :q IS NULL
+            OR :q = ''
+            OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
+          )
+          AND (
+            :categoryId IS NULL
+            OR c.id = :categoryId
+          )
+        ORDER BY b.id DESC
+        """)
+    Page<Book> findBySellerIdAndKeywordAndCategoryWithFetch(
+            @Param("sellerId") Long sellerId,
+            @Param("q") String keyword,
+            @Param("categoryId") Long categoryId,
+            Pageable pageable
+    );
 }

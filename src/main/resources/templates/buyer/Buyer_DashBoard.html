@@ -204,16 +204,34 @@
 
             <div class="h-8 w-px bg-brand-accent hidden md:block"></div>
 
-            <div class="relative group cursor-pointer">
-                <div class="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-brand-cream transition border border-transparent group-hover:border-brand-accent">
+            <!-- Account Menu Container -->
+            <div class="account-menu-container relative">
+                <!-- Trigger Button -->
+                <button class="account-menu-trigger flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-brand-cream transition border border-transparent hover:border-brand-accent">
                     <div id="header-avatar-preview" class="w-8 h-8 rounded-full bg-cover bg-center border border-brand-accent" style="background-image: url('https://i.pravatar.cc/150?img=11');"></div>
                     <span id="buyer-name" class="hidden md:block font-bold text-sm text-brand-dark">Will Trần</span>
                     <svg class="w-4 h-4 text-gray-500 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-                <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-float border border-brand-accent opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden transform origin-top-right scale-95 group-hover:scale-100">
-                    <a th:href="@{/buyer/dashboard}" class="block px-4 py-3 text-sm font-bold text-brand-dark hover:bg-brand-cream hover:text-brand-orange transition">Tài Khoản Của Tôi</a>
-                    <a th:href="@{/main/order-details}" class="block px-4 py-3 text-sm font-bold text-brand-dark hover:bg-brand-cream hover:text-brand-orange transition">Đơn Mua</a>
-                    <a th:href="@{/main/auth}" class="block px-4 py-3 text-sm font-bold text-brand-dark hover:bg-brand-cream hover:text-brand-orange transition">Đăng Xuất</a>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div class="account-menu-dropdown hidden absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-float border border-brand-accent overflow-hidden py-2 z-50 opacity-0 scale-95 pointer-events-none transition-all duration-200 origin-top-right">
+                    <!-- Profile -->
+                    <a href="#" class="account-menu-profile flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-brand-dark hover:bg-brand-cream hover:text-brand-orange transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        Hồ sơ
+                    </a>
+                    <!-- Change Password -->
+                    <a href="#" class="account-menu-change-password flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-brand-dark hover:bg-brand-cream hover:text-brand-orange transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        Đổi mật khẩu
+                    </a>
+                    <!-- Divider -->
+                    <div class="border-t border-brand-accent my-1"></div>
+                    <!-- Logout -->
+                    <button class="account-menu-logout w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        Đăng xuất
+                    </button>
                 </div>
             </div>
         </div>
@@ -971,6 +989,7 @@
         }
     });
 </script>
+<script th:src="@{/js/account-menu.js}"></script>
 <script th:src="@{/js/api-service.js}"></script>
 <script th:src="@{/js/buyer-dashboard-integration.js}"></script>
 </body>

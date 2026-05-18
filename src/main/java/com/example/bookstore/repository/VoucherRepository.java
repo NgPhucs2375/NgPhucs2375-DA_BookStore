@@ -15,4 +15,7 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     Optional<Voucher> findByCode(String code);
     List<Voucher> findBySellerAndStatus(User seller, VoucherStatus status);
     List<Voucher> findBySellerAndNameContainingIgnoreCase(User seller, String name);
+    List<Voucher> findByStatus(VoucherStatus status);
+    List<Voucher> findByCodeContainingIgnoreCaseOrNameContainingIgnoreCase(String code, String name);
+    List<Voucher> findAllByOrderByCreatedAtDesc();
 }

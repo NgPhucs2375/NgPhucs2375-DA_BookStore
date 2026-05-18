@@ -7,6 +7,8 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 @Entity
@@ -58,9 +60,15 @@ public class Voucher {
     @Column(name = "remaining_quantity")
     private Integer remainingQuantity;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false)
+    @JsonIgnore
     private User seller;
+
+    @JsonProperty("sellerId")
+    public Long getSellerId() {
+        return seller != null ? seller.getId() : null;
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)

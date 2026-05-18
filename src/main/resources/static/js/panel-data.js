@@ -934,11 +934,148 @@
     info: function(msg, ttl){ createToast('info', msg, ttl); }
   };
 
+  // ========================================================================
+  // ADMIN VOUCHER MANAGEMENT
+  // ========================================================================
+  var adminVoucherFilter = 'ALL';
+
+  function initAdminVouchers() {
+    var searchInput = document.getElementById('admin-voucher-search');
+    var tableBody = document.getElementById('admin-voucher-table-body');
+    var countEl = document.getElementById('admin-voucher-count');
+    var formEl = document.getElementById('admin-voucher-form');
+
+    function formatDate(d) {
+      if (!d) return '--';
+      var dt = new Date(d);
+      return dt.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function statusBadge(st) {
+      var map = {
+        'ACTIVE': ['bg-emerald-100 text-emerald-700', 'Đang chạy'],
+        'EXPIRED': ['bg-gray-100 text-gray-500', 'Hết hạn'],
+        'DISABLED': ['bg-rose-100 text-rose-700', 'Đã tắt'],
+        'EXHAUSTED': ['bg-amber-100 text-amber-700', 'Hết lượt']
+      };
+      var info = map[st] || ['bg-gray-100 text-gray-500', st];
+      return '<span class="inline-block px-2 py-0.5 rounded text-[10px] font-black ' + info[0] + '">' + info[1] + '</span>';
+    }
+
+    function renderTable(vouchers) {
+      if (!tableBody) return;
+      if (!vouchers || vouchers.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-10 text-center font-bold text-[#5D4037]/40">Không có mã giảm giá nào</td></tr>';
+        if (countEl) countEl.textContent = '0';
+        return;
+      }
+      var activeCount = vouchers.filter(function(v){ return v.status === 'ACTIVE'; }).length;
+      if (countEl) countEl.textContent = activeCount;
+      tableBody.innerHTML = vouchers.map(function(v) {
+        var discountDisplay = v.discountType === 'PERCENTAGE'
+          ? v.discountValue + '%'
+          : vnd(v.discountValue);
+        var canToggle = v.status === 'ACTIVE' || v.status === 'DISABLED';
+        var toggleLabel = v.status === 'ACTIVE' ? 'Tắt' : 'Bật';
+        return '<tr class="hover:bg-[#FAF5E8] transition">'
+          + '<td class="px-6 py-4"><div class="font-black text-[#5D4037]">' + (v.code || '') + '</div><div class="text-xs text-[#5D4037]/50 mt-0.5">' + (v.name || '') + '</div></td>'
+          + '<td class="px-6 py-4 text-xs font-bold">' + (v.discountType === 'PERCENTAGE' ? 'Phần trăm' : 'Cố định') + '</td>'
+          + '<td class="px-6 py-4 text-right font-black">' + discountDisplay + '</td>'
+          + '<td class="px-6 py-4 text-xs">' + formatDate(v.startDate) + ' – ' + formatDate(v.endDate) + '</td>'
+          + '<td class="px-6 py-4 text-center font-black">' + (v.usedCount || 0) + '/' + (v.usageLimit || 0) + '</td>'
+          + '<td class="px-6 py-4">' + statusBadge(v.status) + '</td>'
+          + '<td class="px-6 py-4 text-center"><div class="flex items-center justify-center gap-2">'
+          + (canToggle ? '<button onclick="toggleAdminVoucher(' + v.id + ')" class="text-xs font-black text-blue-600 hover:underline">' + toggleLabel + '</button>' : '')
+          + '<button onclick="deleteAdminVoucher(' + v.id + ')" class="text-xs font-black text-rose-600 hover:underline">Xóa</button>'
+          + '</div></td></tr>';
+      }).join('');
+    }
+
+    function load() {
+      var query = searchInput ? searchInput.value.trim() : '';
+      var status = adminVoucherFilter;
+      ApiService.Voucher.adminGetAll(query, status).then(renderTable).catch(function(e) {
+        BookomToast.error('Lỗi tải voucher: ' + (e.message || ''));
+      });
+    }
+
+    if (searchInput) {
+      var debounce;
+      searchInput.addEventListener('input', function() {
+        clearTimeout(debounce);
+        debounce = setTimeout(load, 300);
+      });
+    }
+
+    if (formEl) {
+      formEl.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(formEl);
+        var data = {};
+        formData.forEach(function(value, key) {
+          if (['discountValue', 'minOrderAmount', 'maxDiscountAmount', 'usageLimit'].includes(key)) {
+            data[key] = value ? Number(value) : null;
+          } else {
+            data[key] = value;
+          }
+        });
+        ApiService.Voucher.adminCreate(data).then(function() {
+          BookomToast.success('Đã tạo mã giảm giá mới thành công');
+          closeAdminVoucherModal();
+          load();
+        }).catch(function(err) {
+          BookomToast.error('Lỗi tạo voucher: ' + err.message);
+        });
+      });
+    }
+
+    window.filterAdminVouchers = function(st) {
+      adminVoucherFilter = st;
+      document.querySelectorAll('.admin-voucher-tab').forEach(function(tab, i) {
+        var tabs = ['ALL', 'ACTIVE', 'EXPIRED', 'DISABLED', 'EXHAUSTED'];
+        if (tabs[i] === st) {
+          tab.classList.add('text-[#5D4037]', 'border-[#5D4037]');
+          tab.classList.remove('text-[#5D4037]/50', 'border-transparent');
+        } else {
+          tab.classList.remove('text-[#5D4037]', 'border-[#5D4037]');
+          tab.classList.add('text-[#5D4037]/50', 'border-transparent');
+        }
+      });
+      load();
+    };
+
+    window.openAdminVoucherModal = function() {
+      document.getElementById('admin-voucher-modal').classList.remove('hidden');
+    };
+    window.closeAdminVoucherModal = function() {
+      document.getElementById('admin-voucher-modal').classList.add('hidden');
+      if (formEl) formEl.reset();
+    };
+
+    window.toggleAdminVoucher = function(id) {
+      ApiService.Voucher.adminToggle(id).then(function() {
+        BookomToast.success('Đã cập nhật trạng thái');
+        load();
+      }).catch(function(e) { BookomToast.error(e.message); });
+    };
+
+    window.deleteAdminVoucher = function(id) {
+      if (!confirm('Bạn có chắc chắn muốn xóa voucher này?')) return;
+      ApiService.Voucher.adminDelete(id).then(function() {
+        BookomToast.success('Đã xóa voucher');
+        load();
+      }).catch(function(e) { BookomToast.error(e.message); });
+    };
+
+    load();
+  }
+
   window.BookomPanelData = {
     initAdminDashboard: initAdminDashboard,
     initAdminBooks: initAdminBooks,
     initAdminUsers: initAdminUsers,
     initAdminShops: initAdminShops,
+    initAdminVouchers: initAdminVouchers,
     initSellerDashboard: initSellerDashboard,
     initSellerOrders: initSellerOrders,
     initSellerInventory: initSellerInventory,

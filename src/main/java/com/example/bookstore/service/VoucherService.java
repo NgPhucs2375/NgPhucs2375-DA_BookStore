@@ -1,5 +1,7 @@
 package com.example.bookstore.service;
 
+import com.example.bookstore.dto.VoucherCreateDTO;
+import com.example.bookstore.dto.VoucherValidateResponse;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.Voucher;
 import com.example.bookstore.model.VoucherUsage;
@@ -23,6 +25,10 @@ public class VoucherService {
     private final VoucherRepository voucherRepository;
     private final VoucherUsageRepository voucherUsageRepository;
 
+    // ========================================================================
+    // SELLER OPERATIONS
+    // ========================================================================
+
     public List<Voucher> getSellerVouchers(User seller) {
         return voucherRepository.findBySeller(seller);
     }
@@ -35,29 +41,74 @@ public class VoucherService {
         return voucherRepository.findBySellerAndStatus(seller, status);
     }
 
+    // ========================================================================
+    // ADMIN OPERATIONS
+    // ========================================================================
+
+    public List<Voucher> getAllVouchers() {
+        return voucherRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    public List<Voucher> searchAllVouchers(String query) {
+        return voucherRepository.findByCodeContainingIgnoreCaseOrNameContainingIgnoreCase(query, query);
+    }
+
+    public List<Voucher> filterAllVouchersByStatus(VoucherStatus status) {
+        return voucherRepository.findByStatus(status);
+    }
+
     @Transactional
-    public Voucher createVoucher(Voucher voucher) {
-        if (voucher.getCode() == null || voucher.getCode().trim().isEmpty()) {
+    public Voucher toggleVoucherStatus(Long id) {
+        Voucher voucher = voucherRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy voucher"));
+        if (voucher.getStatus() == VoucherStatus.ACTIVE) {
+            voucher.setStatus(VoucherStatus.DISABLED);
+        } else if (voucher.getStatus() == VoucherStatus.DISABLED) {
+            voucher.setStatus(VoucherStatus.ACTIVE);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không thể thay đổi trạng thái voucher này");
+        }
+        return voucherRepository.save(voucher);
+    }
+
+    // ========================================================================
+    // CREATE VOUCHER (FROM DTO)
+    // ========================================================================
+
+    @Transactional
+    public Voucher createVoucher(VoucherCreateDTO dto, User seller) {
+        if (dto.getCode() == null || dto.getCode().trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã voucher không được để trống");
         }
-        if (voucherRepository.findByCode(voucher.getCode()).isPresent()) {
+        if (voucherRepository.findByCode(dto.getCode()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã voucher đã tồn tại");
         }
-        
-        // Khởi tạo các giá trị mặc định nếu chưa có
-        if (voucher.getUsedCount() == null) {
-            voucher.setUsedCount(0);
-        }
-        if (voucher.getUsageLimit() == null) {
+        if (dto.getUsageLimit() == null || dto.getUsageLimit() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giới hạn sử dụng không được để trống");
         }
-        if (voucher.getRemainingQuantity() == null) {
-            voucher.setRemainingQuantity(voucher.getUsageLimit());
+        if (dto.getDiscountValue() == null || dto.getDiscountValue() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giá trị giảm không hợp lệ");
         }
-        if (voucher.getStatus() == null) {
-            voucher.setStatus(VoucherStatus.ACTIVE);
+        if (dto.getStartDate() == null || dto.getEndDate() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày bắt đầu và kết thúc không được để trống");
         }
-        
+
+        Voucher voucher = Voucher.builder()
+                .code(dto.getCode().trim().toUpperCase())
+                .name(dto.getName())
+                .discountType(dto.getDiscountType())
+                .discountValue(dto.getDiscountValue())
+                .minOrderAmount(dto.getMinOrderAmount() != null ? dto.getMinOrderAmount() : 0.0)
+                .maxDiscountAmount(dto.getMaxDiscountAmount())
+                .startDate(dto.getStartDate())
+                .endDate(dto.getEndDate())
+                .usageLimit(dto.getUsageLimit())
+                .usedCount(0)
+                .remainingQuantity(dto.getUsageLimit())
+                .seller(seller)
+                .status(VoucherStatus.ACTIVE)
+                .build();
+
         return voucherRepository.save(voucher);
     }
 
@@ -65,13 +116,24 @@ public class VoucherService {
     public void deleteVoucher(Long id, User seller) {
         Voucher voucher = voucherRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy voucher"));
-        
+
         if (!voucher.getSeller().getId().equals(seller.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xóa voucher này");
         }
-        
+
         voucherRepository.delete(voucher);
     }
+
+    @Transactional
+    public void deleteVoucherAsAdmin(Long id) {
+        Voucher voucher = voucherRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy voucher"));
+        voucherRepository.delete(voucher);
+    }
+
+    // ========================================================================
+    // VALIDATE & APPLY VOUCHER (CHECKOUT)
+    // ========================================================================
 
     public Voucher validateVoucher(String code, User user, Double orderAmount) {
         Voucher voucher = voucherRepository.findByCode(code)
@@ -92,10 +154,7 @@ public class VoucherService {
         return voucher;
     }
 
-    @Transactional
-    public Double applyVoucher(String code, User user, Double orderAmount) {
-        Voucher voucher = validateVoucher(code, user, orderAmount);
-        
+    public Double calculateDiscount(Voucher voucher, Double orderAmount) {
         Double discount = 0.0;
         if (voucher.getDiscountType() == VoucherType.PERCENTAGE) {
             discount = orderAmount * (voucher.getDiscountValue() / 100.0);
@@ -105,9 +164,33 @@ public class VoucherService {
         } else {
             discount = voucher.getDiscountValue();
         }
-
-        return discount;
+        return Math.min(discount, orderAmount);
     }
+
+    @Transactional
+    public Double applyVoucher(String code, User user, Double orderAmount) {
+        Voucher voucher = validateVoucher(code, user, orderAmount);
+        return calculateDiscount(voucher, orderAmount);
+    }
+
+    public VoucherValidateResponse validateAndPreview(String code, User user, Double orderAmount) {
+        Voucher voucher = validateVoucher(code, user, orderAmount);
+        Double discount = calculateDiscount(voucher, orderAmount);
+
+        return VoucherValidateResponse.builder()
+                .code(voucher.getCode())
+                .name(voucher.getName())
+                .discountType(voucher.getDiscountType().name())
+                .discountValue(voucher.getDiscountValue())
+                .discountAmount(discount)
+                .maxDiscountAmount(voucher.getMaxDiscountAmount())
+                .minOrderAmount(voucher.getMinOrderAmount())
+                .build();
+    }
+
+    // ========================================================================
+    // USE VOUCHER (POST-CHECKOUT)
+    // ========================================================================
 
     @Transactional
     public void useVoucher(Voucher voucher, User user, com.example.bookstore.model.Order order, Double discountAmount) {

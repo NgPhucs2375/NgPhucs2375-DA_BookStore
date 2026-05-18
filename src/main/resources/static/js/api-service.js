@@ -721,13 +721,13 @@ const ApiService = (() => {
     const Voucher = {
         getSellerVouchers: async (query = '', status = '') => {
             const { userId } = getAuth();
-            const params = new URLSearchParams({ sellerId: userId });
+            const params = new URLSearchParams();
             if (query) params.append('query', query);
             if (status && status !== 'ALL') params.append('status', status);
-
-            const response = await fetch(`${API_BASE}/vouchers/seller/${userId}?${params}`, {
-                headers: getHeaders()
-            });
+            const url = params.toString()
+                ? `${API_BASE}/vouchers/seller/${userId}?${params}`
+                : `${API_BASE}/vouchers/seller/${userId}`;
+            const response = await fetch(url, { headers: getHeaders() });
             return handleResponse(response);
         },
 
@@ -752,12 +752,45 @@ const ApiService = (() => {
 
         validate: async (code, amount) => {
             const { userId } = getAuth();
-            const params = new URLSearchParams({
-                code: code,
-                userId: userId,
-                amount: amount
-            });
+            const params = new URLSearchParams({ code, userId, amount });
             const response = await fetch(`${API_BASE}/vouchers/validate?${params}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        // Admin endpoints
+        adminGetAll: async (query = '', status = '') => {
+            const params = new URLSearchParams();
+            if (query) params.append('query', query);
+            if (status && status !== 'ALL') params.append('status', status);
+            const url = params.toString()
+                ? `${API_BASE}/vouchers/admin/all?${params}`
+                : `${API_BASE}/vouchers/admin/all`;
+            const response = await fetch(url, { headers: getHeaders() });
+            return handleResponse(response);
+        },
+
+        adminCreate: async (voucherData) => {
+            const response = await fetch(`${API_BASE}/vouchers/admin`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(voucherData)
+            });
+            return handleResponse(response);
+        },
+
+        adminToggle: async (voucherId) => {
+            const response = await fetch(`${API_BASE}/vouchers/admin/${voucherId}/toggle`, {
+                method: 'PATCH',
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        adminDelete: async (voucherId) => {
+            const response = await fetch(`${API_BASE}/vouchers/admin/${voucherId}`, {
+                method: 'DELETE',
                 headers: getHeaders()
             });
             return handleResponse(response);

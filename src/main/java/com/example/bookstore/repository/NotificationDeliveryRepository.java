@@ -68,11 +68,16 @@ public interface NotificationDeliveryRepository extends JpaRepository<Notificati
      */
     @Query(value = """
         SELECT nd FROM NotificationDelivery nd
+        JOIN FETCH nd.notification n
+        JOIN FETCH n.user
         WHERE nd.status = 'PENDING'
         AND nd.nextRetryAt <= CURRENT_TIMESTAMP
         ORDER BY nd.nextRetryAt ASC, nd.id ASC
         """)
     List<NotificationDelivery> findPendingRetries(Pageable pageable);
+
+    @Query("SELECT COUNT(nd) FROM NotificationDelivery nd WHERE nd.status = 'PENDING' AND nd.nextRetryAt <= CURRENT_TIMESTAMP")
+    long countPendingReady();
     
     /**
      * Query 2: Find all delivery attempts for a notification (audit trail)

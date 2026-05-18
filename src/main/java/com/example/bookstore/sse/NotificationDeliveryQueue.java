@@ -103,7 +103,6 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class NotificationDeliveryQueue {
     
     // Maximum retry attempts before abandoning
@@ -130,6 +129,7 @@ public class NotificationDeliveryQueue {
      *   2. Set status=PENDING, next_retry_at=NOW (send immediately)
      *   3. Queue worker will pick up in next cycle (within 1 second)
      */
+    @Transactional
     public void enqueue(Notification notification, String channel) {
         log.debug("Enqueueing notification {} to channel {}", notification.getId(), channel);
         
@@ -160,28 +160,41 @@ public class NotificationDeliveryQueue {
      * 
      * Error handling: catch all exceptions to prevent worker crash
      */
-    @Scheduled(fixedDelay = 1000, initialDelay = 2000)
+    @Scheduled(fixedDelay = 5000, initialDelay = 3000)
+    @Transactional
     public void processQueue() {
         // Check if this instance is the queue worker (has distributed lock)
         if (!heartbeatService.isQueueWorkerEnabled()) {
-            // Not the worker, skip processing
             return;
         }
         
         try {
+            // Quick count check to avoid heavy query when queue is empty
+            long pendingCount = deliveryRepo.countPendingReady();
+            if (pendingCount == 0) {
+                return;
+            }
+            
             Pageable batchLimit = PageRequest.of(0, BATCH_SIZE);
             List<NotificationDelivery> pendingTasks = 
                 deliveryRepo.findPendingRetries(batchLimit);
             
             if (pendingTasks.isEmpty()) {
-                return;  // queue empty or nothing ready yet
+                return;
             }
             
-            log.debug("Processing {} pending delivery tasks", pendingTasks.size());
+            log.info("[QueueWorker] Processing {} pending delivery tasks (total pending: {})",
+                     pendingTasks.size(), pendingCount);
             
+            int sent = 0, failed = 0, dropped = 0;
             for (NotificationDelivery task : pendingTasks) {
-                processDeliveryTask(task);
+                int result = processDeliveryTask(task);
+                if (result == 1) sent++;
+                else if (result == -1) dropped++;
+                else failed++;
             }
+            
+            log.info("[QueueWorker] Cycle done: sent={}, retrying={}, dropped={}", sent, failed, dropped);
             
         } catch (Exception e) {
             log.error("Queue worker error: {}", e.getMessage(), e);
@@ -189,19 +202,13 @@ public class NotificationDeliveryQueue {
     }
     
     /**
-     * Process single delivery task with retry/backoff logic
+     * Process single delivery task. Returns: 1=sent, 0=retrying, -1=dropped
      */
-    private void processDeliveryTask(NotificationDelivery task) {
+    private int processDeliveryTask(NotificationDelivery task) {
         try {
-            log.debug("Processing delivery {} for notification {}, attempt {}/{}",
-                      task.getId(),
-                      task.getNotification().getId(),
-                      task.getAttemptCount(),
-                      MAX_ATTEMPTS);
-            
+            // Notification and User are already fetched via JOIN FETCH
             Long userId = task.getNotification().getUser().getId();
             
-            // Attempt delivery via SSE
             boolean delivered = sseService.sendEventToUser(
                 userId,
                 "notification",
@@ -209,59 +216,37 @@ public class NotificationDeliveryQueue {
             );
             
             if (delivered) {
-                // SUCCESS: Mark as SENT
                 task.setStatus(NotificationDelivery.DeliveryStatus.SENT);
                 task.setSentAt(LocalDateTime.now());
                 task.setNextRetryAt(null);
-                
                 deliveryRepo.save(task);
-                
-                log.info("✓ Notification {} delivered to user {} via {} at attempt {}",
-                         task.getNotification().getId(),
-                         userId,
-                         task.getChannel(),
-                         task.getAttemptCount() + 1);
+                return 1;
                 
             } else {
-                // FAILURE: Check if should retry or give up
                 int nextAttemptCount = task.getAttemptCount() + 1;
                 
                 if (nextAttemptCount < MAX_ATTEMPTS) {
-                    // Reschedule with exponential backoff
-                    LocalDateTime nextRetryAt = calculateNextRetryTime(nextAttemptCount);
-                    
                     task.setAttemptCount(nextAttemptCount);
-                    task.setNextRetryAt(nextRetryAt);
+                    task.setNextRetryAt(calculateNextRetryTime(nextAttemptCount));
                     task.setLastError("Delivery failed (user offline or SSE error)");
-                    // status remains PENDING
-                    
                     deliveryRepo.save(task);
-                    
-                    long backoffMs = calculateBackoffMs(nextAttemptCount);
-                    log.warn("⚠ Notification {} delivery failed, retry {} in {} ms",
-                             task.getNotification().getId(),
-                             nextAttemptCount,
-                             backoffMs);
+                    return 0;
                     
                 } else {
-                    // GIVE UP: Exceeded MAX_ATTEMPTS
                     task.setStatus(NotificationDelivery.DeliveryStatus.DROPPED);
                     task.setAttemptCount(nextAttemptCount);
                     task.setLastError("Abandoned after " + MAX_ATTEMPTS + " attempts");
                     task.setNextRetryAt(null);
-                    
                     deliveryRepo.save(task);
                     
-                    log.error("✗ Notification {} DROPPED after {} attempts for user {}",
-                              task.getNotification().getId(),
-                              MAX_ATTEMPTS,
-                              userId);
+                    log.warn("Notification {} DROPPED after {} attempts for user {}",
+                             task.getNotification().getId(), MAX_ATTEMPTS, userId);
+                    return -1;
                 }
             }
             
         } catch (Exception e) {
-            log.error("Error processing delivery task {}: {}",
-                      task.getId(), e.getMessage(), e);
+            log.error("Error processing delivery task {}: {}", task.getId(), e.getMessage());
             
             task.setLastError("Worker exception: " + e.getMessage());
             task.setAttemptCount(task.getAttemptCount() + 1);
@@ -272,8 +257,8 @@ public class NotificationDeliveryQueue {
                 task.setStatus(NotificationDelivery.DeliveryStatus.DROPPED);
                 task.setNextRetryAt(null);
             }
-            
             deliveryRepo.save(task);
+            return -1;
         }
     }
     

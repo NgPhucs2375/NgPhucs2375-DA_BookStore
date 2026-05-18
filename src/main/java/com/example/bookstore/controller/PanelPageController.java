@@ -40,6 +40,14 @@ public class PanelPageController {
         return "admin/Admin_Shops";
     }
 
+    @GetMapping("/admin/vouchers")
+    public String adminVouchers(Model model) {
+        model.addAttribute("pageTitle", "Quản lý mã giảm giá");
+        model.addAttribute("pageSubtitle", "Tạo, quản lý và theo dõi các mã giảm giá toàn sàn");
+        model.addAttribute("activeMenu", "admin-vouchers");
+        return "admin/Admin_Vouchers";
+    }
+
     @GetMapping("/seller/dashboard")
     public String sellerDashboard(Model model) {
         model.addAttribute("pageTitle", "Tong quan nha ban");

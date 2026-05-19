@@ -42,19 +42,20 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final OrderRepository orderRepository;
     private final SubOrderRepository subOrderRepository;
+    private final CouponService couponService;
     private final com.example.bookstore.service.NotificationService notificationService;
 
     @Transactional
     public CheckoutResponse checkoutFromCart(CheckoutRequest request) {
-        return checkoutInternal(request.getBuyerId(), request.getShippingAddress());
+        return checkoutInternal(request.getBuyerId(), request.getShippingAddress(), request.getCouponCode());
     }
 
     @Transactional
     public CheckoutResponse checkoutFromCurrentBuyer(Long buyerId, String shippingAddress) {
-        return checkoutInternal(buyerId, shippingAddress);
+        return checkoutInternal(buyerId, shippingAddress, null);
     }
 
-    private CheckoutResponse checkoutInternal(Long buyerId, String shippingAddress) {
+    private CheckoutResponse checkoutInternal(Long buyerId, String shippingAddress, String couponCode) {
         User buyer = userRepository.findById(buyerId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
 
@@ -80,8 +81,9 @@ public class OrderService {
 
         Order order = Order.builder()
                 .buyer(buyer)
-            .shippingAddress(shippingAddress)
+                .shippingAddress(shippingAddress)
                 .totalAmount(0.0)
+                .discountAmount(0.0)
                 .build();
 
         List<SubOrder> subOrders = new ArrayList<>();
@@ -132,6 +134,17 @@ public class OrderService {
             subOrder.setItems(orderItems);
             subOrders.add(subOrder);
             orderTotal += subTotal;
+        }
+
+        // Handle Coupon
+        if (couponCode != null && !couponCode.trim().isEmpty()) {
+            Integer discount = couponService.calculateDiscount(couponCode, (int) orderTotal);
+            order.setCouponCode(couponCode.trim().toUpperCase());
+            order.setDiscountAmount((double) discount);
+            orderTotal = Math.max(0, orderTotal - discount);
+            
+            // Mark coupon as used
+            couponService.useCoupon(couponCode);
         }
 
         order.setTotalAmount(orderTotal);

@@ -87,23 +87,22 @@
       setText("metric-categories", String(data.categories || 0));
       setText("metric-shops", String(data.shops || 0));
 
-      var catStats = data.categoryStats || {};
-      var rows = Object.keys(catStats)
-        .slice(0, 8)
-        .map(function (k, idx) {
+      var latestShops = data.latestShops || [];
+      var rows = latestShops.map(function (s, idx) {
           return (
             "<tr>" +
-            '<td class="px-6 py-4 font-bold text-[#5D4037]">Shop ' + esc(k) + "</td>" +
-            '<td class="px-6 py-4">' + esc(k) + "</td>" +
+            '<td class="px-6 py-4 font-bold text-[#5D4037]">' + esc(s.shopName) + "</td>" +
+            '<td class="px-6 py-4">' + esc(s.owner) + "</td>" +
             '<td class="px-6 py-4 font-mono text-gray-500">MST0' + (1000 + idx) + '</td>' +
-            '<td class="px-6 py-4 text-gray-500">2026-03-' + (idx + 10) + '</td>' +
-            '<td class="px-6 py-4 text-right"><span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase text-emerald-600">Hoạt động</span></td>' +
+            '<td class="px-6 py-4 text-gray-500">' + esc(s.joined) + '</td>' +
+            '<td class="px-6 py-4 text-right"><span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase text-emerald-600">' + esc(s.status) + '</span></td>' +
             "</tr>"
           );
         })
         .join("");
       setHtml("admin-dashboard-shops", rows || '<tr><td class="px-6 py-10 text-center" colspan="5">Không có dữ liệu gian hàng</td></tr>');
 
+      var catStats = data.categoryStats || {};
       chart(
         "admin-category-chart",
         "bar",
@@ -156,6 +155,7 @@
       getJson(API_ROOT + "/dashboard").then(function(dash) {
         try { setText('metric-orders', String(dash.ordersCount || 0)); } catch(e) {}
         try { setText('metric-newusers', String(dash.newUsers || 0)); } catch(e) {}
+        try { setText('metric-revenue', vnd(dash.revenue || 0)); } catch(e) {}
       }).catch(function(){/* non-critical */});
     });
   }
@@ -500,34 +500,28 @@
   }
 
   function initSellerDashboard() {
-    return Promise.all([
-      getJson(API_ROOT + "/seller/analytics")
-      // getJson(API_ROOT + "/seller/orders?status=all&q=") // Disabled - endpoint not implemented
-    ]).then(function (res) {
-      var ana = res[0] || {};
-      var orders = []; // Empty for now
-
+    return getJson(API_ROOT + "/seller/analytics").then(function (ana) {
       setText("seller-metric-revenue", vnd(ana.estimatedRevenue || 0));
-      setText("seller-metric-pending", String((ana.orderStatusCounts && ana.orderStatusCounts["Cho xac nhan"]) || 0));
+      setText("seller-metric-pending", String((ana.orderStatusCounts && (ana.orderStatusCounts["PENDING_PAYMENT"] || ana.orderStatusCounts["Cho xac nhan"])) || 0));
       setText("seller-metric-products", String(ana.bookCount || 0));
       setText("seller-metric-low", String(ana.lowStock || 0));
 
-      var html = orders.slice(0, 8).map(function (o) {
+      var orders = ana.recentOrders || [];
+      var html = orders.map(function (o) {
         return (
           "<tr>" +
           '<td class="px-4 py-3 font-bold">#' + esc(o.id) + "</td>" +
           '<td class="px-4 py-3">' + esc(o.customer) + "</td>" +
-          '<td class="px-4 py-3">' + esc(o.item) + "</td>" +
+          '<td class="px-4 py-3 text-xs">' + esc(o.item) + "</td>" +
           '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(o.value) + "</td>" +
-          '<td class="px-4 py-3 text-right">' + esc(o.status) + "</td>" +
+          '<td class="px-4 py-3 text-right text-[10px] font-black uppercase">' + esc(o.status) + "</td>" +
           "</tr>"
         );
       }).join("");
 
-      setHtml("seller-dashboard-orders", html || '<tr><td class="px-4 py-3" colspan="5">Khong co du lieu</td></tr>');
+      setHtml("seller-dashboard-orders", html || '<tr><td class="px-4 py-3" colspan="5">Không có dữ liệu đơn hàng</td></tr>');
     }).catch(function(err) {
       console.error('Dashboard error (non-critical):', err);
-      // Don't throw - allow page to continue
     });
   }
 

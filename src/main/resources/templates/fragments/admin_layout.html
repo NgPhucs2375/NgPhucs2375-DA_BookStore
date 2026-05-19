@@ -84,6 +84,18 @@
             <span class="menu-label">Gian hàng</span>
         </a>
 
+        <a th:href="@{/admin/categories}" class="group flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
+           th:classappend="${activeMenu == 'admin-categories'} ? ' bg-[#FAF5E8] text-[#ea580c] shadow-sm' : ' text-gray-600 hover:bg-gray-50'">
+            <div class="h-2 w-2 rounded-full shrink-0" th:classappend="${activeMenu == 'admin-categories'} ? ' bg-[#ea580c]' : ' bg-gray-300 group-hover:bg-gray-400'"></div>
+            <span class="menu-label">Danh mục sách</span>
+        </a>
+
+        <a th:href="@{/admin/coupons}" class="group flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
+           th:classappend="${activeMenu == 'admin-coupons'} ? ' bg-[#FAF5E8] text-[#ea580c] shadow-sm' : ' text-gray-600 hover:bg-gray-50'">
+            <div class="h-2 w-2 rounded-full shrink-0" th:classappend="${activeMenu == 'admin-coupons'} ? ' bg-[#ea580c]' : ' bg-gray-300 group-hover:bg-gray-400'"></div>
+            <span class="menu-label">Mã khuyến mãi</span>
+        </a>
+
         <a th:href="@{/admin/books}" class="group flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
            th:classappend="${activeMenu == 'admin-books'} ? ' bg-[#FAF5E8] text-[#ea580c] shadow-sm' : ' text-gray-600 hover:bg-gray-50'">
             <div class="h-2 w-2 rounded-full shrink-0" th:classappend="${activeMenu == 'admin-books'} ? ' bg-[#ea580c]' : ' bg-gray-300 group-hover:bg-gray-400'"></div>

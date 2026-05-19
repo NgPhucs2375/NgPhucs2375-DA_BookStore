@@ -555,11 +555,14 @@ const ApiService = (() => {
         /**
          * Checkout từ giỏ hàng
          */
-        checkout: async (shippingAddress) => {
+        checkout: async (shippingAddress, couponCode = null) => {
+            const body = { shippingAddress };
+            if (couponCode) body.couponCode = couponCode;
+            
             const response = await fetch(`${API_BASE}/orders/me/checkout`, {
                 method: 'POST',
                 headers: getHeaders(),
-                body: JSON.stringify({ shippingAddress })
+                body: JSON.stringify(body)
             });
             return handleResponse(response);
         },

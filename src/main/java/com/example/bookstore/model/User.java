@@ -33,6 +33,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @JsonIgnore
     @Column(nullable = false, name = "password_hash")
     private String passwordHash;
 

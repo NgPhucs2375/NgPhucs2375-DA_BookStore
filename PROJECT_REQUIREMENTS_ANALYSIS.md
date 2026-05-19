@@ -32,23 +32,21 @@
 
 | # | Chức năng | Yêu cầu | Hiện tại | Ghi chú |
 |---|----------|--------|---------|---------|
-| 1 | **Dashboard** | ✅ Có | ⚠️ **THIẾU** | Không có thống kê doanh thu/đơn hàng/khách hàng |
-| 2 | **Quản lý danh mục** | ✅ CRUD | ❌ **THIẾU** | Không có CRUD danh mục, chỉ có danh sách hiển thị |
-| 3 | **Quản lý sản phẩm** | ✅ CRUD + upload | ✅ **ĐỦ** | Admin_Books.html - CRUD sách, upload ảnh cover |
+| 1 | **Dashboard** | ✅ Có | ✅ **ĐỦ** | Có thống kê doanh thu/đơn hàng/khách hàng/sách qua /api/panel/summary |
+| 2 | **Quản lý danh mục** | ✅ CRUD | ✅ **ĐỦ** | Đã có CRUD danh mục qua AdminCategoryController và Admin_Categories.html |
+| 3 | **Quản lý sản phẩm** | ✅ CRUD + upload | ✅ **ĐỦ** | Admin_Books.html - CRUD sách, upload ảnh cover, Lock/Unlock sách |
 | 4 | **Quản lý tồn kho** | ✅ Theo dõi | ✅ **ĐỦ** | Book có stockQuantity, self-decrement khi order |
-| 5 | **Quản lý khuyến mãi** | ✅ Có | ⚠️ **THIẾU** | Có voucher cứng (BOOKOM15K, SAVE10) nhưng không có giao diện admin tạo mã |
-| 6 | **Quản lý đơn hàng** | ✅ Xem + cập nhật trạng thái | ✅ **ĐỦ** | Admin_Orders.html - Xem danh sách order, update SubOrder status |
-| 7 | **Quản lý người dùng** | ✅ Khóa/mở khóa | ⚠️ **THIẾU** | Có Admin_Users.html nhưng không có chức năng khóa/mở khóa tài khoản |
+| 5 | **Quản lý khuyến mãi** | ✅ Có | ⚠️ **THIẾU** | Có voucher cứng nhưng chưa có hệ thống quản lý Coupon trong DB |
+| 6 | **Quản lý đơn hàng** | ✅ Xem + cập nhật trạng thái | ✅ **ĐỦ** | Admin_Orders.html - Xem danh sách order, lọc theo status/date |
+| 7 | **Quản lý người dùng** | ✅ Khóa/mở khóa | ✅ **ĐỦ** | Admin_Users.html đã có chức năng khóa/mở khóa tài khoản người dùng |
 | 8 | **Quản lý đánh giá** | ✅ Xóa/duyệt comment | ❌ **THIẾU** | Không có hệ thống đánh giá (rating/review) |
 
-**Status**: ⚠️ **~60% - THIẾU NHIỀU CHỨC NĂNG**
+**Status**: ✅ **~85% - HOÀN THIỆN CƠ BẢN**
 
-**THIẾU CẦN THÊM (URGENT)**:
-- ❌ Dashboard với thống kê
-- ❌ CRUD danh mục sản phẩm
-- ❌ Admin quản lý tạo mã khuyến mãi (không hardcode)
-- ❌ Khóa/mở khóa người dùng (lock account)
+**CÒN THIẾU (URGENT)**:
+- ❌ Admin quản lý tạo mã khuyến mãi (DB-backed Coupons)
 - ❌ Hệ thống đánh giá sản phẩm (rating/review/comments)
+- ❌ Cảnh báo tồn kho tự động (Inventory Alerts)
 
 ---
 
@@ -216,26 +214,27 @@ Không có gì thừa, project được thiết kế tối ưu. Có một vài �
 │          COMPLETION STATUS BY CATEGORY                 │
 ├─────────────────────────────────────────────────────────┤
 │ User Features (A.1)        ████████████████████ 100%   │
-│ Admin Features (A.2)       ████████░░░░░░░░░░░  60%    │
-│ Backend Logic (B.1)        ███████░░░░░░░░░░░░  75%    │
-│ UX/Frontend (B.2)          ██████████░░░░░░░░░  60%    │
+│ Admin Features (A.2)       ████████████████░░░░  80%    │
+│ Backend Logic (B.1)        ██████████████░░░░░░  75%    │
+│ UX/Frontend (B.2)          ████████████░░░░░░░░  60%    │
 │ Security (B.3)             ████████████████████ 100%   │
-│ Documentation (C)          ████░░░░░░░░░░░░░░░  40%    │
+│ Documentation (C)          ████████░░░░░░░░░░░░  40%    │
 ├─────────────────────────────────────────────────────────┤
-│ TỔNG CỘNG                  ████████░░░░░░░░░░░  76%    │
+│ TỔNG CỘNG                  ████████████████░░░░  80%    │
 └─────────────────────────────────────────────────────────┘
 
-CẦN HOÀN THÀNH: 24% = ~6-8 tuần làm việc
+CẦN HOÀN THÀNH: 20% = ~2-3 tuần làm việc
 ```
 
 ---
 
 ## 🎯 KHUYẾN NGHỊ ƯPRIORIT
 
-### **TUẦN 1-2: URGENT (Nộp bài)**
-1. ✅ Tạo Dashboard Admin (thống kê cơ bản)
-2. ✅ Export Database SQL Script
-3. ✅ Viết Báo cáo PDF + Use Case Diagram
+### **TUẦN 1: URGENT (Features & Docs)**
+1. ✅ Hệ thống Coupon (DB-backed)
+2. ✅ Rating/Review System
+3. ✅ Export Database SQL Script
+4. ✅ Viết Báo cáo PDF + Use Case Diagram
 
 ### **TUẦN 3: IMPORTANT (Features)**
 4. ✅ CRUD Danh mục

@@ -3,18 +3,27 @@ package com.example.bookstore.controller;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.Category;
 import com.example.bookstore.model.Order;
+import com.example.bookstore.model.SubOrder;
 import com.example.bookstore.model.User;
+import com.example.bookstore.model.enums.OrderStatus;
+import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.OrderRepository;
+import com.example.bookstore.repository.SellerShopRepository;
+import com.example.bookstore.repository.SubOrderRepository;
 import com.example.bookstore.repository.UserRepository;
+import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,7 +34,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -45,6 +53,12 @@ public class PanelController {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private SellerShopRepository sellerShopRepository;
+
+    @Autowired
+    private SubOrderRepository subOrderRepository;
+
     private static String safe(String value) {
         return value == null ? "" : value.trim();
     }
@@ -60,96 +74,20 @@ public class PanelController {
 
     private static String stockBucket(Integer stockQuantity) {
         int stock = stockQuantity == null ? 0 : stockQuantity;
-        if (stock < 20) return "low";
-        if (stock < 60) return "normal";
+        if (stock < 10) return "low";
+        if (stock < 50) return "normal";
         return "high";
-    }
-
-    private static String generatedStatus(String seed, int index) {
-        int mod = Math.abs(Objects.hash(seed, index)) % 5;
-        return mod == 0 ? "Inactive" : "Active";
-    }
-
-    private List<Map<String, Object>> buildShops(List<Book> books) {
-        Map<String, Integer> byAuthor = new LinkedHashMap<>();
-        for (Book book : books) {
-            String owner = safe(book.getAuthor());
-            if (owner.isEmpty()) owner = "BOOKOM Seller";
-            byAuthor.put(owner, byAuthor.getOrDefault(owner, 0) + 1);
-        }
-
-        List<Map<String, Object>> shops = new ArrayList<>();
-        int idx = 1000;
-        for (Map.Entry<String, Integer> entry : byAuthor.entrySet()) {
-            idx += 1;
-            Map<String, Object> shop = new LinkedHashMap<>();
-            shop.put("shopName", "Shop " + entry.getKey());
-            shop.put("owner", entry.getKey());
-            shop.put("legal", "MST 0" + idx);
-            shop.put("products", entry.getValue());
-            shop.put("joined", "2026-03-" + String.format("%02d", (idx % 27) + 1));
-            shops.add(shop);
-        }
-        return shops;
-    }
-
-    private List<Map<String, Object>> buildUsers(List<Book> books, List<User> users) {
-        List<Map<String, Object>> mapped = new ArrayList<>();
-
-        int i = 0;
-        for (User user : users) {
-            i += 1;
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("name", user.getUsername());
-            row.put("email", user.getUsername() + "@bookom.vn");
-            row.put("role", i % 3 == 0 ? "Seller" : "Buyer");
-            row.put("status", generatedStatus(user.getUsername(), i));
-            row.put("joined", "2026-02-" + String.format("%02d", (i % 27) + 1));
-            mapped.add(row);
-        }
-
-        // Add synthetic sellers from authors to help admin operations when users table is still minimal.
-        List<Map<String, Object>> sellerFromBooks = buildShops(books).stream().limit(20).map(shop -> {
-            Map<String, Object> row = new LinkedHashMap<>();
-            String owner = String.valueOf(shop.get("owner"));
-            row.put("name", owner);
-            row.put("email", lower(owner).replace(" ", ".") + "@seller.bookom.vn");
-            row.put("role", "Seller");
-            row.put("status", generatedStatus(owner, owner.length()));
-            row.put("joined", shop.get("joined"));
-            return row;
-        }).collect(Collectors.toList());
-
-        mapped.addAll(sellerFromBooks);
-        return mapped;
-    }
-
-    private List<Map<String, Object>> buildOrders(List<Book> books) {
-        String[] statuses = new String[]{"Cho xac nhan", "Dang giao", "Hoan tat"};
-        List<Map<String, Object>> orders = new ArrayList<>();
-
-        for (int i = 0; i < books.size() && i < 60; i++) {
-            Book b = books.get(i);
-            int qty = (i % 3) + 1;
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("id", "BK-2026-" + (100 + i));
-            row.put("customer", "Khach " + (i + 1));
-            row.put("item", b.getTitle());
-            row.put("value", (b.getPrice() == null ? 0d : b.getPrice()) * qty);
-            row.put("status", statuses[i % statuses.length]);
-            orders.add(row);
-        }
-
-        return orders;
     }
 
     @GetMapping("/summary")
     public Map<String, Object> summary() {
         List<Book> books = bookRepository.findAll();
         List<Category> categories = categoryRepository.findAll();
+        List<Order> orders = orderRepository.findAll();
 
-        double gmv = books.stream()
-                .mapToDouble(b -> (b.getPrice() == null ? 0d : b.getPrice()) * (b.getStockQuantity() == null ? 0 : b.getStockQuantity()))
+        // GMV: Sum of all orders totalAmount
+        double gmv = orders.stream()
+                .mapToDouble(o -> o.getTotalAmount() == null ? 0d : o.getTotalAmount())
                 .sum();
 
         Map<String, Long> categoryStats = books.stream()
@@ -170,9 +108,24 @@ public class PanelController {
         response.put("gmv", gmv);
         response.put("books", books.size());
         response.put("categories", categories.size());
-        response.put("shops", buildShops(books).size());
+        response.put("shops", sellerShopRepository.count());
         response.put("categoryStats", categoryStats);
         response.put("stockBuckets", stockBuckets);
+
+        // Add latest shops
+        List<Map<String, Object>> latestShops = sellerShopRepository.findAll(PageRequest.of(0, 8, Sort.by(Sort.Direction.DESC, "id")))
+                .getContent().stream()
+                .map(s -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("shopName", s.getShopName());
+                    map.put("owner", s.getSeller() != null ? s.getSeller().getUsername() : "N/A");
+                    map.put("joined", "2026-03-01"); // TODO: Add createdAt to SellerShop
+                    map.put("status", "Active");
+                    return map;
+                })
+                .collect(Collectors.toList());
+        response.put("latestShops", latestShops);
+
         return response;
     }
 
@@ -211,71 +164,99 @@ public class PanelController {
             @RequestParam(defaultValue = "all") String role,
             @RequestParam(defaultValue = "all") String status
     ) {
-        List<Map<String, Object>> rows = buildUsers(bookRepository.findAll(), userRepository.findAll());
-
-        return rows.stream()
-                .filter(u -> containsIgnoreCase(String.valueOf(u.get("name")), q)
-                        || containsIgnoreCase(String.valueOf(u.get("email")), q))
-                .filter(u -> "all".equalsIgnoreCase(role) || String.valueOf(u.get("role")).equalsIgnoreCase(role))
-                .filter(u -> "all".equalsIgnoreCase(status) || String.valueOf(u.get("status")).equalsIgnoreCase(status))
+        return userRepository.findAll().stream()
+                .filter(u -> containsIgnoreCase(u.getUsername(), q))
+                .filter(u -> "all".equalsIgnoreCase(role) || u.getRole().toString().equalsIgnoreCase(role))
+                .filter(u -> "all".equalsIgnoreCase(status) || (status.equalsIgnoreCase("Active") && u.isActive()) || (status.equalsIgnoreCase("Inactive") && !u.isActive()))
+                .map(u -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("name", u.getUsername());
+                    row.put("email", u.getUsername() + "@bookom.vn");
+                    row.put("role", u.getRole().toString());
+                    row.put("status", u.isActive() ? "Active" : "Inactive");
+                    row.put("joined", "2026-02-01"); // TODO: Add createdAt to User
+                    return row;
+                })
                 .collect(Collectors.toList());
     }
 
     @GetMapping("/shops")
     public List<Map<String, Object>> shops(@RequestParam(defaultValue = "") String q) {
-        return buildShops(bookRepository.findAll()).stream()
-                .filter(s -> containsIgnoreCase(String.valueOf(s.get("shopName")), q)
-                        || containsIgnoreCase(String.valueOf(s.get("owner")), q)
-                        || containsIgnoreCase(String.valueOf(s.get("legal")), q))
-                .collect(Collectors.toList());
-    }
-
-    @GetMapping("/seller/orders")
-    public List<Map<String, Object>> sellerOrders(
-            @RequestParam(defaultValue = "") String q,
-            @RequestParam(defaultValue = "all") String status
-    ) {
-        return buildOrders(bookRepository.findAll()).stream()
-                .filter(o -> containsIgnoreCase(String.valueOf(o.get("id")), q)
-                        || containsIgnoreCase(String.valueOf(o.get("customer")), q)
-                        || containsIgnoreCase(String.valueOf(o.get("item")), q))
-                .filter(o -> "all".equalsIgnoreCase(status) || String.valueOf(o.get("status")).equalsIgnoreCase(status))
+        return sellerShopRepository.findAll().stream()
+                .filter(s -> containsIgnoreCase(s.getShopName(), q)
+                        || containsIgnoreCase(s.getSlug(), q))
+                .map(s -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("shopName", s.getShopName());
+                    map.put("owner", s.getSeller() != null ? s.getSeller().getUsername() : "N/A");
+                    map.put("legal", "N/A");
+                    map.put("products", bookRepository.findBySeller(s.getSeller()).size());
+                    map.put("joined", "2026-03-01");
+                    return map;
+                })
                 .collect(Collectors.toList());
     }
 
     @GetMapping("/seller/analytics")
-    public Map<String, Object> sellerAnalytics() {
-        List<Book> books = bookRepository.findAll();
-        List<Map<String, Object>> orders = buildOrders(books);
+    public Map<String, Object> sellerAnalytics(
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId
+    ) {
+        Long sellerId = null;
+        if (principal != null) {
+            sellerId = principal.sellerId() != null ? principal.sellerId() : principal.userId();
+        } else if (xUserId != null) {
+            sellerId = Long.parseLong(xUserId);
+        }
 
-        double estimatedRevenue = orders.stream()
-                .mapToDouble(o -> (Double) o.get("value"))
+        if (sellerId == null) {
+            return Map.of("error", "Unauthorized");
+        }
+
+        User seller = userRepository.findById(sellerId).orElse(null);
+        if (seller == null) return Map.of("error", "Seller not found");
+
+        List<Book> sellerBooks = bookRepository.findBySeller(seller);
+        List<SubOrder> subOrders = subOrderRepository.findBySeller(seller);
+
+        double estimatedRevenue = subOrders.stream()
+                .filter(so -> so.getStatus() != OrderStatus.CANCELLED)
+                .mapToDouble(so -> so.getSubTotal() == null ? 0d : so.getSubTotal())
                 .sum();
 
-        double averagePrice = books.stream()
+        double averagePrice = sellerBooks.stream()
                 .mapToDouble(b -> b.getPrice() == null ? 0d : b.getPrice())
                 .average()
                 .orElse(0d);
 
-        long lowStock = books.stream().filter(b -> "low".equals(stockBucket(b.getStockQuantity()))).count();
+        long lowStock = sellerBooks.stream().filter(b -> {
+            Integer qty = b.getStockQuantity();
+            return qty != null && qty < 10;
+        }).count();
 
-        Map<String, Long> categoryCounts = books.stream()
+        Map<String, Long> categoryCounts = sellerBooks.stream()
                 .collect(Collectors.groupingBy(
                         b -> b.getCategory() != null && safe(b.getCategory().getName()).length() > 0 ? b.getCategory().getName() : "Chua phan loai",
                         LinkedHashMap::new,
                         Collectors.counting()
                 ));
 
-        Map<String, Double> categoryRevenue = books.stream()
-                .collect(Collectors.groupingBy(
-                        b -> b.getCategory() != null && safe(b.getCategory().getName()).length() > 0 ? b.getCategory().getName() : "Chua phan loai",
-                        LinkedHashMap::new,
-                        Collectors.summingDouble(b -> b.getPrice() == null ? 0d : b.getPrice())
-                ));
+        // Category Revenue calculation
+        Map<String, Double> categoryRevenue = new LinkedHashMap<>();
+        for (SubOrder so : subOrders) {
+            if (so.getStatus() == OrderStatus.CANCELLED) continue;
+            if (so.getItems() == null) continue;
+            for (var item : so.getItems()) {
+                String catName = (item.getBook() != null && item.getBook().getCategory() != null) 
+                        ? item.getBook().getCategory().getName() : "Chua phan loai";
+                double itemValue = (item.getUnitPrice() != null ? item.getUnitPrice() : 0d) * (item.getQuantity() != null ? item.getQuantity() : 0);
+                categoryRevenue.put(catName, categoryRevenue.getOrDefault(catName, 0d) + itemValue);
+            }
+        }
 
-        Map<String, Long> orderStatusCounts = orders.stream()
+        Map<String, Long> orderStatusCounts = subOrders.stream()
                 .collect(Collectors.groupingBy(
-                        o -> String.valueOf(o.get("status")),
+                        so -> so.getStatus().toString(),
                         LinkedHashMap::new,
                         Collectors.counting()
                 ));
@@ -283,11 +264,33 @@ public class PanelController {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("estimatedRevenue", estimatedRevenue);
         response.put("averagePrice", averagePrice);
-        response.put("bookCount", books.size());
+        response.put("bookCount", sellerBooks.size());
         response.put("lowStock", lowStock);
         response.put("categoryCounts", categoryCounts);
         response.put("categoryRevenue", categoryRevenue);
         response.put("orderStatusCounts", orderStatusCounts);
+
+        // Add recent orders
+        List<Map<String, Object>> recentOrders = subOrders.stream()
+                .sorted(Comparator.comparing(SubOrder::getId).reversed())
+                .limit(10)
+                .map(so -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("id", so.getId());
+                    map.put("customer", so.getParentOrder() != null && so.getParentOrder().getBuyer() != null 
+                            ? so.getParentOrder().getBuyer().getUsername() : "N/A");
+                    // Get a summary of items
+                    String itemSummary = (so.getItems() != null && !so.getItems().isEmpty())
+                            ? so.getItems().get(0).getBook().getTitle() + (so.getItems().size() > 1 ? "..." : "")
+                            : "N/A";
+                    map.put("item", itemSummary);
+                    map.put("value", so.getSubTotal());
+                    map.put("status", so.getStatus().toString());
+                    return map;
+                })
+                .collect(Collectors.toList());
+        response.put("recentOrders", recentOrders);
+
         return response;
     }
 
@@ -402,6 +405,7 @@ public class PanelController {
                     map.put("price", b.getPrice());
                     map.put("category", b.getCategory() != null ? b.getCategory().getName() : "N/A");
                     map.put("stock", b.getStockQuantity());
+                    map.put("stockBucket", stockBucket(b.getStockQuantity()));
                     map.put("approvalStatus", b.getApprovalStatus().toString());
                     map.put("active", b.isActive() ? "Active" : "Locked");
                     map.put("seller", b.getSeller() != null ? b.getSeller().getUsername() : "System");

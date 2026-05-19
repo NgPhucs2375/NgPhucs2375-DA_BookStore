@@ -1,6 +1,7 @@
 package com.example.bookstore.repository;
 
 import com.example.bookstore.model.OrderItem;
+import com.example.bookstore.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -46,5 +47,14 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             @Param("statuses") List<OrderStatus> statuses,
             @Param("fromDate") LocalDateTime fromDate
     );
+
+    /**
+     * Check if a user has purchased a book and the order is COMPLETED.
+     */
+    @Query("SELECT COUNT(oi) > 0 FROM OrderItem oi " +
+           "WHERE oi.subOrder.parentOrder.buyer = :user " +
+           "AND oi.book.id = :bookId " +
+           "AND oi.subOrder.status = com.example.bookstore.model.enums.OrderStatus.COMPLETED")
+    boolean hasUserPurchasedBook(@Param("user") User user, @Param("bookId") Long bookId);
 
 }

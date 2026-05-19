@@ -11,4 +11,6 @@ public class CheckoutRequest {
 
     @NotBlank
     private String shippingAddress;
+
+    private String couponCode;
 }

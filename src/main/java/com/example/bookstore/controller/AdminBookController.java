@@ -3,8 +3,12 @@ package com.example.bookstore.controller;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.service.BookService;
+import com.example.bookstore.service.BookReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +20,9 @@ public class AdminBookController {
 
     @Autowired
     private BookService bookService;
+
+    @Autowired
+    private BookReviewService reviewService;
 
     // Lấy danh sách sách chờ duyệt (PENDING)
     @GetMapping("/pending")
@@ -103,6 +110,35 @@ public class AdminBookController {
         try {
             Book book = bookService.unlockBook(id);
             return ResponseEntity.ok(book);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Lấy danh sách tất cả đánh giá của một cuốn sách (bao gồm cả bị ẩn)
+     */
+    @GetMapping("/{id}/reviews")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getBookReviewsForAdmin(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(reviewService.getAllBookReviewsForAdmin(id, pageable));
+    }
+
+    /**
+     * Ẩn/Hiện một đánh giá
+     */
+    @PutMapping("/reviews/{reviewId}/toggle-visibility")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> toggleReviewVisibility(
+            @PathVariable Long reviewId
+    ) {
+        try {
+            return ResponseEntity.ok(reviewService.toggleReviewVisibility(reviewId));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

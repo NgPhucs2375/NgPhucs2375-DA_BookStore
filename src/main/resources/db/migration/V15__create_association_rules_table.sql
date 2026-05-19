@@ -19,8 +19,8 @@ CREATE TABLE association_rules (
     updated_at DATETIME2 DEFAULT GETDATE(),
     
     -- Constraints
-    CONSTRAINT FK_AssociationRules_BookA FOREIGN KEY (book_id_a) REFERENCES books(book_id),
-    CONSTRAINT FK_AssociationRules_BookB FOREIGN KEY (book_id_b) REFERENCES books(book_id),
+    CONSTRAINT FK_AssociationRules_BookA FOREIGN KEY (book_id_a) REFERENCES books(id),
+    CONSTRAINT FK_AssociationRules_BookB FOREIGN KEY (book_id_b) REFERENCES books(id),
     CONSTRAINT CK_BookA_NotEqual_BookB CHECK (book_id_a <> book_id_b),
     CONSTRAINT CK_Support_Range CHECK (support >= 0 AND support <= 1),
     CONSTRAINT CK_Confidence_Range CHECK (confidence >= 0 AND confidence <= 1),

@@ -32,11 +32,6 @@
     let currentCart = null;
     let appliedCoupon = null;
 
-    const COUPONS = {
-        'BOOKOM15K': { type: 'fixed', amount: 15000, desc: 'BOOKOM15K (Giảm 15.000đ)' },
-        'SAVE10': { type: 'percent', amount: 10, desc: 'SAVE10 (Giảm 10%)' }
-    };
-
     const formatVnd = (value) => ApiService.formatVND(Math.max(0, Number(value) || 0));
 
     const escapeHtml = (value) => String(value || '')
@@ -128,8 +123,7 @@
 
         let voucherDiscount = 0;
         if (appliedCoupon) {
-            if (appliedCoupon.type === 'fixed') voucherDiscount = appliedCoupon.amount;
-            if (appliedCoupon.type === 'percent') voucherDiscount = Math.round(subtotal * (appliedCoupon.amount / 100));
+            voucherDiscount = Number(appliedCoupon.discount) || 0;
         }
 
         const total = Math.max(0, subtotal + shippingFee - shopDiscount - voucherDiscount);
@@ -287,16 +281,28 @@
     };
 
     // coupon handlers
-    applyCouponBtn?.addEventListener('click', (e) => {
+    applyCouponBtn?.addEventListener('click', async (e) => {
         const code = (couponInput?.value || '').trim().toUpperCase();
         if (!code) return alert('Nhập mã khuyến mãi');
-        const rule = COUPONS[code];
-        if (!rule) return alert('Mã không hợp lệ hoặc đã hết hạn');
-        appliedCoupon = rule;
-        appliedCouponText.textContent = rule.desc;
-        appliedCouponWrap.classList.remove('hidden');
-        clearCouponBtn?.classList.remove('hidden');
-        updateSummary(currentCart || {});
+        
+        const subtotal = Number(currentCart?.totalAmount || 0);
+        
+        try {
+            const res = await fetch(`/api/coupons/${code}/validate?orderAmount=${subtotal}`);
+            const data = await res.json();
+            
+            if (!data.valid) {
+                return alert(data.error || 'Mã không hợp lệ');
+            }
+
+            appliedCoupon = data;
+            appliedCouponText.textContent = `${data.code} (Giảm ${formatVnd(data.discount)})`;
+            appliedCouponWrap.classList.remove('hidden');
+            clearCouponBtn?.classList.remove('hidden');
+            updateSummary(currentCart || {});
+        } catch (err) {
+            alert('Không thể kiểm tra mã giảm giá');
+        }
     });
 
     removeAppliedCouponBtn?.addEventListener('click', () => {
@@ -350,7 +356,7 @@
             }
 
             // proceed to checkout - backend expects a shippingAddress string
-            const response = await ApiService.Order.checkout(addressLine);
+            const response = await ApiService.Order.checkout(addressLine, appliedCoupon?.code);
             const orderId = response?.orderId;
             localStorage.setItem('lastOrderId', String(orderId || ''));
             window.location.href = orderId ? `/main/order-success?orderId=${orderId}` : '/main/order-success';

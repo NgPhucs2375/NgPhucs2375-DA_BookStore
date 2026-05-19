@@ -48,6 +48,22 @@ public class PanelPageController {
         return "admin/Admin_Orders";
     }
 
+    @GetMapping("/admin/categories")
+    public String adminCategories(Model model) {
+        model.addAttribute("pageTitle", "Quản lý danh mục");
+        model.addAttribute("pageSubtitle", "Thêm, sửa và xóa danh mục sách trên sàn");
+        model.addAttribute("activeMenu", "admin-categories");
+        return "admin/Admin_Categories";
+    }
+
+    @GetMapping("/admin/coupons")
+    public String adminCoupons(Model model) {
+        model.addAttribute("pageTitle", "Quản lý khuyến mãi");
+        model.addAttribute("pageSubtitle", "Tạo và quản lý các mã giảm giá trên toàn sàn");
+        model.addAttribute("activeMenu", "admin-coupons");
+        return "admin/Admin_Coupons";
+    }
+
     @GetMapping("/seller/dashboard")
     public String sellerDashboard(Model model) {
         model.addAttribute("pageTitle", "Tong quan nha ban");
@@ -92,4 +108,5 @@ public class PanelPageController {
     public String sellerProductDetail() {
         return "seller/Seller_Product_Detail";
     }
+
 }

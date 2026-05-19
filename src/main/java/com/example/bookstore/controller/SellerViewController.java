@@ -12,11 +12,14 @@ public class SellerViewController {
 
     @GetMapping("/form")
     public String showBookForm(@RequestParam(required = false) Long id, Model model) {
-        // Đưa cái ID vào model để Thymeleaf hoặc JS có thể lấy nếu cần (không bắt buộc vì mình lấy qua URL)
+        // 1. Dữ liệu xử lý form sách
         model.addAttribute("bookId", id);
 
-        // Trả về tên file HTML của bro trong thư mục src/main/resources/templates
-        // Ví dụ: product_detail.html -> trả về "product_detail"
+        // 2. Dữ liệu hiển thị layout giao diện (Gộp từ PanelPageController sang)
+        model.addAttribute("pageTitle", "Quản lý sách");
+        model.addAttribute("pageSubtitle", "Thêm mới hoặc cập nhật thông tin sách");
+        model.addAttribute("activeMenu", "seller-inventory");
+
         return "seller/Seller_Product_Detail";
     }
 }

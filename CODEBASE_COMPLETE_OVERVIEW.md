@@ -31,10 +31,7 @@ Roles: BUYER, SELLER, ADMIN
 - books: List<Book> (OneToMany - seller's books)
 - subOrders: List<SubOrder> (OneToMany - seller's orders)
 - cart: Cart (OneToOne - for buyers)
-
-🆕 NEED TO ADD:
-  - isActive: boolean = true
-  - Getter/Setter for isActive
+- isActive: boolean = true (✅ Added)
 ```
 
 #### **Book.java** ✅ Exists
@@ -51,9 +48,7 @@ Roles: BUYER, SELLER, ADMIN
 - category: Category (ManyToOne)
 - seller: User (ManyToOne, not null)
 - approvalStatus: ApprovalStatus (PENDING, APPROVED, REJECTED)
-
-🆕 NEED TO ADD:
-  - isActive: boolean = true
+- isActive: boolean = true (✅ Added)
 ```
 
 #### **Order.java** ✅ Exists
@@ -206,9 +201,9 @@ Roles: BUYER, SELLER, ADMIN
 
 #### **MailService.java** ✅ Exists
 
-#### **UserService.java** ❌ DOES NOT EXIST - NEED TO CREATE
+#### **UserService.java** ✅ Exists
 ```java
-🆕 NEED TO CREATE:
+✅ EXISTING METHODS:
    - getUserById(Long id): User
    - getUsersByRole(UserRole role): List<User>
    - lockUser(Long userId): User
@@ -220,30 +215,28 @@ Roles: BUYER, SELLER, ADMIN
 
 ### **4. CONTROLLER LAYER** (`src/main/java/com/example/bookstore/controller/`)
 
-#### **AdminBookController.java** ✅ Exists (Partial)
+#### **AdminBookController.java** ✅ Exists
 ```
 ✅ EXISTING ENDPOINTS:
    GET /api/admin/books/pending
    PUT /api/admin/books/{id}/status
-
-🆕 NEED TO ADD ENDPOINTS:
    DELETE /api/admin/books/{id}
    PUT /api/admin/books/{id}
    PUT /api/admin/books/{id}/lock
    PUT /api/admin/books/{id}/unlock
 ```
 
-#### **AdminUserController.java** ❌ DOES NOT EXIST - NEED TO CREATE
+#### **AdminUserController.java** ✅ Exists
 ```java
-🆕 NEED TO CREATE:
+✅ EXISTING ENDPOINTS:
    PUT /api/admin/users/{id}/lock
    PUT /api/admin/users/{id}/unlock
    GET /api/admin/users/{id}
 ```
 
-#### **AdminOrderController.java** ❌ DOES NOT EXIST - NEED TO CREATE
+#### **AdminOrderController.java** ✅ Exists
 ```java
-🆕 NEED TO CREATE:
+✅ EXISTING ENDPOINTS:
    GET /api/admin/orders
    GET /api/admin/orders/{id}
 ```
@@ -504,10 +497,10 @@ V2__create_seller_shop.sql
 
 | Feature | DB | Model | Service | Controller | Repo | Frontend | Status |
 |---------|----|----|---------|-----------|------|----------|--------|
-| **A01: Dashboard** | ✅ | ✅ | 🟡 Partial | 🟡 Partial | ✅ | 🟡 Partial | 60% |
-| **A02: Lock/Unlock User** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0% |
-| **A03: Book Operations** | ❌ | 🟡 | 🟡 | 🟡 | ❌ | ❌ | 20% |
-| **A04: All Orders** | ✅ | ✅ | 🟡 | ❌ | 🟡 | ❌ | 30% |
+| **A01: Dashboard** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 90% |
+| **A02: Lock/Unlock User** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 100% |
+| **A03: Book Operations** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 100% |
+| **A04: All Orders** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 100% |
 
 ---
 

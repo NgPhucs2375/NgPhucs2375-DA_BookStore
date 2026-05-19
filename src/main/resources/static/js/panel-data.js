@@ -152,6 +152,11 @@
           cutout: '70%'
         }
       );
+      // populate small quick metrics from /dashboard if available
+      getJson(API_ROOT + "/dashboard").then(function(dash) {
+        try { setText('metric-orders', String(dash.ordersCount || 0)); } catch(e) {}
+        try { setText('metric-newusers', String(dash.newUsers || 0)); } catch(e) {}
+      }).catch(function(){/* non-critical */});
     });
   }
 
@@ -452,6 +457,48 @@
     return load();
   }
 
+  function initAdminCategories() {
+    var listEl = document.getElementById('admin-categories-body');
+    var createBtn = document.getElementById('create-category-btn');
+    var nameInput = document.getElementById('create-category-name');
+    var descInput = document.getElementById('create-category-desc');
+
+    function load() {
+      return getJson('/api/admin/categories').then(function(rows) {
+        if (!listEl) return;
+        var html = (rows || []).map(function(c) {
+          return '<tr>' +
+            '<td class="px-4 py-3 font-bold">' + esc(c.name) + '</td>' +
+            '<td class="px-4 py-3">' + esc(c.description || '') + '</td>' +
+            '<td class="px-4 py-3 text-right"><button class="text-rose-600" data-id="' + c.id + '">Xóa</button></td>' +
+            '</tr>';
+        }).join('');
+        listEl.innerHTML = html || '<tr><td class="px-4 py-3" colspan="3">Không có danh mục</td></tr>';
+        // wire delete buttons
+        Array.from(listEl.querySelectorAll('button[data-id]')).forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var id = btn.getAttribute('data-id');
+            if (!confirm('Xóa danh mục?')) return;
+            fetch('/api/admin/categories/' + id, { method: 'DELETE', headers: authHeaders() })
+              .then(function(res) { if(res.ok) { BookomToast.success('Đã xóa'); load(); } else { return res.text().then(function(t){ BookomToast.error(t || 'Lỗi'); }); } });
+          });
+        });
+      });
+    }
+
+    if (createBtn && nameInput) {
+      createBtn.addEventListener('click', function() {
+        var name = (nameInput.value || '').trim();
+        var desc = (descInput && descInput.value) || '';
+        if (!name) return BookomToast.error('Tên danh mục bắt buộc');
+        fetch('/api/admin/categories', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ name: name, description: desc }) })
+          .then(function(res) { if (res.status === 201 || res.ok) { BookomToast.success('Đã tạo'); nameInput.value=''; if(descInput) descInput.value=''; load(); } else { return res.text().then(function(t){ BookomToast.error(t || 'Lỗi'); }); } });
+      });
+    }
+
+    return load();
+  }
+
   function initSellerDashboard() {
     return Promise.all([
       getJson(API_ROOT + "/seller/analytics")
@@ -744,5 +791,6 @@
     initSellerOrders: initSellerOrders,
     initSellerInventory: initSellerInventory,
     initSellerAnalytics: initSellerAnalytics
+    ,initAdminCategories: initAdminCategories
   };
 })();

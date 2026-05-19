@@ -291,6 +291,54 @@ public class PanelController {
         return response;
     }
 
+        /**
+         * Lightweight dashboard summary for admin (orders counts, revenue, new users, low-stock)
+         */
+        @GetMapping("/dashboard")
+        public Map<String, Object> dashboardSummary() {
+                Map<String, Object> resp = new LinkedHashMap<>();
+
+                List<Order> orders = orderRepository.findAll();
+                List<User> users = userRepository.findAll();
+                List<Book> books = bookRepository.findAll();
+
+                // total orders
+                resp.put("ordersCount", orders.size());
+
+                // revenue (sum of totalAmount)
+                double revenue = orders.stream()
+                                .mapToDouble(o -> o.getTotalAmount() == null ? 0d : o.getTotalAmount())
+                                .sum();
+                resp.put("revenue", revenue);
+
+                        // new users (best-effort): if User has createdAt field, count those; otherwise return total users
+                        long newUsers;
+                        try {
+                                newUsers = users.stream().filter(u -> {
+                                        try {
+                                                java.lang.reflect.Field f = u.getClass().getDeclaredField("createdAt");
+                                                f.setAccessible(true);
+                                                Object val = f.get(u);
+                                                if (val instanceof java.time.temporal.TemporalAccessor) return true; // best-effort
+                                        } catch (NoSuchFieldException | IllegalAccessException ignored) {}
+                                        return false;
+                                }).count();
+                                if (newUsers == 0) newUsers = users.size();
+                        } catch (Exception ex) {
+                                newUsers = users.size();
+                        }
+                resp.put("newUsers", newUsers);
+
+                // low stock books (<20)
+                        long lowStock = books.stream().filter(b -> {
+                                Integer qty = b.getStockQuantity();
+                                return qty != null && qty < 20;
+                        }).count();
+                resp.put("lowStock", lowStock);
+
+                return resp;
+        }
+
     /**
      * 🆕 NEW: Lấy danh sách người dùng chi tiết với trạng thái active/lock
      * GET /api/panel/users-detailed?q=&role=all&status=all

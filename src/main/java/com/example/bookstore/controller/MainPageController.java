@@ -121,6 +121,16 @@ public class MainPageController {
         return "main/Flash_Sale";
     }
 
+    @GetMapping("/main/payment-result")
+    public String paymentResult() {
+        return "main/Payment_Result";
+    }
+
+    @GetMapping("/main/Payment_Result.html")
+    public String paymentResultHtmlAlias() {
+        return "main/Payment_Result";
+    }
+
     @GetMapping("/buyer/dashboard")
     public String buyerDashboard() {
         return "buyer/Buyer_DashBoard";

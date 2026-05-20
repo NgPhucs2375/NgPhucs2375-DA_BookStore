@@ -257,3 +257,20 @@ For detailed documentation:
 
 **Last Updated**: May 16, 2026  
 **Maintainers**: Development Team
+
+---
+
+## Recent Merge: d769cfe (2026-05-17)
+
+Summary: Merged branch `Mar1cc` — standardised JWT principal handling and related security updates; documentation refreshed.
+
+Key changes included in the merge:
+- Security: refactor of `JwtAuthenticationFilter` and `SecurityConfig` to extract a consistent authenticated principal (claims now include `userId`, `roles`, and `sellerId`).
+- Controllers: updates to admin and principal-based controllers (notably `AdminBookController`) to rely on the authenticated principal instead of legacy request attributes.
+- Docs: supporting documentation files under `docs/` and `PROJECT_REQUIREMENTS_ANALYSIS.md` updated to reflect the new principal-based identity model.
+
+Impact & Notes:
+- Deploy these security changes together (JWT tokens and server) to avoid `401/403` spikes.
+- Verify tokens used by external clients include the required claims before rolling out to production.
+
+If you want, I can add a short migration checklist to the `OPERATIONS_GUIDE.md` and `TECHNICAL_ARCHITECTURE.md` with rollout steps and smoke tests.

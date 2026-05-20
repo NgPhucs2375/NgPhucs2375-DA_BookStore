@@ -10,7 +10,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
-    <!-- Flowbite (Tailwind components) -->
     <link href="https://unpkg.com/flowbite@1.7.0/dist/flowbite.min.css" rel="stylesheet">
 
     <script>
@@ -21,7 +20,7 @@
                         'brand-peach': '#F8D9C0',
                         'brand-cream': '#FAF5E8',
                         'brand-biscuit': '#D19C74',
-                        'brand-dark': '#4a3b32', // Darker brown for text
+                        'brand-dark': '#4a3b32', 
                         'brand-accent': '#E5CBB5',
                         'brand-orange': '#ea580c',
                         'brand-green': '#16a34a',
@@ -48,9 +47,6 @@
     </script>
 
     <style>
-        /* ========================================================================== */
-        /* 1. CƠ BẢN & NỀN TẢNG                                                       */
-        /* ========================================================================== */
         @keyframes fadeInUpStagger { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes shine { 0% { transform: translateX(-100%) skewX(-20deg); } 100% { transform: translateX(200%) skewX(-20deg); } }
@@ -68,7 +64,6 @@
             to { transform: scale(4); opacity: 0; }
         }
 
-
         html, body { font-family: 'Quicksand', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -77,7 +72,7 @@
             background-image: linear-gradient(to bottom right, #fdfcf9, #fbf3ed);
             min-height: 100vh; overflow-x: hidden;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 1rem;
+            padding: 1.5rem;
             position: relative;
         }
 
@@ -94,13 +89,16 @@
         :focus-visible { outline: 3px solid rgba(209, 156, 116, 0.3); outline-offset: 3px; border-radius: 0.75rem; }
 
         /* ========================================================================== */
-        /* 2. CỖ MÁY TRẠNG THÁI (STATE MACHINE)                                       */
+        /* CỐI MÁY TRẠNG THÁI (ĐÃ FIX: Thay thế tuyệt đối bằng hiển thị/ẩn mượt mà)   */
         /* ========================================================================== */
         .auth-view {
-            position: absolute; inset: 0;
-            opacity: 0; visibility: hidden; pointer-events: none;
+            display: none;
+            opacity: 0;
             transform: translateY(15px);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
         }
 
         #route-login:checked ~ .master-container .view-login,
@@ -109,25 +107,22 @@
         #route-reg-3:checked ~ .master-container .view-reg-3,
         #route-forgot-1:checked ~ .master-container .view-forgot-1,
         #route-forgot-2:checked ~ .master-container .view-forgot-2 {
-            opacity: 1; visibility: visible; pointer-events: auto;
+            display: flex;
+            opacity: 1;
             transform: translateY(0);
-            z-index: 10;
         }
 
-        /* Staggered animations for login form */
         #route-login:checked ~ .master-container .view-login > * {
-            animation: fadeInUpStagger 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+            animation: fadeInUpStagger 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
         }
-        #route-login:checked ~ .master-container .view-login .stagger-1 { animation-delay: 0.1s; }
-        #route-login:checked ~ .master-container .view-login .stagger-2 { animation-delay: 0.2s; }
-        #route-login:checked ~ .master-container .view-login .stagger-3 { animation-delay: 0.3s; }
-        #route-login:checked ~ .master-container .view-login .stagger-4 { animation-delay: 0.4s; }
-        #route-login:checked ~ .master-container .view-login .stagger-5 { animation-delay: 0.5s; }
-        #route-login:checked ~ .master-container .view-login .stagger-6 { animation-delay: 0.6s; }
-        #route-login:checked ~ .master-container .view-login .stagger-7 { animation-delay: 0.7s; }
+        #route-login:checked ~ .master-container .view-login .stagger-1 { animation-delay: 0.05s; }
+        #route-login:checked ~ .master-container .view-login .stagger-2 { animation-delay: 0.1s; }
+        #route-login:checked ~ .master-container .view-login .stagger-3 { animation-delay: 0.15s; }
+        #route-login:checked ~ .master-container .view-login .stagger-4 { animation-delay: 0.2s; }
+        #route-login:checked ~ .master-container .view-login .stagger-5 { animation-delay: 0.25s; }
+        #route-login:checked ~ .master-container .view-login .stagger-6 { animation-delay: 0.3s; }
+        #route-login:checked ~ .master-container .view-login .stagger-7 { animation-delay: 0.35s; }
 
-
-        /* Trạng thái Tab Header */
         #route-login:checked ~ .master-container .tab-login,
         #route-reg-1:checked ~ .master-container .tab-register,
         #route-reg-2:checked ~ .master-container .tab-register,
@@ -138,13 +133,9 @@
         #route-reg-2:checked ~ .master-container .tab-register::after,
         #route-reg-3:checked ~ .master-container .tab-register::after { transform: scaleX(1); }
 
-        /* Ẩn Tabs khi quên mật khẩu */
         #route-forgot-1:checked ~ .master-container .main-auth-tabs,
         #route-forgot-2:checked ~ .master-container .main-auth-tabs { display: none; }
 
-        /* ========================================================================== */
-        /* 3. CAROUSEL (GLASSMORPHISM)                                                */
-        /* ========================================================================== */
         .glass-pane {
             background-color: rgba(248, 217, 192, 0.3);
             backdrop-filter: blur(20px);
@@ -189,10 +180,7 @@
             background-color: #4a3b32; width: 28px; border-radius: 5px;
         }
 
-        /* ========================================================================== */
-        /* 4. COMPONENTS (INPUT, BUTTON, CHECKBOX...)                                 */
-        /* ========================================================================== */
-        .form-group { position: relative; margin-bottom: 1.75rem; }
+        .form-group { position: relative; margin-bottom: 1.5rem; width: 100%; }
         .floating-input {
             height: 3.75rem; padding: 1.5rem 1.25rem 0.5rem 3.5rem;
             background-color: #fbfbfb; border: 2px solid transparent; border-radius: 0.75rem;
@@ -235,6 +223,7 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 8px 15px -5px rgba(74, 59, 50, 0.3), inset 0 -2px 0 rgba(0,0,0,0.2);
             position: relative; overflow: hidden;
+            display: flex; items-center: justify-content: center; align-items: center;
             -webkit-tap-highlight-color: transparent;
         }
         .btn-primary::after {
@@ -246,27 +235,19 @@
         .btn-primary:active { transform: translateY(-1px); box-shadow: 0 4px 8px -2px rgba(74, 59, 50, 0.3), inset 0 -1px 0 rgba(0,0,0,0.2); }
 
         .btn-primary .ripple {
-            position: absolute;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.6);
-            transform: scale(0);
-            animation: ripple 600ms linear;
+            position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.6);
+            transform: scale(0); animation: ripple 600ms linear; pointer-events: none;
         }
 
         .btn-primary .shooting-star {
-            position: absolute;
-            top: -1px;
-            left: 0;
-            width: 4px;
-            height: 102%;
+            position: absolute; top: -1px; left: 0; width: 4px; height: 102%;
             background: linear-gradient(to bottom, transparent, #fff, transparent);
-            opacity: 0;
-            animation: shooting-star 7s infinite;
-            animation-delay: 2s;
+            opacity: 0; animation: shooting-star 7s infinite; animation-delay: 2s;
         }
 
         .btn-social {
-            border: 2px solid #E5CBB5; border-radius: 0.75rem;
+            height: 3.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            border: 2px solid #E5CBB5; border-radius: 0.75rem; font-weight: 700; color: #4a3b32;
             transition: all 0.2s ease;
         }
         .btn-social:hover { border-color: #D19C74; background-color: #fbf3ed; transform: translateY(-2px); box-shadow: 0 6px 15px -4px rgba(209, 156, 116, 0.2); }
@@ -291,16 +272,15 @@
             color: #4a3b32; background-color: #fdfcf9; border: 2px solid #E5CBB5; border-radius: 0.75rem;
             transition: all 0.2s;
         }
-        .otp-input:focus { border-color: #D19C74; box-shadow: var(--tw-shadow-input); transform: translateY(-2px); background-color: #fff; }
+        .otp-input:focus { border-color: #D19C74; box-shadow: 0 0 0 4px rgba(209, 156, 116, 0.2); transform: translateY(-2px); background-color: #fff; }
 
         .error-message { display: none; color: #dc2626; font-size: 0.75rem; font-weight: 600; margin-top: 0.25rem; margin-left: 0.5rem; }
         .form-group.has-error .error-message { display: flex; }
         .form-group.has-error .floating-input { border-color: #dc2626; box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1); }
-
     </style>
 </head>
 
-<body class="bg-grid-pattern">
+<body class="bg-grid-pattern pt-24 pb-12">
 
 <input type="radio" id="route-login" name="master-route" class="hidden" checked>
 <input type="radio" id="route-reg-1" name="master-route" class="hidden">
@@ -316,7 +296,7 @@
 
 <div class="fixed inset-0 bg-gradient-to-br from-brand-peach/20 via-transparent to-brand-biscuit/10 pointer-events-none z-0"></div>
 
-<div class="w-full max-w-6xl flex justify-between items-center py-4 px-4 z-10 absolute top-0 left-1/2 -translate-x-1/2">
+<div class="w-full max-w-6xl flex justify-between items-center py-4 px-6 z-30 absolute top-0 left-1/2 -translate-x-1/2">
     <a th:href="@{/}" class="flex items-center gap-3 group">
         <div class="bg-brand-dark text-white p-2 rounded-lg shadow-md group-hover:bg-brand-biscuit transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -333,87 +313,83 @@
     </a>
 </div>
 
-<main class="master-container w-full max-w-6xl bg-white/50 rounded-3xl shadow-float border border-white/80 flex flex-col lg:flex-row relative z-10 min-h-auto lg:min-h-187.5 animation-delay-300 animate-fadeInUp">
+<main class="master-container w-full max-w-6xl bg-white/50 rounded-3xl shadow-float border border-white/80 flex flex-col lg:flex-row relative z-10 min-h-[650px] overflow-hidden">
 
-    <div class="hidden lg:flex lg:w-5/12 glass-pane relative flex-col justify-between overflow-hidden rounded-l-3xl lg:min-h-187.5">
-
-        <div class="carousel-inner w-full h-full relative z-10 p-12">
-
+    <div class="hidden lg:flex lg:w-5/12 glass-pane relative flex-col justify-between overflow-hidden p-12">
+        <div class="carousel-inner w-full h-full relative min-h-[450px]">
             <div class="carousel-slide slide-1 flex flex-col items-center justify-center text-center">
-                <div class="carousel-img w-80 h-80 mb-4">
-                    <img src="https://i.imgur.com/sC3a3h1.png" alt="Illustration of books and knowledge" class="w-full h-full object-contain drop-shadow-2xl"/>
+                <div class="carousel-img w-72 h-72 mb-6">
+                    <img src="https://i.imgur.com/sC3a3h1.png" alt="Knowledge" class="w-full h-full object-contain drop-shadow-2xl"/>
                 </div>
                 <div class="carousel-content">
-                    <h2 class="font-serif text-4xl font-bold text-brand-dark mb-4 leading-tight">Thư Viện Của Mọi Thời Đại</h2>
-                    <p class="text-brand-dark/80 font-medium text-base max-w-sm">Khám phá hơn 1 triệu tựa sách bản quyền, từ tiểu thuyết kinh điển đến kho tàng kiến thức.</p>
+                    <h2 class="font-serif text-3xl font-bold text-brand-dark mb-3 leading-tight">Thư Viện Của Mọi Thời Đại</h2>
+                    <p class="text-brand-dark/80 font-medium text-sm max-w-sm">Khám phá hơn 1 triệu tựa sách bản quyền, từ tiểu thuyết kinh điển đến kho tàng kiến thức.</p>
                 </div>
             </div>
 
             <div class="carousel-slide slide-2 flex flex-col items-center justify-center text-center">
-                <div class="carousel-img w-80 h-80 mb-4">
-                     <img src="https://i.imgur.com/L8nL0sB.png" alt="Illustration of smart shopping" class="w-full h-full object-contain drop-shadow-2xl"/>
+                <div class="carousel-img w-72 h-72 mb-6">
+                     <img src="https://i.imgur.com/L8nL0sB.png" alt="Smart shopping" class="w-full h-full object-contain drop-shadow-2xl"/>
                 </div>
                 <div class="carousel-content">
-                    <h2 class="font-serif text-4xl font-bold text-brand-dark mb-4 leading-tight">Mua Sắm Thông Minh Hơn</h2>
-                    <p class="text-brand-dark/80 font-medium text-base max-w-sm">Tích lũy BOOKOM Xu, nhận hàng ngàn mã giảm giá và miễn phí vận chuyển tận cửa.</p>
+                    <h2 class="font-serif text-3xl font-bold text-brand-dark mb-3 leading-tight">Mua Sắm Thông Minh Hơn</h2>
+                    <p class="text-brand-dark/80 font-medium text-sm max-w-sm">Tích lũy BOOKOM Xu, nhận hàng ngàn mã giảm giá và miễn phí vận chuyển tận cửa.</p>
                 </div>
             </div>
 
             <div class="carousel-slide slide-3 flex flex-col items-center justify-center text-center">
-                <div class="carousel-img w-80 h-80 mb-4">
-                    <img src="https://i.imgur.com/b02JmIV.png" alt="Illustration of a person reading peacefully" class="w-full h-full object-contain drop-shadow-2xl"/>
+                <div class="carousel-img w-72 h-72 mb-6">
+                    <img src="https://i.imgur.com/b02JmIV.png" alt="Peaceful reading" class="w-full h-full object-contain drop-shadow-2xl"/>
                 </div>
                 <div class="carousel-content">
-                    <h2 class="font-serif text-4xl font-bold text-brand-dark mb-4 leading-tight">Nuôi Dưỡng Tâm Hồn Bạn</h2>
-                    <p class="text-brand-dark/80 font-medium text-base max-w-sm">Dành thời gian cho bản thân với những cuốn sách chữa lành và không gian đọc tĩnh lặng.</p>
+                    <h2 class="font-serif text-3xl font-bold text-brand-dark mb-3 leading-tight">Nuôi Dưỡng Tâm Hồn Bạn</h2>
+                    <p class="text-brand-dark/80 font-medium text-sm max-w-sm">Dành thời gian cho bản thân với những cuốn sách chữa lành và không gian đọc tĩnh lặng.</p>
                 </div>
             </div>
 
             <div class="carousel-slide slide-4 flex flex-col items-center justify-center text-center">
-                <div class="carousel-img w-80 h-80 mb-4">
-                    <img src="https://i.imgur.com/Y5LAd5a.png" alt="Illustration of a community of readers" class="w-full h-full object-contain drop-shadow-2xl"/>
+                <div class="carousel-img w-72 h-72 mb-6">
+                    <img src="https://i.imgur.com/Y5LAd5a.png" alt="Readers community" class="w-full h-full object-contain drop-shadow-2xl"/>
                 </div>
                 <div class="carousel-content">
-                    <h2 class="font-serif text-4xl font-bold text-brand-dark mb-4 leading-tight">Cộng Đồng Đọc Sách Lớn Nhất</h2>
-                    <p class="text-brand-dark/80 font-medium text-base max-w-sm">Kết nối, chia sẻ cảm nhận và đọc những bài đánh giá chất lượng từ các độc giả khác.</p>
+                    <h2 class="font-serif text-3xl font-bold text-brand-dark mb-3 leading-tight">Cộng Đồng Lớn Nhất</h2>
+                    <p class="text-brand-dark/80 font-medium text-sm max-w-sm">Kết nối, chia sẻ cảm nhận và đọc những bài đánh giá chất lượng từ các độc giả khác.</p>
                 </div>
             </div>
-
         </div>
 
-        <div class="carousel-controls absolute bottom-10 left-0 w-full flex justify-center items-center gap-2 z-20">
+        <div class="carousel-controls flex justify-center items-center gap-2 mt-4">
             <label for="slide-1" class="carousel-dot dot-1"></label>
             <label for="slide-2" class="carousel-dot dot-2"></label>
             <label for="slide-3" class="carousel-dot dot-3"></label>
             <label for="slide-4" class="carousel-dot dot-4"></label>
         </div>
-
     </div>
 
-    <div class="w-full lg:w-7/12 bg-white/80 relative flex flex-col pt-8 pb-10 px-6 sm:px-12 lg:px-16 overflow-y-auto hide-scrollbar h-full rounded-r-3xl">
-
-        <div class="main-auth-tabs flex items-center gap-10 border-b-2 border-gray-100 mb-10 select-none relative z-30">
-            <label for="route-login" class="tab-login pb-4 text-lg font-bold text-gray-400 cursor-pointer transition-all relative group">
+    <div class="w-full lg:w-7/12 bg-white/80 flex flex-col pt-8 pb-10 px-6 sm:px-12 lg:px-16 justify-between min-h-[550px]">
+        
+        <div class="main-auth-tabs flex items-center gap-10 border-b-2 border-gray-100 mb-8 select-none z-30">
+            <label for="route-login" class="tab-login pb-4 text-lg font-bold text-gray-400 cursor-pointer transition-all relative group block">
                 Đăng Nhập
                 <span class="absolute -bottom-0.5 left-0 w-full h-1 bg-brand-biscuit transform scale-x-0 transition-transform origin-left rounded-full content-[''] group-hover:scale-x-100"></span>
             </label>
-            <label for="route-reg-1" class="tab-register pb-4 text-lg font-bold text-gray-400 cursor-pointer transition-all relative group">
+            <label for="route-reg-1" class="tab-register pb-4 text-lg font-bold text-gray-400 cursor-pointer transition-all relative group block">
                 Tạo Tài Khoản
                 <span class="absolute -bottom-0.5 left-0 w-full h-1 bg-brand-biscuit transform scale-x-0 transition-transform origin-left rounded-full content-[''] group-hover:scale-x-100"></span>
             </label>
         </div>
 
-        <div class="form-wrapper relative grow w-full min-h-125">
+        <div class="form-wrapper w-full grow flex flex-col justify-center">
 
-            <div class="auth-view view-login flex flex-col h-full">
-                <div class="mb-8 stagger-1">
-                    <h2 class="text-4xl font-black text-brand-dark mb-2 tracking-tight font-serif">Chào mừng trở lại!</h2>
-                    <p class="text-gray-500 font-medium text-base">Đăng nhập để tiếp tục hành trình khám phá tri thức của bạn.</p>
+            <div class="auth-view view-login">
+                <div class="mb-6 stagger-1">
+                    <h2 class="text-3xl font-black text-brand-dark mb-1 tracking-tight font-serif">Chào mừng trở lại!</h2>
+                    <p class="text-gray-500 font-medium text-sm">Đăng nhập để tiếp tục hành trình khám phá tri thức của bạn.</p>
                 </div>
 
-                <form class="flex flex-col grow">
+                <form class="w-full flex flex-col">
                     <div class="form-group stagger-2">
-                        <input type="email" id="log_email" class="floating-input peer w-full" placeholder=" " required autocomplete="email" aria-label="Email hoặc Số điện thoại">
+                        <input type="email" id="log_email" class="floating-input peer w-full" placeholder=" " required autocomplete="email">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon-premium w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                         </svg>
@@ -421,7 +397,7 @@
                     </div>
 
                     <div class="form-group stagger-3">
-                        <input type="password" id="log_pass" class="floating-input peer w-full" placeholder=" " required minlength="6" autocomplete="current-password" aria-label="Mật khẩu">
+                        <input type="password" id="log_pass" class="floating-input peer w-full" placeholder=" " required minlength="6" autocomplete="current-password">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon-premium w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
@@ -434,7 +410,7 @@
                         </button>
                     </div>
 
-                    <div class="flex items-center justify-between mb-8 stagger-4">
+                    <div class="flex items-center justify-between mb-6 stagger-4">
                         <label class="flex items-center gap-3 cursor-pointer group">
                             <input type="checkbox" class="custom-checkbox" checked>
                             <span class="text-sm font-bold text-gray-500 group-hover:text-brand-dark transition-colors">Ghi nhớ đăng nhập</span>
@@ -444,8 +420,8 @@
                         </label>
                     </div>
 
-                    <button type="button" class="btn-primary mb-6 w-full group stagger-5" aria-label="Đăng nhập">
-                        <span class="relative z-10 flex items-center justify-center gap-2">
+                    <button type="button" class="btn-primary mb-5 w-full group stagger-5">
+                        <span class="relative z-10 flex items-center justify-center gap-2 w-full">
                             Đăng Nhập
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -454,18 +430,18 @@
                         <span class="shooting-star"></span>
                     </button>
 
-                    <div class="flex items-center gap-4 my-4 stagger-6">
+                    <div class="flex items-center gap-4 my-3 stagger-6">
                         <div class="h-px bg-gray-200 grow"></div>
                         <span class="text-xs font-bold text-gray-400 uppercase">Hoặc</span>
                         <div class="h-px bg-gray-200 grow"></div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 stagger-7">
-                        <button type="button" class="btn-social w-full" aria-label="Đăng nhập bằng Google">
+                        <button type="button" class="btn-social w-full">
                             <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                             Google
                         </button>
-                        <button type="button" class="btn-social w-full" aria-label="Đăng nhập bằng Facebook">
+                        <button type="button" class="btn-social w-full">
                             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                             Facebook
                         </button>
@@ -473,100 +449,78 @@
                 </form>
             </div>
 
-            <div class="auth-view view-reg-1 flex flex-col h-full">
-                <div class="mb-6">
-                    <div>
-                        <h2 class="text-3xl font-black text-brand-dark mb-2">Tạo Tài Khoản Mới</h2>
-                        <p class="text-gray-500 font-medium">Tham gia cùng hàng triệu độc giả khác.</p>
-                    </div>
+            <div class="auth-view view-reg-1">
+                <div class="mb-4">
+                    <h2 class="text-2xl font-black text-brand-dark mb-1">Tạo Tài Khoản Mới</h2>
+                    <p class="text-gray-500 font-medium text-xs">Tham gia cùng hàng triệu độc giả khác.</p>
                 </div>
 
-                <div class="step-indicator relative flex items-center justify-between mb-8">
-                    <div class="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1.5 bg-gray-100 rounded-full -z-10"></div>
-                    <div class="reg-progress absolute left-0 top-1/2 transform -translate-y-1/2 h-1.5 bg-brand-biscuit rounded-full -z-10"></div>
-
-                    <div class="dot-1 w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center font-bold text-xs text-gray-400 transition-all duration-500">1</div>
-                    <div class="dot-2 w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center font-bold text-xs text-gray-400 transition-all duration-500">2</div>
-                    <div class="dot-3 w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center font-bold text-xs text-gray-400 transition-all duration-500">3</div>
+                <div class="step-indicator relative flex items-center justify-between mb-6 px-4">
+                    <div class="absolute left-0 right-0 top-1/2 transform -translate-y-1/2 h-1 bg-gray-100 rounded-full -z-10"></div>
+                    <div class="reg-progress absolute left-0 top-1/2 transform -translate-y-1/2 h-1 w-1/3 bg-brand-biscuit rounded-full -z-10"></div>
+                    <div class="w-8 h-8 rounded-full bg-brand-biscuit text-white flex items-center justify-center font-bold text-xs">1</div>
+                    <div class="w-8 h-8 rounded-full bg-white border-2 border-gray-200 text-gray-400 flex items-center justify-center font-bold text-xs">2</div>
+                    <div class="w-8 h-8 rounded-full bg-white border-2 border-gray-200 text-gray-400 flex items-center justify-center font-bold text-xs">3</div>
                 </div>
 
-                <form class="flex flex-col grow overflow-y-auto hide-scrollbar">
-
-                    <div class="grid grid-cols-2 gap-5 mb-5">
+                <form class="w-full flex flex-col">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
                         <div class="form-group mb-0">
-                            <input type="text" id="reg_ho" class="floating-input peer" placeholder=" " required pattern="^[a-zA-ZÀ-ỹ\s]{2,}$" autocomplete="given-name" aria-label="Họ">
+                            <input type="text" id="reg_ho" class="floating-input peer w-full" placeholder=" " required pattern="^[a-zA-ZÀ-ỹ\s]{2,}$">
                             <svg class="icon-premium w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             <label for="reg_ho" class="floating-label">Họ</label>
-                            <div class="error-message">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                Tối thiểu 2 chữ cái.
-                            </div>
                         </div>
                         <div class="form-group mb-0">
-                            <input type="text" id="reg_ten" class="floating-input peer" placeholder=" " required pattern="^[a-zA-ZÀ-ỹ\s]{2,}$" autocomplete="family-name" aria-label="Tên">
+                            <input type="text" id="reg_ten" class="floating-input peer w-full" placeholder=" " required pattern="^[a-zA-ZÀ-ỹ\s]{2,}$">
                             <svg class="icon-premium w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             <label for="reg_ten" class="floating-label">Tên</label>
-                            <div class="error-message">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                Sai định dạng.
-                            </div>
                         </div>
                     </div>
 
-                    <div class="form-group mb-5">
-                        <input type="email" id="reg_email" class="floating-input peer" placeholder=" " required autocomplete="email" aria-label="Địa chỉ Email">
+                    <div class="form-group mb-4">
+                        <input type="email" id="reg_email" class="floating-input peer w-full" placeholder=" " required>
                         <svg class="icon-premium w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                         <label for="reg_email" class="floating-label">Địa chỉ Email</label>
-                        <div class="error-message">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            Email không hợp lệ.
-                        </div>
                     </div>
 
-                    <div class="form-group mb-6">
-                        <input type="password" id="reg_pass" class="floating-input peer" placeholder=" " required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" autocomplete="new-password" aria-label="Tạo Mật khẩu">
+                    <div class="form-group mb-4">
+                        <input type="password" id="reg_pass" class="floating-input peer w-full" placeholder=" " required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}">
                         <svg class="icon-premium w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                         <label for="reg_pass" class="floating-label">Tạo Mật khẩu</label>
-
-                        <button type="button" class="toggle-password absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-brand-biscuit transition-colors cursor-pointer outline-none bg-white p-1" aria-label="Hiện/Ẩn mật khẩu">
+                        <button type="button" class="toggle-password absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 p-1">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                         </button>
 
-                        <div class="error-message">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            Mật khẩu phải chứa ít nhất 8 ký tự, gồm 1 chữ hoa, 1 chữ thường và 1 số.
-                        </div>
-
-                        <div class="flex items-center gap-1.5 mt-3 px-2">
-                            <div id="strength-bar-1" class="h-1.5 w-full bg-gray-200 rounded-full transition-all duration-300"></div>
-                            <div id="strength-bar-2" class="h-1.5 w-full bg-gray-200 rounded-full transition-all duration-300"></div>
-                            <div id="strength-bar-3" class="h-1.5 w-full bg-gray-200 rounded-full transition-all duration-300"></div>
-                            <div id="strength-bar-4" class="h-1.5 w-full bg-gray-200 rounded-full transition-all duration-300"></div>
-                            <span id="strength-text" class="text-[10px] font-bold text-gray-400 ml-2 uppercase tracking-wide whitespace-nowrap w-16 text-center">Mật Khẩu</span>
+                        <div class="flex items-center gap-1.5 mt-2 px-1">
+                            <div id="strength-bar-1" class="h-1 w-full bg-gray-200 rounded-full transition-all"></div>
+                            <div id="strength-bar-2" class="h-1 w-full bg-gray-200 rounded-full transition-all"></div>
+                            <div id="strength-bar-3" class="h-1 w-full bg-gray-200 rounded-full transition-all"></div>
+                            <div id="strength-bar-4" class="h-1 w-full bg-gray-200 rounded-full transition-all"></div>
+                            <span id="strength-text" class="text-[10px] font-bold text-gray-400 ml-2 uppercase tracking-wide">Mật Khẩu</span>
                         </div>
                     </div>
 
-                    <div class="form-group mb-5">
-                        <input type="password" id="reg_pass_conf" class="floating-input peer" placeholder=" " required autocomplete="new-password" aria-label="Xác nhận mật khẩu">
+                    <div class="form-group mb-4">
+                        <input type="password" id="reg_pass_conf" class="floating-input peer w-full" placeholder=" " required>
                         <svg class="icon-premium w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                         <label for="reg_pass_conf" class="floating-label">Nhập lại Mật khẩu</label>
                     </div>
 
-                    <div class="flex items-start gap-3 mt-2 mb-8 bg-brand-cream/50 p-4 rounded-xl border border-brand-accent">
+                    <div class="flex items-start gap-3 p-3 bg-brand-cream/50 rounded-xl border border-brand-accent mb-6">
                         <input type="checkbox" id="terms_agree" class="custom-checkbox mt-0.5" required>
-                        <label for="terms_agree" class="text-xs font-medium text-brand-dark leading-relaxed cursor-pointer hover:text-brand-biscuit transition">
-                            Tôi đã đọc và đồng ý với <a th:href="@{/main/contact}" class="text-brand-orange hover:underline font-bold">Điều khoản Dịch vụ</a> và <a th:href="@{/main/contact}" class="text-brand-orange hover:underline font-bold">Chính sách Bảo mật</a> của nền tảng BOOKOM.
+                        <label for="terms_agree" class="text-xs font-medium text-brand-dark leading-relaxed cursor-pointer">
+                            Tôi đồng ý với <a th:href="@{/main/contact}" class="text-brand-orange font-bold">Điều khoản</a> & <a th:href="@{/main/contact}" class="text-brand-orange font-bold">Bảo mật</a>.
                         </label>
                     </div>
 
-                    <label for="route-reg-2" class="btn-primary mt-auto text-center cursor-pointer group focus:ring-4 focus:ring-brand-accent/30 hover:scale-[1.02]" role="button" tabindex="0" aria-label="Tiếp tục đăng ký">
+                    <label for="route-reg-2" class="btn-primary w-full text-center cursor-pointer justify-center hover:scale-[1.01]" role="button" tabindex="0">
                         Tiếp Tục
-                        <svg class="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </label>
                 </form>
             </div>
 
-            <div class="auth-view view-reg-2 flex flex-col h-full">
+            <div class="auth-view view-reg-2">
                 <div class="mb-4 flex items-center gap-3">
                     <label for="route-reg-1" class="w-8 h-8 bg-brand-cream rounded-full flex items-center justify-center text-brand-dark hover:bg-brand-biscuit hover:text-white transition cursor-pointer shadow-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
@@ -574,137 +528,125 @@
                     <h2 class="text-2xl font-black text-brand-dark">Hồ Sơ Cá Nhân</h2>
                 </div>
 
-                <form class="flex flex-col grow overflow-y-auto hide-scroll pb-4 px-1">
-
-                    <div class="flex flex-col items-center justify-center mb-8 mt-2">
+                <form class="w-full flex flex-col">
+                    <div class="flex flex-col items-center justify-center mb-6">
                         <input id="avatar-file-input" type="file" accept="image/*" class="hidden">
-                        <div id="avatar-upload-box" class="avatar-upload group">
+                        <div id="avatar-upload-box" class="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-brand-accent flex flex-col items-center justify-center relative cursor-pointer overflow-hidden group">
                             <img id="avatar-preview" class="w-full h-full object-cover hidden" alt="Avatar preview">
-                            <svg class="avatar-icon w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            <div class="avatar-overlay flex-col">
-                                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                                Tải ảnh
-                            </div>
+                            <svg class="avatar-icon w-8 h-8 text-gray-400 group-hover:text-brand-biscuit transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </div>
-                        <span class="text-xs font-bold text-gray-400 mt-3 uppercase tracking-widest">Ảnh đại diện (Tùy chọn)</span>
+                        <span class="text-[11px] font-bold text-gray-400 mt-2 uppercase tracking-widest">Ảnh đại diện (Tùy chọn)</span>
                     </div>
 
                     <div class="mb-6">
                         <label class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 block">Chọn Thể Loại Yêu Thích (Ít nhất 1)</label>
-                        <div id="favorite-categories-grid" class="grid grid-cols-3 gap-3"></div>
-                        <p id="favorite-categories-hint" class="text-[11px] text-gray-400 mt-2">Đang tải danh mục...</p>
+                        <div id="favorite-categories-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                        <p id="favorite-categories-hint" class="text-[11px] text-gray-400 mt-1">Đang tải danh mục...</p>
                     </div>
 
-                    <div class="flex items-start gap-3 mb-8 bg-brand-cream/50 p-4 rounded-xl border border-brand-accent">
-                        <input type="checkbox" id="terms_agree_2" class="custom-checkbox mt-0.5" required checked>
-                        <label for="terms_agree_2" class="text-xs font-medium text-gray-600 leading-relaxed cursor-pointer hover:text-brand-dark transition">
-                            Tôi đồng ý nhận email về các chương trình khuyến mãi, sự kiện và sách mới ra mắt từ hệ thống.
+                    <div class="flex items-start gap-3 p-3 bg-brand-cream/50 rounded-xl border border-brand-accent mb-6">
+                        <input type="checkbox" id="terms_agree_2" class="custom-checkbox mt-0.5" checked>
+                        <label for="terms_agree_2" class="text-xs font-medium text-gray-600">
+                            Tôi đồng ý nhận email thông báo cập nhật sách mới từ BOOKOM.
                         </label>
                     </div>
 
-                    <div class="flex gap-4 mt-auto">
-                        <label for="route-reg-1" class="w-1/3 flex items-center justify-center border-2 border-brand-accent text-brand-dark font-bold rounded-xl cursor-pointer hover:bg-gray-50 transition">Quay Lại</label>
-                        <button id="request-register-otp-btn" type="button" class="btn-primary w-2/3 cursor-pointer group focus:ring-4 focus:ring-brand-accent/30 hover:scale-[1.02]" aria-label="Hoàn tất đăng ký">Hoàn Tất <svg class="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button>
+                    <div class="flex gap-4">
+                        <label for="route-reg-1" class="w-1/3 flex items-center justify-center border-2 border-brand-accent text-brand-dark font-bold rounded-xl cursor-pointer hover:bg-gray-50 transition text-sm">Quay Lại</label>
+                        <button id="request-register-otp-btn" type="button" class="btn-primary w-2/3 cursor-pointer justify-center hover:scale-[1.01]">Hoàn Tất</button>
                     </div>
                 </form>
             </div>
 
-            <div class="auth-view view-reg-3 flex flex-col h-full items-center justify-center text-center">
-                <div class="w-24 h-24 bg-brand-peach/50 rounded-full flex items-center justify-center mb-8 shadow-inner text-brand-orange">
-                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            <div class="auth-view view-reg-3 items-center justify-center text-center">
+                <div class="w-16 h-16 bg-brand-peach/50 rounded-full flex items-center justify-center mb-4 text-brand-orange shadow-inner">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 </div>
-                <h2 class="text-3xl font-black text-brand-dark mb-4">Xác Thực Email</h2>
-                <p class="text-gray-500 font-medium mb-10 max-w-sm leading-relaxed">
-                    Mã OTP gồm 6 chữ số đã được gửi đến <span id="register-otp-email" class="font-bold text-brand-dark border-b border-brand-dark">your-email@example.com</span>.
+                <h2 class="text-2xl font-black text-brand-dark mb-2">Xác Thực Email</h2>
+                <p class="text-gray-500 font-medium text-xs mb-6 max-w-sm">
+                    Mã OTP gồm 6 chữ số đã được gửi đến: <br><span id="register-otp-email" class="font-bold text-brand-dark border-b border-brand-dark"></span>.
                 </p>
 
-                <div class="flex gap-4 mb-10 justify-center w-full">
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="otp-input register-otp-input" maxlength="1" placeholder="•" aria-label="OTP digit" autofocus>
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="otp-input register-otp-input" maxlength="1" placeholder="•" aria-label="OTP digit">
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="otp-input register-otp-input" maxlength="1" placeholder="•" aria-label="OTP digit">
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="otp-input register-otp-input" maxlength="1" placeholder="•" aria-label="OTP digit">
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="otp-input register-otp-input" maxlength="1" placeholder="•" aria-label="OTP digit">
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="otp-input register-otp-input" maxlength="1" placeholder="•" aria-label="OTP digit">
+                <div class="flex gap-2 mb-6 justify-center w-full">
+                    <input type="text" inputmode="numeric" class="otp-input register-otp-input" maxlength="1" placeholder="•">
+                    <input type="text" inputmode="numeric" class="otp-input register-otp-input" maxlength="1" placeholder="•">
+                    <input type="text" inputmode="numeric" class="otp-input register-otp-input" maxlength="1" placeholder="•">
+                    <input type="text" inputmode="numeric" class="otp-input register-otp-input" maxlength="1" placeholder="•">
+                    <input type="text" inputmode="numeric" class="otp-input register-otp-input" maxlength="1" placeholder="•">
+                    <input type="text" inputmode="numeric" class="otp-input register-otp-input" maxlength="1" placeholder="•">
                 </div>
 
-                <div class="text-sm font-bold text-gray-400 mb-10">
-                    Chưa nhận được mã? <button id="resend-register-otp-btn" type="button" class="text-brand-orange cursor-pointer hover:underline">Gửi lại OTP</button>
+                <div class="text-xs font-bold text-gray-400 mb-6">
+                    Chưa nhận được mã? <button id="resend-register-otp-btn" type="button" class="text-brand-orange hover:underline">Gửi lại OTP</button>
                 </div>
 
-                <button id="verify-register-otp-btn" type="button" class="btn-primary w-full max-w-sm bg-brand-orange hover:bg-orange-700 shadow-[0_10px_20px_rgba(234,88,12,0.3)] focus:ring-4 focus:ring-brand-accent/30" aria-label="Xác nhận tạo tài khoản">
+                <button id="verify-register-otp-btn" type="button" class="btn-primary w-full max-w-xs justify-center bg-brand-orange hover:bg-orange-700 shadow-md">
                     Xác Nhận Tạo Tài Khoản
                 </button>
-
-                <label for="route-reg-1" class="mt-8 text-sm font-bold text-gray-400 hover:text-brand-biscuit cursor-pointer transition-colors">Sửa lại Email</label>
+                <label for="route-reg-1" class="mt-4 text-xs font-bold text-gray-400 hover:text-brand-biscuit cursor-pointer">Sửa lại Email</label>
             </div>
 
-            <div class="auth-view view-forgot-1 flex flex-col h-full">
-                <label for="route-login" class="w-max text-gray-400 hover:text-brand-biscuit transition-colors flex items-center gap-2 text-sm font-bold uppercase tracking-widest cursor-pointer mb-10 group">
-                    <svg class="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <div class="auth-view view-forgot-1">
+                <label for="route-login" class="w-max text-gray-400 hover:text-brand-biscuit transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer mb-6 group">
+                    <svg class="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     Trở Về Đăng Nhập
                 </label>
 
-                <div class="mb-12">
-                    <h2 class="text-4xl font-black text-brand-dark mb-4 tracking-tight">Khôi Phục Mật Khẩu</h2>
-                    <p class="text-gray-500 font-medium text-lg leading-relaxed">
-                        Đừng lo lắng! Hãy nhập địa chỉ email đã đăng ký. Chúng tôi sẽ gửi mã OTP để bạn tạo mật khẩu mới an toàn.
+                <div class="mb-6">
+                    <h2 class="text-3xl font-black text-brand-dark mb-2 tracking-tight">Khôi Phục Mật Khẩu</h2>
+                    <p class="text-gray-500 font-medium text-sm leading-relaxed">
+                        Hãy nhập địa chỉ email đã đăng ký. Chúng tôi sẽ gửi mã OTP để bạn tạo mật khẩu mới an toàn.
                     </p>
                 </div>
 
-                <form class="flex flex-col grow">
-                    <div class="form-group mb-12">
-                            <input type="email" id="forgot_email" class="floating-input peer" placeholder=" " required autocomplete="email" aria-label="Email tài khoản">
+                <form class="w-full flex flex-col">
+                    <div class="form-group mb-6">
+                        <input type="email" id="forgot_email" class="floating-input peer w-full" placeholder=" " required>
                         <svg class="icon-premium w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                         <label for="forgot_email" class="floating-label">Email tài khoản</label>
                     </div>
 
-                    <label for="route-forgot-2" class="btn-primary mt-auto text-center cursor-pointer shadow-[0_10px_20px_rgba(209,156,116,0.3)] bg-brand-biscuit hover:bg-brand-dark focus:ring-4 focus:ring-brand-accent/30" role="button" tabindex="0" aria-label="Gửi mã xác thực OTP">
+                    <label for="route-forgot-2" class="btn-primary w-full text-center cursor-pointer justify-center bg-brand-biscuit hover:bg-brand-dark" role="button" tabindex="0">
                         Gửi Mã Xác Thực OTP
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </label>
                 </form>
             </div>
 
-            <div class="auth-view view-forgot-2 flex flex-col h-full">
-                <label for="route-forgot-1" class="w-max text-gray-400 hover:text-brand-biscuit transition-colors flex items-center gap-2 text-sm font-bold uppercase tracking-widest cursor-pointer mb-8 group">
-                    <svg class="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <div class="auth-view view-forgot-2">
+                <label for="route-forgot-1" class="w-max text-gray-400 hover:text-brand-biscuit transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer mb-6 group">
+                    <svg class="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     Đổi Email Khác
                 </label>
 
-                <div class="mb-10">
-                    <h2 class="text-3xl font-black text-brand-dark mb-2">Tạo Mật Khẩu Mới</h2>
-                    <p class="text-gray-500 font-medium">Mã OTP đã được gửi đến hộp thư của bạn.</p>
+                <div class="mb-4">
+                    <h2 class="text-2xl font-black text-brand-dark mb-1">Tạo Mật Khẩu Mới</h2>
+                    <p class="text-gray-500 font-medium text-xs">Mã OTP đã được gửi đến hộp thư của bạn.</p>
                 </div>
 
-                <form class="flex flex-col grow">
-                    <div class="mb-8 flex flex-col sm:flex-row sm:justify-between items-center bg-brand-cream border border-brand-accent p-5 rounded-xl shadow-inner gap-4">
-                        <span class="text-sm font-bold text-brand-dark uppercase tracking-widest">Mã OTP:</span>
-                        <div class="flex gap-3">
-                            <input type="number" class="otp-input !w-12 !h-14" maxlength="1" autofocus placeholder="•">
-                            <input type="number" class="otp-input !w-12 !h-14" maxlength="1" placeholder="•">
-                            <input type="number" class="otp-input !w-12 !h-14" maxlength="1" placeholder="•">
-                            <input type="number" class="otp-input !w-12 !h-14" maxlength="1" placeholder="•">
+                <form class="w-full flex flex-col">
+                    <div class="mb-4 flex flex-col sm:flex-row justify-between items-center bg-brand-cream border border-brand-accent p-4 rounded-xl gap-3">
+                        <span class="text-xs font-bold text-brand-dark uppercase tracking-widest">Mã OTP:</span>
+                        <div class="flex gap-2">
+                            <input type="text" class="otp-input !w-10 !h-12 text-center" maxlength="1" placeholder="•">
+                            <input type="text" class="otp-input !w-10 !h-12 text-center" maxlength="1" placeholder="•">
+                            <input type="text" class="otp-input !w-10 !h-12 text-center" maxlength="1" placeholder="•">
+                            <input type="text" class="otp-input !w-10 !h-12 text-center" maxlength="1" placeholder="•">
                         </div>
                     </div>
 
-                    <div class="form-group mb-5">
-                        <input type="password" id="reset_pass" class="floating-input peer" placeholder=" " required>
+                    <div class="form-group mb-4">
+                        <input type="password" id="reset_pass" class="floating-input peer w-full" placeholder=" " required>
                         <svg class="icon-premium w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                         <label for="reset_pass" class="floating-label">Mật khẩu mới</label>
-                        <button type="button" class="toggle-password absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-brand-biscuit transition-colors cursor-pointer outline-none bg-white p-1">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                        </button>
-                    </div>
-                    <div class="form-group mb-10">
-                        <input type="password" id="reset_pass_conf" class="floating-input peer" placeholder=" " required>
-                        <svg class="icon-premium w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                        <label for="reset_pass_conf" class="floating-label">Xác nhận mật khẩu mới</label>
-                        <button type="button" class="toggle-password absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-brand-biscuit transition-colors cursor-pointer outline-none bg-white p-1">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                        </button>
                     </div>
 
-                    <label for="route-login" class="btn-primary mt-auto text-center cursor-pointer">
+                    <div class="form-group mb-6">
+                        <input type="password" id="reset_pass_conf" class="floating-input peer w-full" placeholder=" " required>
+                        <svg class="icon-premium w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <label for="reset_pass_conf" class="floating-label">Xác nhận mật khẩu mới</label>
+                    </div>
+
+                    <label for="route-login" class="btn-primary w-full text-center cursor-pointer justify-center">
                         Cập Nhật & Đăng Nhập
                     </label>
                 </form>
@@ -721,359 +663,274 @@
 <script src="https://unpkg.com/flowbite@1.7.0/dist/flowbite.bundle.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Auto-cycle carousel
-        let currentSlide = 1;
-        const totalSlides = 4;
-        setInterval(() => {
-            currentSlide = (currentSlide % totalSlides) + 1;
-            const radio = document.getElementById(`slide-${currentSlide}`);
-            if (radio) radio.checked = true;
-        }, 5000); // Change slide every 5 seconds
-
-        // Ripple effect for buttons
-        const buttons = document.querySelectorAll('.btn-primary');
-        buttons.forEach(button => {
-            button.addEventListener('click', function (e) {
-                const rect = button.getBoundingClientRect();
-                const ripple = document.createElement('span');
-                const diameter = Math.max(button.clientWidth, button.clientHeight);
-
-                ripple.className = 'ripple';
-                ripple.style.width = ripple.style.height = `${diameter}px`;
-                ripple.style.left = `${e.clientX - rect.left - diameter / 2}px`;
-                ripple.style.top = `${e.clientY - rect.top - diameter / 2}px`;
-
-                // Check if there's a .ripple element and remove it
-                const existingRipple = button.querySelector('.ripple');
-                if (existingRipple) {
-                    existingRipple.remove();
-                }
-
-                button.appendChild(ripple);
-            });
-        });
-
-
-        const toggleBtns = document.querySelectorAll('.toggle-password');
-        toggleBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const input = this.parentElement.querySelector('input');
-                const svg = this.querySelector('svg');
-                if (input.type === 'password') {
-                    input.type = 'text';
-                    svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
-                    this.classList.add('text-brand-orange');
-                } else {
-                    input.type = 'password';
-                    svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
-                    this.classList.remove('text-brand-orange');
-                }
-            });
-        });
-
-        // Đo độ mạnh mật khẩu
-        const regPass = document.getElementById('reg_pass');
-        const bars = [document.getElementById('strength-bar-1'), document.getElementById('strength-bar-2'), document.getElementById('strength-bar-3'), document.getElementById('strength-bar-4')];
-        const strengthText = document.getElementById('strength-text');
-
-        if(regPass) {
-            regPass.addEventListener('input', (e) => {
-                // dùng biểu thức chính quy để quy định password
-                const val = e.target.value;
-                let score = 0;
-                if (val.length >= 8) score++;
-                if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
-                if (/\d/.test(val)) score++;
-                if (/[^A-Za-z0-9]/.test(val)) score++;
-
-                bars.forEach(bar => bar.className = 'h-1.5 w-full bg-gray-200 rounded-full transition-all duration-300');
-
-                if (val.length === 0) {
-                    strengthText.innerText = 'Mật khẩu';
-                    strengthText.className = 'text-[10px] font-bold text-gray-400 ml-2 uppercase tracking-wide whitespace-nowrap w-16 text-center';
-                    return;
-                }
-
-                if (score <= 1) {
-                    bars[0].classList.replace('bg-gray-200', 'bg-brand-red');
-                    strengthText.innerText = 'Yếu';
-                    strengthText.className = 'text-[10px] font-bold text-brand-red ml-2 uppercase tracking-wide whitespace-nowrap w-16 text-center';
-                } else if (score === 2) {
-                    bars[0].classList.replace('bg-gray-200', 'bg-brand-orange');
-                    bars[1].classList.replace('bg-gray-200', 'bg-brand-orange');
-                    strengthText.innerText = 'Trung Bình';
-                    strengthText.className = 'text-[10px] font-bold text-brand-orange ml-2 uppercase tracking-wide whitespace-nowrap w-16 text-center';
-                } else if (score >= 3) {
-                    bars.forEach((bar, index) => { if(index <= score -1) bar.classList.replace('bg-gray-200', 'bg-brand-green') });
-                    strengthText.innerText = score === 3 ? 'Khá' : 'Rất Mạnh';
-                    strengthText.className = 'text-[10px] font-bold text-brand-green ml-2 uppercase tracking-wide whitespace-nowrap w-16 text-center';
-                }
-            });
-        }
-
-        const otpInputs = document.querySelectorAll('.otp-input');
-        otpInputs.forEach((input, index) => {
-            input.addEventListener('keyup', (e) => {
-                if (e.target.value.length === 1 && index < otpInputs.length - 1) {
-                    otpInputs[index + 1].focus();
-                }
-            });
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
-                    otpInputs[index - 1].focus();
-                }
-            });
-        });
-
-        const routeReg3 = document.getElementById('route-reg-3');
-        const registerOtpEmail = document.getElementById('register-otp-email');
-        const registerOtpInputs = document.querySelectorAll('.register-otp-input');
-        const verifyRegisterOtpBtn = document.getElementById('verify-register-otp-btn');
-        const resendRegisterOtpBtn = document.getElementById('resend-register-otp-btn');
-        const requestRegisterOtpBtn = document.getElementById('request-register-otp-btn');
-        const favoriteCategoriesGrid = document.getElementById('favorite-categories-grid');
-        const favoriteCategoriesHint = document.getElementById('favorite-categories-hint');
-        const avatarUploadBox = document.getElementById('avatar-upload-box');
-        const avatarFileInput = document.getElementById('avatar-file-input');
-        const avatarPreview = document.getElementById('avatar-preview');
-
-        let pendingRegister = null;
-
-        const getAvatarPayload = () => {
-            const avatar = localStorage.getItem('registerAvatarPreview');
-            return avatar && avatar.startsWith('data:image/') ? avatar : null;
-        };
-
-        const getSelectedCategoryIds = () => {
-            return Array.from(document.querySelectorAll('input[name="favoriteCategory"]:checked'))
-                .map((el) => Number(el.value));
-        };
-
-        const loadFavoriteCategories = async () => {
-            if (!favoriteCategoriesGrid) {
-                return;
-            }
-            try {
-                const result = await ApiService.Category.getAll();
-                const categories = Array.isArray(result) ? result : [];
-                if (categories.length === 0) {
-                    favoriteCategoriesHint.textContent = 'Chua co danh muc de chon.';
-                    favoriteCategoriesGrid.innerHTML = '';
-                    return;
-                }
-
-                favoriteCategoriesGrid.innerHTML = categories.map((category, index) => `
-                    <label class="relative">
-                        <input type="checkbox" name="favoriteCategory" value="${category.id}" class="genre-input" ${index === 0 ? 'checked' : ''}>
-                        <div class="genre-card">
-                            <svg class="genre-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                            <span class="genre-title">${category.name}</span>
-                        </div>
-                    </label>
-                `).join('');
-                favoriteCategoriesHint.textContent = 'Danh muc nay se duoc dung de goi y san pham.';
-            } catch (error) {
-                favoriteCategoriesHint.textContent = 'Khong tai duoc danh muc. Vui long thu lai.';
-                favoriteCategoriesGrid.innerHTML = '';
-            }
-        };
-
-        if (avatarUploadBox && avatarFileInput && avatarPreview) {
-            avatarUploadBox.addEventListener('click', () => avatarFileInput.click());
-            avatarFileInput.addEventListener('change', () => {
-                const file = avatarFileInput.files?.[0];
-                if (!file) return;
-                if (!file.type.startsWith('image/')) {
-                    Swal.fire({ icon: 'warning', title: 'Sai dinh dang', text: 'Vui long chon file anh hop le.' });
-                    return;
-                }
-                if (file.size > 1_500_000) {
-                    Swal.fire({ icon: 'warning', title: 'Anh qua lon', text: 'Vui long chon anh nho hon 1.5MB.' });
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = () => {
-                    avatarPreview.src = reader.result;
-                    avatarPreview.classList.remove('hidden');
-                    const icon = avatarUploadBox.querySelector('.avatar-icon');
-                    if (icon) {
-                        icon.classList.add('hidden');
-                    }
-                    localStorage.setItem('registerAvatarPreview', String(reader.result));
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        const requestRegisterOtp = async (email) => {
-            const response = await ApiService.Auth.requestOtp(email);
-            return response; // Return response để check OTP
-        };
-
-        const verifyRegisterOtp = async (email, otp) => {
-            await ApiService.Auth.verifyOtp(email, otp);
-        };
-
-        loadFavoriteCategories();
-
-        // ==========================================================
-        // PHẦN 2: LOGIC GỌI API BẰNG APISERVICE
-        // ==========================================================
-
-        // 1. XỬ LÝ ĐĂNG NHẬP
-        const loginBtn = document.querySelector('.view-login .btn-primary');
-        loginBtn.addEventListener('click', async (e) => {
-            e.preventDefault(); // Ngăn trình duyệt tự load lại trang
-
-            // Lấy giá trị từ input
-            const username = document.getElementById('log_email').value;
-            const password = document.getElementById('log_pass').value;
-
-            if (!username || !password) {
-                Swal.fire({ icon: 'warning', title: 'Oops...', text: 'Vui lòng điền đầy đủ thông tin!'});
+        try {
+            if (typeof ApiService === 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Thiếu ApiService', text: 'Tập tin /js/api-service.js chưa được load hoặc có lỗi.' });
                 return;
             }
 
-            // Gọi API login JWT để lưu token/user cho các luồng cần auth (cart/order)
-            try {
-                const data = await ApiService.Auth.loginJwt(username, password);
-                if (data?.accessToken) {
-                    localStorage.setItem('accessToken', data.accessToken);
-                }
-                if (data?.userId) {
-                    localStorage.setItem('userId', String(data.userId));
-                }
-                if (data?.role) {
-                    localStorage.setItem('userRole', data.role);
-                }
+            // Auto-cycle carousel
+            let currentSlide = 1;
+            const totalSlides = 4;
+            setInterval(() => {
+                currentSlide = (currentSlide % totalSlides) + 1;
+                const radio = document.getElementById(`slide-${currentSlide}`);
+                if (radio) radio.checked = true;
+            }, 5000);
 
-                Swal.fire({ icon: 'success', title: 'Tuyệt vời!', text: 'Đăng nhập thành công!', timer: 1500, showConfirmButton: false })
-                    .then(() => {
-                        // Chuyển hướng trang tùy theo role (mặc định buyer)
-                        if (data?.role === 'ADMIN') {
-                            window.location.href = "/admin";
-                        } else if (data?.role === 'SELLER') {
-                            window.location.href = "/seller/dashboard";
-                        } else {
-                            window.location.href = "/";
-                        }
-                    });
-            } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Đăng nhập thất bại', text: error?.message || 'Lỗi kết nối Server' });
-            }
-        });
+            // Ripple effect for buttons
+            const buttons = document.querySelectorAll('.btn-primary');
+            buttons.forEach(button => {
+                button.addEventListener('click', function (e) {
+                    const rect = button.getBoundingClientRect();
+                    const ripple = document.createElement('span');
+                    const diameter = Math.max(button.clientWidth, button.clientHeight);
 
-        // 2. XỬ LÝ ĐĂNG KÝ + OTP EMAIL
-        requestRegisterOtpBtn?.addEventListener('click', async (e) => {
-            // Lấy email từ bước 1 làm username
-            const email = document.getElementById('reg_email').value;
-            const password = document.getElementById('reg_pass').value;
-            const passConfirm = document.getElementById('reg_pass_conf').value;
-            const favoriteCategoryIds = getSelectedCategoryIds();
-            const avatarUrl = getAvatarPayload();
+                    ripple.className = 'ripple';
+                    ripple.style.width = ripple.style.height = `${diameter}px`;
+                    ripple.style.left = `${e.clientX - rect.left - diameter / 2}px`;
+                    ripple.style.top = `${e.clientY - rect.top - diameter / 2}px`;
 
-            // Kiểm tra sơ bộ
-            if(password !== passConfirm) {
-                Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Mật khẩu xác nhận không khớp!'});
-                return;
-            }
-
-            // Chỉ xác thực yêu cầu chọn thể loại nếu hệ thống thực sự có thể loại
-            if (favoriteCategoriesGrid && favoriteCategoriesGrid.innerHTML.trim() !== '') {
-                if (favoriteCategoryIds.length === 0) {
-                    Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Vui lòng chọn ít nhất 1 thể loại bạn yêu thích để chúng tôi gợi ý sách tốt hơn.' });
-                    return;
-                }
-            }
-
-            try {
-                const response = await requestRegisterOtp(email);
-                pendingRegister = { email, password, favoriteCategoryIds, avatarUrl };
-                localStorage.setItem('favoriteCategoryIds', JSON.stringify(favoriteCategoryIds));
-                if (registerOtpEmail) {
-                    registerOtpEmail.textContent = email;
-                }
-                if (routeReg3) {
-                    routeReg3.checked = true;
-                }
-                
-                // Hiển thị OTP nếu SMTP không config
-                if (response?.otp) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: '[DEV MODE] OTP trong UI',
-                        text: `Ma OTP: ${response.otp}\\n\\n${response.message}`,
-                        confirmButtonText: 'OK'
-                    });
-                } else {
-                    Swal.fire({ icon: 'success', title: 'OTP da gui', text: 'Vui long nhap ma OTP trong email de hoan tat dang ky.' });
-                }
-            } catch (error) {
-                const message = typeof error?.data === 'string' ? error.data : (error?.message || 'Loi ket noi Server');
-                Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: message });
-            }
-        });
-
-        resendRegisterOtpBtn?.addEventListener('click', async () => {
-            if (!pendingRegister?.email) {
-                Swal.fire({ icon: 'warning', title: 'Chua co email', text: 'Vui long quay lai buoc truoc de nhap email.' });
-                return;
-            }
-            try {
-                const response = await requestRegisterOtp(pendingRegister.email);
-                
-                // Hiển thị OTP nếu SMTP không config
-                if (response?.otp) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: '[DEV MODE] OTP trong UI',
-                        text: `Ma OTP: ${response.otp}\\n\\n${response.message}`,
-                        confirmButtonText: 'OK'
-                    });
-                } else {
-                    Swal.fire({ icon: 'success', title: 'Da gui lai OTP', text: 'Vui long kiem tra email cua ban.' });
-                }
-            } catch (error) {
-                const message = typeof error?.data === 'string' ? error.data : (error?.message || 'Loi ket noi Server');
-                Swal.fire({ icon: 'error', title: 'Gui OTP that bai', text: message });
-            }
-        });
-
-        verifyRegisterOtpBtn?.addEventListener('click', async () => {
-            if (!pendingRegister?.email || !pendingRegister?.password) {
-                Swal.fire({ icon: 'warning', title: 'Thieu du lieu dang ky', text: 'Vui long thuc hien lai buoc dang ky.' });
-                return;
-            }
-
-            const otp = Array.from(registerOtpInputs).map((i) => i.value).join('');
-            if (otp.length < 4) {
-                Swal.fire({ icon: 'warning', title: 'OTP khong hop le', text: 'Vui long nhap day du ma OTP.' });
-                return;
-            }
-
-            try {
-                await verifyRegisterOtp(pendingRegister.email, otp);
-                await ApiService.Auth.register(
-                    pendingRegister.email,
-                    pendingRegister.password,
-                    pendingRegister.avatarUrl,
-                    pendingRegister.favoriteCategoryIds
-                );
-                Swal.fire({ icon: 'success', title: 'Dang ky thanh cong', text: 'Ban co the dang nhap ngay bay gio.' })
-                    .then(() => {
-                        document.getElementById('route-login').checked = true;
-                    });
-                pendingRegister = null;
-                localStorage.removeItem('registerAvatarPreview');
-                localStorage.removeItem('favoriteCategoryIds');
-                registerOtpInputs.forEach((input) => {
-                    input.value = '';
+                    const existingRipple = button.querySelector('.ripple');
+                    if (existingRipple) { existingRipple.remove(); }
+                    button.appendChild(ripple);
                 });
-            } catch (error) {
-                const message = typeof error?.data === 'string' ? error.data : (error?.message || 'Loi ket noi Server');
-                Swal.fire({ icon: 'error', title: 'Xac thuc that bai', text: message });
+            });
+
+            // Toggle show/hide password
+            const toggleBtns = document.querySelectorAll('.toggle-password');
+            toggleBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const input = this.parentElement.querySelector('input');
+                    const svg = this.querySelector('svg');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
+                        this.classList.add('text-brand-orange');
+                    } else {
+                        input.type = 'password';
+                        svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
+                        this.classList.remove('text-brand-orange');
+                    }
+                });
+            });
+
+            // Password strength validation
+            const regPass = document.getElementById('reg_pass');
+            const bars = [document.getElementById('strength-bar-1'), document.getElementById('strength-bar-2'), document.getElementById('strength-bar-3'), document.getElementById('strength-bar-4')];
+            const strengthText = document.getElementById('strength-text');
+
+            if(regPass) {
+                regPass.addEventListener('input', (e) => {
+                    const val = e.target.value;
+                    let score = 0;
+                    if (val.length >= 8) score++;
+                    if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+                    if (/\d/.test(val)) score++;
+                    if (/[^A-Za-z0-9]/.test(val)) score++;
+
+                    bars.forEach(bar => bar.className = 'h-1 w-full bg-gray-200 rounded-full transition-all');
+
+                    if (val.length === 0) {
+                        strengthText.innerText = 'Mật khẩu';
+                        strengthText.className = 'text-[10px] font-bold text-gray-400 ml-2 uppercase';
+                        return;
+                    }
+
+                    if (score <= 1) {
+                        bars[0].classList.replace('bg-gray-200', 'bg-brand-red');
+                        strengthText.innerText = 'Yếu';
+                        strengthText.className = 'text-[10px] font-bold text-brand-red ml-2 uppercase';
+                    } else if (score === 2) {
+                        bars[0].classList.replace('bg-gray-200', 'bg-brand-orange');
+                        bars[1].classList.replace('bg-gray-200', 'bg-brand-orange');
+                        strengthText.innerText = 'Trung Bình';
+                        strengthText.className = 'text-[10px] font-bold text-brand-orange ml-2 uppercase';
+                    } else if (score >= 3) {
+                        bars.forEach((bar, index) => { if(index <= score - 1) bar.classList.replace('bg-gray-200', 'bg-brand-green') });
+                        strengthText.innerText = score === 3 ? 'Khá' : 'Rất Mạnh';
+                        strengthText.className = 'text-[10px] font-bold text-brand-green ml-2 uppercase';
+                    }
+                });
             }
-        });
+
+            // OTP inputs handler
+            const otpInputs = document.querySelectorAll('.otp-input');
+            otpInputs.forEach((input, index) => {
+                input.addEventListener('keyup', (e) => {
+                    if (e.target.value.length === 1 && index < otpInputs.length - 1) {
+                        otpInputs[index + 1].focus();
+                    }
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
+                        otpInputs[index - 1].focus();
+                    }
+                });
+            });
+
+            // Tab Fallback click event mapping
+            const mainTabs = document.querySelectorAll('.main-auth-tabs label[for]');
+            mainTabs.forEach(lbl => {
+                const target = lbl.getAttribute('for');
+                if (!target) return;
+                lbl.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const radio = document.getElementById(target);
+                    if (radio) radio.checked = true;
+                });
+            });
+
+            // API Service variables Mapping
+            const routeReg3 = document.getElementById('route-reg-3');
+            const registerOtpEmail = document.getElementById('register-otp-email');
+            const registerOtpInputs = document.querySelectorAll('.register-otp-input');
+            const verifyRegisterOtpBtn = document.getElementById('verify-register-otp-btn');
+            const resendRegisterOtpBtn = document.getElementById('resend-register-otp-btn');
+            const requestRegisterOtpBtn = document.getElementById('request-register-otp-btn');
+            const favoriteCategoriesGrid = document.getElementById('favorite-categories-grid');
+            const favoriteCategoriesHint = document.getElementById('favorite-categories-hint');
+            const avatarUploadBox = document.getElementById('avatar-upload-box');
+            const avatarFileInput = document.getElementById('avatar-file-input');
+            const avatarPreview = document.getElementById('avatar-preview');
+
+            let pendingRegister = null;
+
+            const getAvatarPayload = () => {
+                const avatar = localStorage.getItem('registerAvatarPreview');
+                return avatar && avatar.startsWith('data:image/') ? avatar : null;
+            };
+
+            const getSelectedCategoryIds = () => {
+                return Array.from(document.querySelectorAll('input[name="favoriteCategory"]:checked')).map(el => Number(el.value));
+            };
+
+            const loadFavoriteCategories = async () => {
+                if (!favoriteCategoriesGrid) return;
+                try {
+                    const result = await ApiService.Category.getAll();
+                    const categories = Array.isArray(result) ? result : [];
+                    if (categories.length === 0) {
+                        favoriteCategoriesHint.textContent = 'Chưa có danh mục để chọn.';
+                        return;
+                    }
+
+                    favoriteCategoriesGrid.innerHTML = categories.map((category, index) => `
+                        <label class="relative flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-brand-cream border border-transparent hover:border-brand-accent transition">
+                            <input type="checkbox" name="favoriteCategory" value="${category.id}" class="custom-checkbox" ${index === 0 ? 'checked' : ''}>
+                            <span class="text-xs font-semibold text-brand-dark">${category.name}</span>
+                        </label>
+                    `).join('');
+                    favoriteCategoriesHint.textContent = 'Danh mục dùng để gợi ý sản phẩm.';
+                } catch (error) {
+                    favoriteCategoriesHint.textContent = 'Không tải được danh mục.';
+                }
+            };
+
+            if (avatarUploadBox && avatarFileInput) {
+                avatarUploadBox.addEventListener('click', () => avatarFileInput.click());
+                avatarFileInput.addEventListener('change', () => {
+                    const file = avatarFileInput.files?.[0];
+                    if (!file) return;
+                    if (file.size > 1500000) {
+                        Swal.fire({ icon: 'warning', title: 'Ảnh quá lớn', text: 'Vui lòng chọn ảnh nhỏ hơn 1.5MB.' });
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        if(avatarPreview) {
+                            avatarPreview.src = reader.result;
+                            avatarPreview.classList.remove('hidden');
+                        }
+                        const icon = avatarUploadBox.querySelector('.avatar-icon');
+                        if (icon) icon.classList.add('hidden');
+                        localStorage.setItem('registerAvatarPreview', String(reader.result));
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            loadFavoriteCategories();
+
+            // LOGIN LOGIC
+            const loginBtn = document.querySelector('.view-login .btn-primary');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const username = document.getElementById('log_email')?.value;
+                    const password = document.getElementById('log_pass')?.value;
+
+                    if (!username || !password) {
+                        Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Vui lòng điền đầy đủ thông tin!'});
+                        return;
+                    }
+
+                    try {
+                        const data = await ApiService.Auth.loginJwt(username, password);
+                        if (data?.accessToken) localStorage.setItem('accessToken', data.accessToken);
+                        if (data?.userId) localStorage.setItem('userId', String(data.userId));
+                        if (data?.role) localStorage.setItem('userRole', data.role);
+
+                        Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đăng nhập thành công!', timer: 1200, showConfirmButton: false })
+                            .then(() => {
+                                if (data?.role === 'ADMIN') window.location.href = "/admin";
+                                else if (data?.role === 'SELLER') window.location.href = "/seller/dashboard";
+                                else window.location.href = "/";
+                            });
+                    } catch (error) {
+                        Swal.fire({ icon: 'error', title: 'Thất bại', text: error?.message || 'Sai tài khoản hoặc mật khẩu' });
+                    }
+                });
+            }
+
+            // REGISTER FLOW
+            requestRegisterOtpBtn?.addEventListener('click', async (e) => {
+                const email = document.getElementById('reg_email').value;
+                const password = document.getElementById('reg_pass').value;
+                const passConfirm = document.getElementById('reg_pass_conf').value;
+                const favoriteCategoryIds = getSelectedCategoryIds();
+                const avatarUrl = getAvatarPayload();
+
+                if(password !== passConfirm) {
+                    Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Mật khẩu xác nhận không khớp!'});
+                    return;
+                }
+
+                try {
+                    const response = await ApiService.Auth.requestOtp(email);
+                    pendingRegister = { email, password, favoriteCategoryIds, avatarUrl };
+                    if (registerOtpEmail) registerOtpEmail.textContent = email;
+                    if (routeReg3) routeReg3.checked = true;
+                    
+                    if (response?.otp) {
+                        Swal.fire({ icon: 'warning', title: '[DEV MODE] OTP', text: `Mã OTP: ${response.otp}` });
+                    } else {
+                        Swal.fire({ icon: 'success', title: 'Đã gửi OTP', text: 'Kiểm tra hòm thư email của bạn.' });
+                    }
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Lỗi gửi OTP', text: error?.message || 'Có lỗi xảy ra' });
+                }
+            });
+
+            verifyRegisterOtpBtn?.addEventListener('click', async () => {
+                if (!pendingRegister) return;
+                const otp = Array.from(registerOtpInputs).map(i => i.value).join('');
+                try {
+                    await ApiService.Auth.verifyOtp(pendingRegister.email, otp);
+                    await ApiService.Auth.register(pendingRegister.email, pendingRegister.password, pendingRegister.avatarUrl, pendingRegister.favoriteCategoryIds);
+                    
+                    Swal.fire({ icon: 'success', title: 'Chúc mừng', text: 'Đăng ký thành công!' })
+                        .then(() => {
+                            document.getElementById('route-login').checked = true;
+                        });
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Lỗi xác thực', text: error?.message || 'OTP không chính xác' });
+                }
+            });
+
+        } catch (err) {
+            console.error(err);
+        }
     });
 </script>
 </body>

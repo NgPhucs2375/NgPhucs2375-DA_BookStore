@@ -45,10 +45,10 @@ public class UserAddress {
     @Column(length = 100)
     private String ward;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String district;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String province;
 
     @Column(length = 20)

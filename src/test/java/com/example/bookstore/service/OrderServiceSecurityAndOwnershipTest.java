@@ -36,6 +36,10 @@ class OrderServiceSecurityAndOwnershipTest {
     @Mock
     private SubOrderRepository subOrderRepository;
 
+    // 1. Thêm Mock cho CouponService ở đây
+    @Mock
+    private CouponService couponService;
+
     @Mock
     private NotificationService notificationService;
 
@@ -43,24 +47,32 @@ class OrderServiceSecurityAndOwnershipTest {
 
     @BeforeEach
     void setUp() {
-        orderService = new OrderService(userRepository, cartRepository, orderRepository, subOrderRepository, notificationService);
+        // 2. Cập nhật Constructor: thêm couponService vào vị trí số 5
+        orderService = new OrderService(
+                userRepository,
+                cartRepository,
+                orderRepository,
+                subOrderRepository,
+                couponService,
+                notificationService
+        );
     }
 
     @Test
     void getCurrentBuyerOrders_shouldReturnOrdersForBuyer() {
         User buyer = User.builder()
-            .id(2L)
-            .username("buyer")
-            .passwordHash("x")
-            .role(UserRole.BUYER)
-            .build();
+                .id(2L)
+                .username("buyer")
+                .passwordHash("x")
+                .role(UserRole.BUYER)
+                .build();
 
         Order order = Order.builder()
-            .id(10L)
-            .buyer(buyer)
-            .totalAmount(100000.0)
-            .shippingAddress("HCM")
-            .build();
+                .id(10L)
+                .buyer(buyer)
+                .totalAmount(100000.0)
+                .shippingAddress("HCM")
+                .build();
 
         when(userRepository.findById(2L)).thenReturn(Optional.of(buyer));
         when(orderRepository.findByBuyerOrderByCreatedAtDesc(buyer)).thenReturn(java.util.List.of(order));
@@ -71,20 +83,20 @@ class OrderServiceSecurityAndOwnershipTest {
     @Test
     void updateSubOrderStatusForSeller_shouldUpdateStatus() {
         User owner = User.builder()
-            .id(33L)
-            .username("seller-ok")
-            .passwordHash("x")
-            .role(UserRole.SELLER)
-            .shopName("Shop OK")
-            .build();
+                .id(33L)
+                .username("seller-ok")
+                .passwordHash("x")
+                .role(UserRole.SELLER)
+                .shopName("Shop OK")
+                .build();
 
         SubOrder subOrder = SubOrder.builder()
-            .id(200L)
-            .seller(owner)
-            .status(OrderStatus.PROCESSING)
-            .subTotal(210000.0)
-            .parentOrder(Order.builder().id(2L).build())
-            .build();
+                .id(200L)
+                .seller(owner)
+                .status(OrderStatus.PROCESSING)
+                .subTotal(210000.0)
+                .parentOrder(Order.builder().id(2L).build())
+                .build();
 
         when(userRepository.findById(33L)).thenReturn(Optional.of(owner));
         when(subOrderRepository.findById(200L)).thenReturn(Optional.of(subOrder));
@@ -100,27 +112,27 @@ class OrderServiceSecurityAndOwnershipTest {
     @Test
     void cancelCurrentBuyerOrder_shouldCancelSubOrdersWhenOrderIsPending() {
         User buyer = User.builder()
-            .id(44L)
-            .username("buyer-ok")
-            .passwordHash("x")
-            .role(UserRole.BUYER)
-            .build();
+                .id(44L)
+                .username("buyer-ok")
+                .passwordHash("x")
+                .role(UserRole.BUYER)
+                .build();
 
         SubOrder subOrder = SubOrder.builder()
-            .id(301L)
-            .status(OrderStatus.PENDING_PAYMENT)
-            .seller(User.builder().id(55L).username("seller").passwordHash("x").role(UserRole.SELLER).build())
-            .subTotal(45000.0)
-            .parentOrder(Order.builder().id(9L).buyer(buyer).build())
-            .build();
+                .id(301L)
+                .status(OrderStatus.PENDING_PAYMENT)
+                .seller(User.builder().id(55L).username("seller").passwordHash("x").role(UserRole.SELLER).build())
+                .subTotal(45000.0)
+                .parentOrder(Order.builder().id(9L).buyer(buyer).build())
+                .build();
 
         Order order = Order.builder()
-            .id(9L)
-            .buyer(buyer)
-            .totalAmount(45000.0)
-            .shippingAddress("Hanoi")
-            .subOrders(java.util.List.of(subOrder))
-            .build();
+                .id(9L)
+                .buyer(buyer)
+                .totalAmount(45000.0)
+                .shippingAddress("Hanoi")
+                .subOrders(java.util.List.of(subOrder))
+                .build();
 
         when(userRepository.findById(44L)).thenReturn(Optional.of(buyer));
         when(orderRepository.findById(9L)).thenReturn(Optional.of(order));

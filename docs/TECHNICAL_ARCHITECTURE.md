@@ -657,3 +657,20 @@ A: Use fetch joins in repository queries, add paging, review lazy-loaded associa
 **Last Updated**: May 16, 2026  
 **Version**: 1.5 (Post-Recommendation Refactor)  
 **Next Review**: August 2026
+
+---
+
+## Recent Merge: d769cfe (2026-05-17)
+
+Overview: The `Mar1cc` merge standardizes JWT principal extraction and updates security-related components across the codebase. This affects authentication, method-level authorization, and several admin controllers.
+
+Architectural impact:
+- `JwtAuthenticationFilter` and `SecurityConfig` updated to consistently populate a typed authenticated principal (`JwtAuthenticatedPrincipal`) with `userId`, `roles`, and `sellerId` claims.
+- Controller and service layers now rely on the authenticated principal for identity/ownership checks; legacy request-attribute patterns were removed.
+- Ensure any integration points (API clients, authentication service, tokens) include the expected claims to avoid authorization failures.
+
+Rollout recommendations:
+- Deploy authentication provider and application code in the same release window.
+- Run the security regression suite and perform smoke tests on admin and principal-based endpoints.
+- Monitor `401`/`403` metrics and audit logs for denials immediately after deployment.
+

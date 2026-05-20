@@ -769,3 +769,22 @@ WITH REPLACE
 **Last Updated**: May 16, 2026  
 **Next Review**: August 2026  
 **Owner**: DevOps / Infrastructure Team
+
+---
+
+## Recent Merge: d769cfe (2026-05-17) - JWT Principal & Security Updates
+
+Summary: The `Mar1cc` branch was merged to standardize how the application extracts the authenticated principal from JWT tokens and to update security-related controllers. Apply the following rollout checklist when deploying these changes.
+
+Deployment Checklist (merge-specific):
+- [ ] Ensure JWT tokens issued by auth services include `userId`, `roles`, and `sellerId` claims.
+- [ ] Deploy `JwtAuthenticationFilter` and `SecurityConfig` changes together with application code to avoid mismatches.
+- [ ] Run smoke tests for authentication and admin flows:
+  - `GET /api/auth/me` should return `userId` and `roles`.
+  - Admin endpoints (`/api/admin/**`) should still enforce `@PreAuthorize` controls.
+  - Sample flow: login -> call admin approve endpoint -> expect 200 for admin token.
+- [ ] Monitor for `401`/`403` spikes for 30 minutes after rollout.
+- [ ] Run the security regression suite: `JwtTokenProviderTest`, `CustomPermissionEvaluatorTest`, controller auth tests.
+
+Notes:
+- If external clients use tokens without the new claims, prepare a compatibility plan (token exchange or phased rollout).

@@ -51,9 +51,8 @@ public class Book {
     @Column(nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
     private ApprovalStatus approvalStatus;
 
-    @Column(nullable = false, columnDefinition = "BIT DEFAULT 1")
-    @org.hibernate.annotations.ColumnDefault("1")
-    private boolean isActive = true;  // true = sách được phép bán, false = sách bị khóa
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
 
     @PrePersist
     public void onCreate() {

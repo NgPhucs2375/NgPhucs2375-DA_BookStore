@@ -165,6 +165,72 @@ class OrderServiceSecurityAndOwnershipTest {
     }
 
     @Test
+    void updateSubOrderStatusForSeller_shouldRejectStatusJump() {
+        User owner = User.builder()
+            .id(66L)
+            .username("seller-jump")
+            .passwordHash("x")
+            .role(UserRole.SELLER)
+            .shopName("Jump Shop")
+            .build();
+
+        SubOrder subOrder = SubOrder.builder()
+            .id(300L)
+            .seller(owner)
+            .status(OrderStatus.PENDING_PAYMENT)
+            .subTotal(150000.0)
+            .parentOrder(Order.builder().id(3L).build())
+            .build();
+
+        when(userRepository.findById(66L)).thenReturn(Optional.of(owner));
+        when(subOrderRepository.findById(300L)).thenReturn(Optional.of(subOrder));
+
+        SubOrderStatusUpdateRequest request = SubOrderStatusUpdateRequest.builder()
+            .status(OrderStatus.SHIPPING)
+            .build();
+
+        ResponseStatusException ex = assertThrows(
+            ResponseStatusException.class,
+            () -> orderService.updateSubOrderStatusForSeller(66L, 300L, request)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
+    void updateSubOrderStatusForSeller_shouldRejectCompletedOrder() {
+        User owner = User.builder()
+            .id(77L)
+            .username("seller-completed")
+            .passwordHash("x")
+            .role(UserRole.SELLER)
+            .shopName("Completed Shop")
+            .build();
+
+        SubOrder subOrder = SubOrder.builder()
+            .id(400L)
+            .seller(owner)
+            .status(OrderStatus.COMPLETED)
+            .subTotal(250000.0)
+            .parentOrder(Order.builder().id(4L).build())
+            .build();
+
+        when(userRepository.findById(77L)).thenReturn(Optional.of(owner));
+        when(subOrderRepository.findById(400L)).thenReturn(Optional.of(subOrder));
+
+        SubOrderStatusUpdateRequest request = SubOrderStatusUpdateRequest.builder()
+            .status(OrderStatus.SHIPPING)
+            .build();
+
+        ResponseStatusException ex = assertThrows(
+            ResponseStatusException.class,
+            () -> orderService.updateSubOrderStatusForSeller(77L, 400L, request)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
     void getSellerAnalytics_shouldBuildSummaryFromCompletedOrders() {
         User seller = User.builder()
             .id(44L)

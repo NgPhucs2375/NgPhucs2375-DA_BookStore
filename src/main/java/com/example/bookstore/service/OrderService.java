@@ -346,8 +346,8 @@ public class OrderService {
      * Cập nhật trạng thái sub-order cho seller với state machine validation.
      * 
      * Flow hợp lệ:
-     *   PENDING_PAYMENT -> PROCESSING (xác nhận đơn, trừ stock)
-     *   PROCESSING -> SHIPPING (giao hàng)
+        *   PENDING_PAYMENT -> PROCESSING (đã xác nhận, trừ stock)
+        *   PROCESSING -> SHIPPING (đang giao)
      *   SHIPPING -> COMPLETED (hoàn thành)
      *   PROCESSING -> CANCELLED (hủy đơn, hoàn stock, hoàn tiền nếu đã thanh toán)
      *   PENDING_PAYMENT -> CANCELLED (hủy đơn)
@@ -367,6 +367,11 @@ public class OrderService {
 
         if (subOrder.getSeller() == null || !sellerId.equals(subOrder.getSeller().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seller cannot update this sub order");
+        }
+
+        if (subOrder.getStatus() == OrderStatus.COMPLETED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Seller không thể chỉnh sửa đơn hàng đã hoàn thành");
         }
 
         OrderStatus newStatus = request.getStatus();
@@ -797,13 +802,13 @@ public class OrderService {
             case PENDING_PAYMENT:
                 if (target != OrderStatus.PROCESSING && target != OrderStatus.CANCELLED) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Đơn chờ xử lý chỉ có thể chuyển sang Đang xử lý hoặc Hủy");
+                        "Đơn chờ xác nhận chỉ có thể chuyển sang Đã xác nhận hoặc Hủy");
                 }
                 break;
             case PROCESSING:
                 if (target != OrderStatus.SHIPPING && target != OrderStatus.CANCELLED) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Đơn đang xử lý chỉ có thể chuyển sang Đang giao hoặc Hủy");
+                        "Đơn đã xác nhận chỉ có thể chuyển sang Đang giao hoặc Hủy");
                 }
                 break;
             case SHIPPING:
@@ -1162,10 +1167,10 @@ public class OrderService {
     private String getStatusLabel(OrderStatus status) {
         if (status == null) return "Không xác định";
         switch (status) {
-            case PENDING_PAYMENT: return "Chờ xử lý";
-            case PROCESSING: return "Đang xử lý";
+            case PENDING_PAYMENT: return "Chờ xác nhận";
+            case PROCESSING: return "Đã xác nhận";
             case SHIPPING: return "Đang giao";
-            case COMPLETED: return "Đã hoàn thành";
+            case COMPLETED: return "Hoàn thành";
             case CANCELLED: return "Đã hủy";
             default: return status.name();
         }

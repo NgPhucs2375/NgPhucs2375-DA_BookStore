@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/buyer_layout :: layout(~{::main}, 'cart')}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả thanh toán - BOOKOM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-peach': '#F8D9C0',
+                        'brand-cream': '#FAF5E8',
+                        'brand-biscuit': '#D19C74',
+                        'brand-dark': '#5D4037',
+                        'brand-accent': '#E5CBB5',
+                        'brand-orange': '#ea580c',
+                        'brand-orange-light': '#ffedd5',
+                        'brand-green': '#16a34a',
+                    },
+                    fontFamily: {
+                        sans: ['Quicksand', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #D19C74; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b88560; }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-icon {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body class="text-brand-dark flex flex-col min-h-screen selection:bg-brand-biscuit selection:text-white">
+
+<header class="bg-white sticky top-0 z-50 shadow-sm border-b border-brand-accent">
+    <div class="max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
+        <a th:href="@{/}" class="text-3xl font-extrabold tracking-tighter text-brand-dark hover:text-brand-biscuit transition-colors flex items-center gap-2">
+            <div class="bg-brand-biscuit text-white p-1.5 rounded-lg shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            </div>
+            BOOKOM
+        </a>
+        <h1 class="text-xl lg:text-2xl font-bold text-brand-dark hidden md:block uppercase tracking-widest">Kết Quả Thanh Toán</h1>
+        <a th:href="@{/}" class="sm:hidden text-brand-biscuit font-bold text-sm">Trang Chủ</a>
+    </div>
+</header>
+
+<main class="flex-grow pb-24 px-4 md:px-6">
+    <div class="max-w-2xl mx-auto pt-12">
+
+        <!-- Success State -->
+        <div id="success-state" class="hidden fade-in">
+            <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12 text-center">
+                <div class="flex justify-center mb-6">
+                    <div class="relative">
+                        <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center pulse-icon">
+                            <svg class="w-12 h-12 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <h1 class="text-4xl md:text-5xl font-black text-brand-dark mb-2 uppercase tracking-wider">
+                    Thanh Toán Thành Công! 🎉
+                </h1>
+
+                <p class="text-lg text-gray-600 font-medium mb-8">
+                    Đơn hàng của bạn đã được xác nhận. Cảm ơn bạn đã mua hàng tại BOOKOM!
+                </p>
+
+                <div class="bg-brand-cream/50 border-2 border-brand-accent rounded-xl p-6 mb-8">
+                    <p class="text-sm text-gray-600 font-medium mb-3">Mã Đơn Hàng</p>
+                    <p id="success-order-id" class="text-3xl font-black text-brand-orange font-mono">--</p>
+                    <button onclick="copyOrderId()" class="mt-4 px-4 py-2 bg-brand-dark text-white rounded-lg font-bold text-sm hover:bg-brand-biscuit transition">
+                        Sao Chép Mã
+                    </button>
+                </div>
+
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8 text-left">
+                    <h3 class="font-bold text-blue-900 mb-2">📦 Điều gì tiếp theo?</h3>
+                    <ul class="text-sm text-blue-800 space-y-1 font-medium">
+                        <li>✓ Đơn hàng đang được xử lý</li>
+                        <li>✓ Bạn sẽ nhận email xác nhận chi tiết đơn hàng</li>
+                        <li>✓ Theo dõi tình trạng đơn hàng trong tài khoản của bạn</li>
+                    </ul>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a th:href="@{/buyer/dashboard}" class="px-8 py-3 bg-brand-dark text-white font-bold rounded-lg hover:bg-brand-biscuit transition shadow-md uppercase">
+                        Xem Đơn Hàng
+                    </a>
+                    <a th:href="@{/}" class="px-8 py-3 bg-brand-cream text-brand-dark font-bold rounded-lg border-2 border-brand-accent hover:bg-brand-cream/80 transition uppercase">
+                        Tiếp Tục Mua Hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Failure State -->
+        <div id="failure-state" class="hidden fade-in">
+            <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12 text-center">
+                <div class="flex justify-center mb-6">
+                    <div class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <h1 class="text-4xl md:text-5xl font-black text-red-600 mb-2 uppercase tracking-wider">
+                    Thanh Toán Thất Bại ❌
+                </h1>
+
+                <p class="text-lg text-gray-600 font-medium mb-8">
+                    Giao dịch không thành công. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.
+                </p>
+
+                <div class="bg-red-50 border-2 border-red-300 rounded-xl p-6 mb-8 text-left">
+                    <h3 class="font-bold text-red-900 mb-3">Lý do thất bại:</h3>
+                    <p id="failure-reason" class="text-red-700 font-medium">Mã lỗi: --</p>
+                </div>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-8 text-left">
+                    <h3 class="font-bold text-yellow-900 mb-2">💡 Gợi ý</h3>
+                    <ul class="text-sm text-yellow-800 space-y-1 font-medium">
+                        <li>• Kiểm tra thông tin thẻ tín dụng của bạn</li>
+                        <li>• Đảm bảo tài khoản của bạn có đủ số dư</li>
+                        <li>• Liên hệ ngân hàng nếu vẫn gặp sự cố</li>
+                        <li>• Thử lại sau vài phút</li>
+                    </ul>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a th:href="@{/main/checkout}" class="px-8 py-3 bg-brand-orange text-white font-bold rounded-lg hover:bg-orange-700 transition shadow-md uppercase">
+                        Thử Lại
+                    </a>
+                    <a th:href="@{/main/cart}" class="px-8 py-3 bg-brand-cream text-brand-dark font-bold rounded-lg border-2 border-brand-accent hover:bg-brand-cream/80 transition uppercase">
+                        Quay Lại Giỏ Hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State (default while checking) -->
+        <div id="loading-state" class="fade-in">
+            <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12 text-center">
+                <div class="flex justify-center mb-6">
+                    <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center animate-spin">
+                        <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h-2m2 0h2m-2 0v2m0-2v-2m0 6h2m-2 0h-2m2 0v2m0-2v-2"></path>
+                        </svg>
+                    </div>
+                </div>
+                <h1 class="text-2xl font-bold text-brand-dark mb-4">Đang kiểm tra kết quả thanh toán...</h1>
+                <p class="text-gray-600 font-medium">Vui lòng không đóng cửa sổ này</p>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script>
+    /**
+     * Payment Result Handler
+     * Checks the URL parameters to determine payment status
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const status = params.get('status');
+        const orderId = params.get('orderId');
+        const errorCode = params.get('errorCode');
+
+        const loadingState = document.getElementById('loading-state');
+        const successState = document.getElementById('success-state');
+        const failureState = document.getElementById('failure-state');
+
+        // Simulate a brief loading state (0.5-1s) to show checking
+        setTimeout(() => {
+            loadingState?.classList.add('hidden');
+
+            if (status === 'success' && orderId) {
+                successState?.classList.remove('hidden');
+                document.getElementById('success-order-id').textContent = `#${orderId}`;
+                // Save to localStorage for later reference
+                localStorage.setItem('lastOrderId', orderId);
+                localStorage.setItem('paymentStatus', 'success');
+            } else {
+                failureState?.classList.remove('hidden');
+                const reasonEl = document.getElementById('failure-reason');
+                if (reasonEl) {
+                    if (errorCode) {
+                        const errorMessages = {
+                            '01': 'Giao dịch không thành công',
+                            '02': 'Ngân hàng từ chối giao dịch',
+                            '03': 'Số tài khoản không hợp lệ',
+                            '04': 'Mật khẩu không đúng',
+                            '05': 'Tài khoản không tồn tại',
+                            '06': 'Tài khoản bị khóa',
+                            '07': 'Số dư không đủ',
+                            '08': 'Giao dịch bị hủy',
+                            '99': 'Lỗi hệ thống. Vui lòng thử lại sau.'
+                        };
+                        reasonEl.textContent = `Mã lỗi: ${errorCode} - ${errorMessages[errorCode] || 'Lỗi không xác định'}`;
+                    } else {
+                        reasonEl.textContent = 'Giao dịch không thành công';
+                    }
+                }
+                localStorage.setItem('paymentStatus', 'failed');
+            }
+        }, 800);
+    });
+
+    /**
+     * Copy order ID to clipboard
+     */
+    function copyOrderId() {
+        const orderIdEl = document.getElementById('success-order-id');
+        if (!orderIdEl) return;
+
+        const orderId = orderIdEl.textContent;
+        navigator.clipboard.writeText(orderId).then(() => {
+            alert('Đã sao chép mã đơn hàng: ' + orderId);
+        }).catch(() => {
+            alert('Không thể sao chép. Vui lòng thử lại.');
+        });
+    }
+</script>
+
+</body>
+</html>

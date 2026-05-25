@@ -192,7 +192,7 @@ public class OrderService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
 
         if (!canBuyerCancelOrder(order)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only pending orders can be cancelled");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ có thể hủy đơn hàng ở trạng thái chờ thanh toán hoặc chờ xác nhận");
         }
 
         if (order.getSubOrders() != null) {
@@ -691,7 +691,11 @@ public class OrderService {
             return true;
         }
 
+        // Allow cancellation only if all sub-orders are in PENDING_PAYMENT or PROCESSING state
+        // Cannot cancel: COMFIRMED, SHIPPING, COMPLETED, CANCELLED
         return order.getSubOrders().stream()
-            .allMatch(subOrder -> subOrder.getStatus() == OrderStatus.PENDING_PAYMENT);
+            .allMatch(subOrder -> 
+                subOrder.getStatus() == OrderStatus.PENDING_PAYMENT ||
+                subOrder.getStatus() == OrderStatus.PROCESSING);
     }
 }

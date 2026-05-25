@@ -12,13 +12,26 @@
                 <select id="orders-status" class="rounded-lg border border-[#E5CBB5] px-3 py-2 font-bold">
                     <option value="all">Tất cả trạng thái</option>
                     <option value="PENDING_PAYMENT">Chờ thanh toán</option>
-                    <option value="CONFIRMED">Đã xác nhận</option>
+                    <option value="PROCESSING">Đã xác nhận</option>
                     <option value="SHIPPING">Đang giao</option>
-                    <option value="DELIVERED">Đã giao</option>
+                    <option value="COMPLETED">Đã hoàn thành</option>
+                    <option value="CANCELLED">Đã hủy</option>
                 </select>
             </section>
             <section class="rounded-xl border border-[#E5CBB5] bg-white overflow-hidden">
-                <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-[#FAF5E8] text-[#5D4037]/70"><tr><th class="px-4 py-3 font-black">Ma don</th><th class="px-4 py-3 font-black">Khach</th><th class="px-4 py-3 font-black">San pham</th><th class="px-4 py-3 font-black">Gia tri</th><th class="px-4 py-3 font-black">Trang thai</th><th class="px-4 py-3 font-black text-right">Chi tiet</th></tr></thead><tbody id="seller-orders-body" class="divide-y divide-[#E5CBB5]"></tbody></table></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-[#FAF5E8] text-[#5D4037]/70"><tr>
+                            <th class="px-4 py-3 font-black">Mã đơn</th>
+                            <th class="px-4 py-3 font-black">Khách hàng</th>
+                            <th class="px-4 py-3 font-black">Sản phẩm</th>
+                            <th class="px-4 py-3 font-black">Tổng đơn</th>
+                            <th class="px-4 py-3 font-black">Trạng thái</th>
+                            <th class="px-4 py-3 font-black text-right">Hành động</th>
+                        </tr></thead>
+                        <tbody id="seller-orders-body" class="divide-y divide-[#E5CBB5]"></tbody>
+                    </table>
+                </div>
             </section>
         </main>
     </div>

@@ -9,8 +9,10 @@ import com.example.bookstore.model.User;
 import com.example.bookstore.repository.SellerShopRepository;
 import com.example.bookstore.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ public class SellerShopService {
      */
     public SellerShopResponse getMyShop(Long sellerId) {
         SellerShop shop = shopRepository.findBySellerId(sellerId)
-                .orElseThrow(() -> new RuntimeException("Bạn chưa tạo cửa hàng nào."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bạn chưa tạo cửa hàng nào."));
         return mapToResponse(shop);
     }
 
@@ -137,6 +139,59 @@ public class SellerShopService {
         }
         
         return mapToResponse(shop);
+    }
+
+    /**
+     * Admin approve a seller - creates SellerShop if it doesn't exist and sets approval status to APPROVED
+     * This ensures that when admin approves a seller, they can immediately start selling
+     */
+    @Transactional
+    public SellerShopResponse adminApproveSeller(Long sellerId) {
+        // 1. Validate seller exists and has SELLER role
+        User seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người bán."));
+        
+        if (seller.getRole() != UserRole.SELLER) {
+            throw new RuntimeException("Người dùng này không có role SELLER.");
+        }
+
+        // 2. Get or create SellerShop
+        SellerShop shop = shopRepository.findBySellerId(sellerId)
+                .orElseGet(() -> {
+                    // Auto-create SellerShop if not exists
+                    String slug = generateUniqueSlug(seller.getShopName() != null ? seller.getShopName() : seller.getUsername());
+                    SellerShop newShop = SellerShop.builder()
+                            .seller(seller)
+                            .slug(slug)
+                            .shopName(seller.getShopName() != null ? seller.getShopName() : seller.getUsername())
+                            .approvalStatus(ApprovalStatus.PENDING)
+                            .build();
+                    return shopRepository.save(newShop);
+                });
+
+        // 3. Approve the shop
+        shop.setApprovalStatus(ApprovalStatus.APPROVED);
+        SellerShop approvedShop = shopRepository.save(shop);
+        
+        return mapToResponse(approvedShop);
+    }
+
+    /**
+     * Generate unique slug from shop name
+     */
+    private String generateUniqueSlug(String shopName) {
+        // Convert to lowercase and replace spaces with hyphens
+        String baseSlug = shopName.toLowerCase().replaceAll("\\s+", "-").replaceAll("[^a-z0-9-]", "");
+        
+        // Check if slug exists, if yes append timestamp
+        String slug = baseSlug;
+        int counter = 1;
+        while (shopRepository.existsBySlug(slug)) {
+            slug = baseSlug + "-" + System.currentTimeMillis() % 10000;
+            counter++;
+        }
+        
+        return slug;
     }
 
     // --- CÁC HÀM TIỆN ÍCH (HELPER METHODS) ---

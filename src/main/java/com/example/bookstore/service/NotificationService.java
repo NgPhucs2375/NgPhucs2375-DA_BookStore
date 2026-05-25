@@ -9,7 +9,8 @@ import com.example.bookstore.model.enums.NotificationPriority;
 import com.example.bookstore.repository.NotificationRepository;
 import com.example.bookstore.repository.UserRepository;
 import com.example.bookstore.sse.NotificationDeliveryQueue;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -101,7 +102,7 @@ public class NotificationService {
      *   - Client can fetch via GET /api/notifications/me (polling fallback)
      *   - Delivery is best-effort, not guaranteed
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public NotificationItemResponse createNotification(Long creatorUserId, Long targetUserId, NotificationCreateRequest req) {
         validateCreateRequest(req);
 

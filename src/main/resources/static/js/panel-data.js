@@ -531,9 +531,11 @@
     function getStatusColor(status) {
       switch(status) {
         case 'PENDING_PAYMENT': return 'text-red-600';
-        case 'CONFIRMED': return 'text-amber-600';
-        case 'SHIPPING': return 'text-indigo-600';
-        case 'DELIVERED': return 'text-emerald-600';
+        case 'PROCESSING': return 'text-indigo-600';
+        case 'COMFIRMED': return 'text-amber-600';
+        case 'SHIPPING': return 'text-blue-600';
+        case 'COMPLETED': return 'text-emerald-600';
+        case 'CANCELLED': return 'text-slate-500';
         default: return 'text-gray-600';
       }
     }
@@ -541,9 +543,11 @@
     function getStatusLabel(status) {
       var labels = {
         'PENDING_PAYMENT': 'Chờ thanh toán',
-        'CONFIRMED': 'Đã xác nhận',
+        'PROCESSING': 'Đang xử lý',
+        'COMFIRMED': 'Đã xác nhận',
         'SHIPPING': 'Đang giao',
-        'DELIVERED': 'Đã giao'
+        'COMPLETED': 'Đã hoàn thành',
+        'CANCELLED': 'Đã hủy'
       };
       return labels[status] || status;
     }
@@ -581,16 +585,26 @@
           var buyerName = order.buyerUsername || "--";
           var itemSummary = order.itemSummary || "--";
 
+          var actionButtons = '';
+          if (order.status === "COMPLETED" || order.status === "CANCELLED") {
+            actionButtons = '<button class="rounded border border-brand-accent px-3 py-1 text-xs font-bold hover:bg-brand-accent hover:text-white transition" onclick="viewOrderDetail(' + (order.orderId || 0) + ')">Xem chi tiết</button>';
+          } else {
+            actionButtons = '<div class="flex gap-2 justify-end">' +
+              '<button class="rounded border border-emerald-500 px-3 py-1 text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition" onclick="confirmSellerOrder(' + (order.subOrderId || 0) + ',\'' + (order.status || "PENDING_PAYMENT") + '\')">' +
+              'Xác nhận</button>' +
+              '<button class="rounded border border-rose-500 px-3 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 transition" onclick="cancelSellerOrder(' + (order.subOrderId || 0) + ')">Hủy</button>' +
+              '<button class="rounded border border-brand-accent px-3 py-1 text-xs font-bold hover:bg-brand-accent hover:text-white transition" onclick="viewOrderDetail(' + (order.orderId || 0) + ')">Xem chi tiết</button>' +
+              '</div>';
+          }
+
           return (
             '<tr>' +
             '<td class="px-4 py-3 font-bold">#' + esc(order.orderId || order.subOrderId || "?") + '</td>' +
             '<td class="px-4 py-3 text-sm">' + esc(buyerName) + '</td>' +
             '<td class="px-4 py-3 text-sm">' + esc(itemSummary) + '</td>' +
-            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(order.subTotal) + '</td>' +
+            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(order.totalAmount) + '</td>' +
             '<td class="px-4 py-3 font-black ' + statusColor + '">' + esc(statusLabel) + '</td>' +
-            '<td class="px-4 py-3 text-right">' +
-              '<button class="rounded border border-brand-accent px-3 py-1 text-xs font-bold hover:bg-gray-50 transition" onclick="viewOrderDetail(' + (order.orderId || 0) + ')">Chi tiết</button>' +
-            '</td>' +
+            '<td class="px-4 py-3 text-right">' + actionButtons + '</td>' +
             '</tr>'
           );
         }).join("");
@@ -608,7 +622,56 @@
     });
 
     window.viewOrderDetail = function(orderId) {
-      alert('Xem chi tiết đơn hàng #' + orderId + ' (chưa có trang chi tiết cho seller)');
+      window.location.href = '/main/order-details?orderId=' + orderId;
+    };
+
+    window.confirmSellerOrder = function(subOrderId, currentStatus) {
+      var statusLabel = {
+        'PENDING_PAYMENT': 'Đang xử lý',
+        'PROCESSING': 'Đã xác nhận',
+        'COMFIRMED': 'Đang giao',
+        'SHIPPING': 'Đã hoàn thành'
+      }[currentStatus] || 'xác nhận';
+
+      if (!confirm("Bạn có chắc muốn cập nhật trạng thái thành '" + statusLabel + "'?")) return;
+
+      BookomToast.info('Đang cập nhật...');
+      
+      if (!window.ApiService || !ApiService.Order || !ApiService.Order.confirmSubOrder) {
+        BookomToast.error('ApiService không khả dụng');
+        return;
+      }
+
+      ApiService.Order.confirmSubOrder(subOrderId)
+        .then(function(response) {
+          BookomToast.success('✓ Cập nhật trạng thái thành công');
+          setTimeout(function() { location.reload(); }, 800);
+        })
+        .catch(function(error) {
+          BookomToast.error('❌ Lỗi: ' + (error.message || 'Cập nhật thất bại'));
+          console.error(error);
+        });
+    };
+
+    window.cancelSellerOrder = function(subOrderId) {
+      if (!confirm("Bạn có chắc muốn hủy đơn hàng này? Hành động này không thể hoàn tác.")) return;
+
+      BookomToast.info('Đang hủy đơn hàng...');
+      
+      if (!window.ApiService || !ApiService.Order || !ApiService.Order.updateSubOrderStatus) {
+        BookomToast.error('ApiService không khả dụng');
+        return;
+      }
+
+      ApiService.Order.updateSubOrderStatus(subOrderId, 'CANCELLED')
+        .then(function(response) {
+          BookomToast.success('✓ Đơn hàng đã được hủy');
+          setTimeout(function() { location.reload(); }, 800);
+        })
+        .catch(function(error) {
+          BookomToast.error('❌ Lỗi: ' + (error.message || 'Hủy thất bại'));
+          console.error(error);
+        });
     };
 
     return load();

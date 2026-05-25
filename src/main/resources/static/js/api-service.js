@@ -613,7 +613,22 @@ const ApiService = (() => {
         },
 
         /**
-         * Cập nhật trạng thái sub-order
+         * Xác nhận sub-order - tự động chuyển trạng thái theo luồng:
+         * PROCESSING -> CONFIRMED -> SHIPPING -> COMPLETED
+         */
+        confirmSubOrder: async (subOrderId) => {
+            const response = await fetch(
+                `${API_BASE}/orders/sub-orders/${subOrderId}/confirm`,
+                {
+                    method: 'POST',
+                    headers: getHeaders()
+                }
+            );
+            return handleResponse(response);
+        },
+
+        /**
+         * Cập nhật trạng thái sub-order (dùng cho hủy đơn)
          */
         updateSubOrderStatus: async (subOrderId, status) => {
             const response = await fetch(

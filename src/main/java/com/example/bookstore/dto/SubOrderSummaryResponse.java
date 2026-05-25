@@ -16,4 +16,5 @@ public class SubOrderSummaryResponse {
     private Integer itemCount;
     private OrderStatus status;
     private Double subTotal;
+     private Double totalAmount;
 }

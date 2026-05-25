@@ -3,6 +3,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">BOOKOM</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <link th:href="@{/tailadmin-style.css}" rel="stylesheet" />
     <th:block th:if="${includeChart}">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -66,4 +67,5 @@
         .dash-section:nth-child(5) { animation-delay: 0.4s; }
         .dash-section:nth-child(6) { animation-delay: 0.5s; }
     </style>
+    <script src="https://unpkg.com/flowbite@1.7.0/dist/flowbite.bundle.js" defer></script>
 </head>

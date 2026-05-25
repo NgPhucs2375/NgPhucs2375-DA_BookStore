@@ -18,7 +18,7 @@
     // 1. CONSTANTS & CONFIG
     // ==========================================
 
-    const API_ROOT = '/api/panel';
+    const API_ROOT = '/api/seller';
     const REFRESH_INTERVAL = 60000; // 60s auto-refresh
 
     // BOOKOM brand colors
@@ -93,8 +93,8 @@
                     sessionStorage.removeItem('accessToken');
                     sessionStorage.removeItem('access_token');
                 } catch (e) { }
-                if (window.location.pathname !== '/login') {
-                    window.location.href = '/login';
+                if (window.location.pathname !== '/main/auth') {
+                    window.location.href = '/main/auth';
                 }
                 throw new Error('Unauthorized: ' + res.status);
             }
@@ -620,7 +620,7 @@
     // ==========================================
 
     function loadDashboardData() {
-        var url = API_ROOT + '/seller/dashboard-stats?period=' + currentPeriod;
+        var url = API_ROOT + '/dashboard-stats?period=' + currentPeriod;
 
         return fetchJson(url).then(function (data) {
             if (data.error) {

@@ -23,6 +23,10 @@ public class Coupon {
     @Column(nullable = false, unique = true, length = 50)
     private String code;  // "BOOKOM15K", "SAVE10", etc.
 
+    @ManyToOne
+    @JoinColumn(name = "seller_id")
+    private User seller;  // Seller who owns this voucher (NULL = global/admin coupon)
+
     @Column(length = 500)
     private String description;  // "Giảm 15k cho đơn hàng"
 
@@ -35,6 +39,12 @@ public class Coupon {
 
     @Column(name = "min_order_value")
     private Integer minOrderAmount;  // Minimum order value to use coupon
+
+    @Column(name = "max_discount_amount")
+    private Double maxDiscountAmount;  // Maximum discount amount (for PERCENT type)
+
+    @Column(name = "start_date")
+    private LocalDateTime startDate;  // Start date when coupon becomes valid
 
     @Column(name = "end_date")
     private LocalDateTime expiresAt;  // Expiration date
@@ -68,8 +78,10 @@ public class Coupon {
      */
     public boolean isValid() {
         if (!isActive) return false;
-        if (expiresAt != null && LocalDateTime.now().isAfter(expiresAt)) return false;
-        if (totalQuantity > 0 && usedCount >= totalQuantity) return false;
+        LocalDateTime now = LocalDateTime.now();
+        if (startDate != null && now.isBefore(startDate)) return false;  // Not yet started
+        if (expiresAt != null && now.isAfter(expiresAt)) return false;  // Expired
+        if (totalQuantity > 0 && usedCount >= totalQuantity) return false;  // Out of usage
         return true;
     }
 
@@ -86,10 +98,18 @@ public class Coupon {
      * Calculate discount amount for given order value
      */
     public Integer calculateDiscount(Integer orderAmount) {
+        int discount;
         if (type == CouponType.FIXED) {
-            return Math.min(amount, orderAmount);
+            discount = Math.min(amount, orderAmount);
         } else {  // PERCENT
-            return (int) (orderAmount * amount / 100.0);
+            discount = (int) (orderAmount * amount / 100.0);
         }
+        
+        // Apply maxDiscountAmount cap if set
+        if (maxDiscountAmount != null && discount > maxDiscountAmount) {
+            discount = maxDiscountAmount.intValue();
+        }
+        
+        return discount;
     }
 }

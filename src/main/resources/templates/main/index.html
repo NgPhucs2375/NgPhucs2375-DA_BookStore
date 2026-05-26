@@ -124,11 +124,11 @@
                 Trang chủ
                 <span class="absolute bottom-0 left-0 w-full h-0.5 bg-brand-dark transform scale-x-100 transition-transform origin-left"></span>
             </a>
-            <a href="/main/discovery" class="relative group py-2">
+            <a href="#danh-muc-sach" class="relative group py-2">
                 Sách
                 <span class="absolute bottom-0 left-0 w-full h-0.5 bg-brand-dark transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
             </a>
-            <a href="/main/discovery" class="relative group py-2 flex items-center gap-1">
+            <a id="nav-category-link" href="#danh-muc-sach" class="relative group py-2 flex items-center gap-1">
                 Thể loại
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                 <span class="absolute bottom-0 left-0 w-full h-0.5 bg-brand-dark transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
@@ -281,24 +281,24 @@
 
                 <div class="mb-8">
                     <h3 class="font-bold text-brand-dark mb-4 uppercase text-sm tracking-wider">Đánh giá</h3>
-                    <ul class="space-y-3">
+                    <ul class="space-y-3" id="rating-filter-list">
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-cb">
+                                <input type="checkbox" class="rating-filter-checkbox" data-min-rating="5">
                                 <div class="flex text-yellow-400 text-sm tracking-widest">★★★★★</div>
                                 <span class="text-sm text-brand-dark group-hover:text-brand-brown transition">(Từ 5 sao)</span>
                             </label>
                         </li>
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-cb" checked>
+                                <input type="checkbox" class="rating-filter-checkbox" data-min-rating="4">
                                 <div class="flex text-yellow-400 text-sm tracking-widest">★★★★<span class="text-gray-300">★</span></div>
                                 <span class="text-sm text-brand-dark group-hover:text-brand-brown transition">(Từ 4 sao)</span>
                             </label>
                         </li>
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-cb">
+                                <input type="checkbox" class="rating-filter-checkbox" data-min-rating="3">
                                 <div class="flex text-yellow-400 text-sm tracking-widest">★★★<span class="text-gray-300">★★</span></div>
                                 <span class="text-sm text-brand-dark group-hover:text-brand-brown transition">(Từ 3 sao)</span>
                             </label>
@@ -310,7 +310,7 @@
 
                 <div class="mb-4">
                     <h3 class="font-bold text-brand-dark mb-4 uppercase text-sm tracking-wider">Nhà Xuất Bản</h3>
-                    <ul class="space-y-3 text-sm font-medium text-brand-dark">
+                    <ul id="publisher-filter-list" class="space-y-3 text-sm font-medium text-brand-dark">
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
                                 <input type="checkbox" class="custom-cb">

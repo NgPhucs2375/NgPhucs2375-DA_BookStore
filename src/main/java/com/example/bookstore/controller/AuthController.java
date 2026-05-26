@@ -15,9 +15,11 @@ import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -160,6 +162,51 @@ public class AuthController {
     @GetMapping("/profile/{userId}")
     public UserProfileResponse getProfile(@PathVariable Long userId) {
         return authService.getProfile(userId);
+    }
+
+    @PostMapping("/become-seller")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<?> becomeSeller(
+            @AuthenticationPrincipal org.springframework.security.core.userdetails.User principalUser,
+            @RequestBody Map<String, String> body
+    ) {
+        // principalUser may be null depending on security config; try JwtAuthenticatedPrincipal otherwise
+        Long userId = null;
+        try {
+            // try to extract id from Security Context principal if it's our JwtAuthenticatedPrincipal
+            Object principal = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal jp) {
+                userId = jp.userId();
+            }
+        } catch (Exception ignored) {}
+
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Không có thông tin xác thực");
+        }
+
+        try {
+            String shopName = body.getOrDefault("shopName", null);
+            String shopAddress = body.getOrDefault("shopAddress", null);
+            com.example.bookstore.model.User updated = authService.upgradeToSeller(userId, shopName, shopAddress);
+
+            java.util.List<String> roles = java.util.List.of(updated.getRole().name());
+            Long sellerId = updated.getId();
+            String token = jwtTokenProvider.createToken(updated.getId(), roles, sellerId);
+
+            java.util.Map<String, Object> resp = new java.util.LinkedHashMap<>();
+            resp.put("tokenType", "Bearer");
+            resp.put("accessToken", token);
+            resp.put("userId", updated.getId());
+            resp.put("role", updated.getRole().name());
+            resp.put("roles", roles);
+            resp.put("sellerId", sellerId);
+
+            return ResponseEntity.ok(resp);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @PutMapping("/profile/{userId}")

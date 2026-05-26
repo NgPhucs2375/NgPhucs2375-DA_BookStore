@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const priceMinInput = document.getElementById('price-min-input');
     const priceMaxInput = document.getElementById('price-max-input');
     const applyPriceFilterBtn = document.getElementById('apply-price-filter-btn');
+    const publisherListEl = document.getElementById('publisher-filter-list');
+    const ratingFilterList = document.getElementById('rating-filter-list');
 
     if (!booksGrid) {
         return;
@@ -174,6 +176,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const renderPublisherList = (publishers = []) => {
+        if (!publisherListEl) return;
+        if (!Array.isArray(publishers) || publishers.length === 0) {
+            publisherListEl.innerHTML = '<li class="text-sm text-gray-500">Không có dữ liệu NXB.</li>';
+            return;
+        }
+
+        publisherListEl.innerHTML = publishers.map((p) => `
+            <li>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" class="publisher-filter-checkbox" data-publisher="${encodeURIComponent(p)}">
+                    <span class="group-hover:text-brand-brown transition-colors">${p}</span>
+                </label>
+            </li>
+        `).join('');
+    };
+
+    const loadPublishers = async () => {
+        try {
+            // Gather publisher list from server-side via book search (first page) to avoid adding new API
+            const resp = await ApiService.Book.search('', null, 0, 200);
+            const books = Array.isArray(resp?.content) ? resp.content : [];
+            const pubs = Array.from(new Set(books.map(b => b.publisher).filter(Boolean))).slice(0, 20);
+            renderPublisherList(pubs);
+        } catch (err) {
+            console.warn('Không tải được danh sách NXB', err);
+            renderPublisherList([]);
+        }
+    };
+
     const clearFilters = () => {
         state.q = '';
         state.categoryId = null;
@@ -211,8 +243,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const applyPublisherFilter = (books) => {
+        if (!state.publishers || state.publishers.length === 0) return books;
+        return books.filter((b) => state.publishers.includes(b.publisher));
+    };
+
+    const applyRatingFilter = (books) => {
+        // Backend stores reviews and ratings; frontend will filter by book.averageRating if present
+        if (!state.minRating) return books;
+        return books.filter((b) => (Number(b.averageRating || 0) >= Number(state.minRating)));
+    };
+
     const setCategory = (categoryId) => {
         state.categoryId = categoryId;
+        state.page = 0;
+        loadBooks();
+    };
+
+    const applyAdvancedFiltersFromUi = () => {
+        // Publishers
+        const checkedPublishers = Array.from(document.querySelectorAll('.publisher-filter-checkbox:checked')).map(cb => decodeURIComponent(cb.getAttribute('data-publisher')));
+        state.publishers = checkedPublishers.length > 0 ? checkedPublishers : null;
+
+        // Ratings
+        const checkedRatings = Array.from(document.querySelectorAll('.rating-filter-checkbox:checked')).map(cb => Number(cb.getAttribute('data-min-rating')));
+        state.minRating = checkedRatings.length > 0 ? Math.max(...checkedRatings) : null;
+
         state.page = 0;
         loadBooks();
     };
@@ -376,7 +432,12 @@ document.addEventListener('DOMContentLoaded', () => {
             );
 
             const serverBooks = Array.isArray(response?.content) ? response.content : [];
-            const books = applySort(applyPriceFilter(serverBooks));
+            let books = serverBooks.slice();
+            // client-side advanced filters
+            books = applyPriceFilter(books);
+            books = applyPublisherFilter(books);
+            books = applyRatingFilter(books);
+            books = applySort(books);
 
             if (books.length === 0) {
                 renderBooksEmpty();
@@ -462,6 +523,26 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCategories();
         await loadBooks();
     })();
+
+    // Header category nav: scroll to category section and prepare for in-place filtering
+    const navCategoryLink = document.getElementById('nav-category-link');
+    if (navCategoryLink) {
+        navCategoryLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const section = document.getElementById('danh-muc-sach');
+            if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // After scrolling, ensure category buttons are bound so user can click to filter
+            setTimeout(() => {
+                try {
+                    bindCategoryEvents();
+                    const firstBtn = homeCategoryGrid?.querySelector('[data-category-id]');
+                    if (firstBtn) firstBtn.focus();
+                } catch (err) {
+                    console.error('Category nav handler failed:', err);
+                }
+            }, 500);
+        });
+    }
 
     const token = localStorage.getItem('accessToken');
     const role = localStorage.getItem('userRole');

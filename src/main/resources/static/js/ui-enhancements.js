@@ -269,6 +269,47 @@ const ApiErrorHandler = {
   }
 };
 
+// Update cart badge in header based on current buyer cart
+document.addEventListener('DOMContentLoaded', async () => {
+  const updateCartBadge = async () => {
+    try {
+      if (!window.ApiService) return;
+      const auth = ApiService.getAuth();
+      const badgeEl = document.querySelector('header a[href="/main/cart"] .relative > span') || document.querySelector('header a[href="/main/cart"] .absolute');
+      if (!auth.userId || auth.role !== 'BUYER') {
+        if (badgeEl) badgeEl.textContent = '';
+        return;
+      }
+      const cart = await ApiService.Cart.get(auth.userId);
+      const count = cart?.totalItems || 0;
+      // Try to find the badge element in header and set text
+      const headerBadge = document.querySelector('header a[href="/main/cart"] .absolute, header a[href="/main/cart"] .-top-2');
+      if (headerBadge) {
+        headerBadge.textContent = String(count);
+      } else {
+        // Create a small badge if not present
+        const cartLink = document.querySelector('header a[href="/main/cart"] .relative');
+        if (cartLink) {
+          let span = cartLink.querySelector('.cart-badge-count');
+          if (!span) {
+            span = document.createElement('span');
+            span.className = 'cart-badge-count absolute -top-2 -right-2 bg-brand-dark text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold shadow-sm';
+            cartLink.appendChild(span);
+          }
+          span.textContent = String(count);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  updateCartBadge();
+  // update periodically and on storage events
+  window.addEventListener('storage', (e) => { if (e.key === 'userId' || e.key === 'accessToken' || e.key === 'userRole') updateCartBadge(); });
+  setInterval(updateCartBadge, 30 * 1000);
+});
+
 // ============================================================
 // 9. EXPORT
 // ============================================================

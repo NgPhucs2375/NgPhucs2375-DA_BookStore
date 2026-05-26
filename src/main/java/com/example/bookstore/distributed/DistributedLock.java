@@ -11,6 +11,9 @@ public class DistributedLock {
     @Column(name = "lock_name", length = 100)
     private String lockName;
 
+    @Column(name = "instance_id", length = 255, nullable = false)
+    private String instanceId = "";
+
     @Column(name = "lock_holder_id", length = 255, nullable = false)
     private String lockHolderId = "UNOWNED";
 
@@ -22,11 +25,14 @@ public class DistributedLock {
 
     public DistributedLock(String lockName) {
         this.lockName = lockName;
+        this.instanceId = "";
     }
 
     // Getters and Setters
     public String getLockName() { return lockName; }
     public void setLockName(String lockName) { this.lockName = lockName; }
+    public String getInstanceId() { return instanceId; }
+    public void setInstanceId(String instanceId) { this.instanceId = instanceId; }
     public String getLockHolderId() { return lockHolderId; }
     public void setLockHolderId(String lockHolderId) { this.lockHolderId = lockHolderId; }
     public LocalDateTime getLockExpiresAt() { return lockExpiresAt; }

@@ -1,6 +1,8 @@
 package com.example.bookstore.dto;
 
 import com.example.bookstore.model.Coupon.CouponType;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.example.bookstore.config.CouponTypeDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +21,7 @@ import java.time.LocalDateTime;
 public class SellerVoucherCreateDTO {
     private String code;                    // Voucher code (e.g., "SELLER_SAVE10")
     private String description;             // Description of the voucher
+    @JsonDeserialize(using = CouponTypeDeserializer.class)
     private CouponType discountType;        // FIXED or PERCENT
     private Integer discountValue;          // Discount amount/percentage
     private Integer minOrderAmount;         // Minimum order value to apply

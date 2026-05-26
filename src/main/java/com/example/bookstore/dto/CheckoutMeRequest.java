@@ -7,4 +7,6 @@ import lombok.Data;
 public class CheckoutMeRequest {
     @NotBlank
     private String shippingAddress;
+
+    private String couponCode;
 }

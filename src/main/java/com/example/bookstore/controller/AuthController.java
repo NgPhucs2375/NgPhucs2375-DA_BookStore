@@ -27,13 +27,13 @@ import java.util.Map;
 public class AuthController {
 
     @Autowired
-    private AuthService authService; //Thêm bộ não xử lý
+    AuthService authService; //Thêm bộ não xử lý
 
     @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    JwtTokenProvider jwtTokenProvider;
 
     @Autowired
-    private AuthOtpService authOtpService;
+    AuthOtpService authOtpService;
 
     @PostMapping("/otp/request")
     public ResponseEntity<?> requestRegisterOtp(@Valid @RequestBody EmailOtpRequest request) {
@@ -157,6 +157,64 @@ public class AuthController {
         response.put("sellerId", sellerId);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout() {
+        // Since JWT is stateless, logout on server side doesn't invalidate the token
+        // Client should remove token from localStorage/sessionStorage
+        return ResponseEntity.ok("Đăng xuất thành công");
+    }
+
+    /**
+     * DEV-ONLY: Quick login for seeded accounts (no OTP required)
+     * Used in development when email cannot receive OTP
+     * 
+     * Example:
+     * POST /api/auth/dev-login
+     * {
+     *   "username": "shop_nha_nam@gmail.com",
+     *   "password": "seller123"
+     * }
+     * 
+     * Response:
+     * {
+     *   "tokenType": "Bearer",
+     *   "accessToken": "eyJ0eXAi...",
+     *   "userId": 2,
+     *   "role": "SELLER",
+     *   "sellerId": 2
+     * }
+     */
+    @PostMapping("/dev-login")
+    public ResponseEntity<?> devLogin(@Valid @RequestBody AuthLoginRequest request) {
+        // No OTP verification needed - directly authenticate
+        User authenticated = authService.authenticateUser(request.getUsername(), request.getPassword());
+        if (authenticated == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Sai tên đăng nhập hoặc mật khẩu");
+        }
+
+        if (!authenticated.isActive()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("Tài khoản bị từ chối đăng nhập");
+        }
+
+        Long sellerId = authenticated.getRole() == UserRole.SELLER
+            ? authenticated.getId()
+            : null;
+        java.util.List<String> roles = java.util.List.of(authenticated.getRole().name());
+        String token = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+
+        java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("tokenType", "Bearer");
+        response.put("accessToken", token);
+        response.put("userId", authenticated.getId());
+        response.put("role", authenticated.getRole().name());
+        response.put("roles", roles);
+        response.put("sellerId", sellerId);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/profile/{userId}")
     public UserProfileResponse getProfile(@PathVariable Long userId) {
         return authService.getProfile(userId);

@@ -108,7 +108,7 @@ public class CouponService {
      * Search coupons
      */
     public Page<Coupon> searchCoupons(String keyword, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size);
         return couponRepository.searchCoupons(keyword, pageable);
     }
 
@@ -239,15 +239,19 @@ public class CouponService {
      * List seller's coupons with pagination
      */
     public Page<Coupon> listSellerCoupons(Long sellerId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        // Không thêm Sort vào Pageable vì method name findBySeller_IdOrderByCreatedAtDesc
+        // đã tự động thêm ORDER BY created_at DESC. Nếu thêm Sort nữa sẽ bị duplicate
+        // ORDER BY trên SQL Server (lỗi: "A column has been specified more than once in the order by list").
+        Pageable pageable = PageRequest.of(page, size);
         return couponRepository.findBySeller_IdOrderByCreatedAtDesc(sellerId, pageable);
     }
+
 
     /**
      * Search seller's coupons
      */
     public Page<Coupon> searchSellerCoupons(Long sellerId, String keyword, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size);
         return couponRepository.searchSellerCoupons(sellerId, keyword, pageable);
     }
 
@@ -320,6 +324,48 @@ public class CouponService {
      */
     public List<Coupon> getValidCouponsForSeller(Long sellerId) {
         return couponRepository.findAllValidVouchersForSeller(sellerId);
+    }
+
+    /**
+     * Validate coupon against a list of seller IDs (prevent cross-seller usage).
+     * If coupon has no seller (global/admin coupon), it's valid for any seller.
+     * If coupon belongs to a specific seller, it must be in the sellerIds list.
+     */
+    public Coupon validateCouponForSellerList(String code, List<Long> sellerIds, Integer orderAmount) {
+        Coupon coupon = couponRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mã giảm giá không tồn tại"));
+
+        // Check basic validity
+        if (!coupon.isActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã giảm giá đã bị vô hiệu hóa");
+        }
+        if (coupon.getExpiresAt() != null && LocalDateTime.now().isAfter(coupon.getExpiresAt())) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Mã giảm giá đã hết hạn");
+        }
+        if (coupon.getTotalQuantity() > 0 && coupon.getUsedCount() >= coupon.getTotalQuantity()) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Mã giảm giá đã hết lượt sử dụng");
+        }
+        if (coupon.getMinOrderAmount() != null && orderAmount < coupon.getMinOrderAmount()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Đơn hàng tối thiểu " + coupon.getMinOrderAmount() + " VND");
+        }
+
+        // Check start date
+        if (coupon.getStartDate() != null && LocalDateTime.now().isBefore(coupon.getStartDate())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã giảm giá chưa đến thời gian sử dụng");
+        }
+
+        // CRITICAL: Prevent cross-seller usage
+        // If coupon has a seller, it must be one of the sellers in the cart
+        if (coupon.getSeller() != null) {
+            Long couponSellerId = coupon.getSeller().getId();
+            if (sellerIds == null || sellerIds.isEmpty() || !sellerIds.contains(couponSellerId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Mã giảm giá không áp dụng được cho cửa hàng trong giỏ hàng của bạn");
+            }
+        }
+
+        return coupon;
     }
 }
 

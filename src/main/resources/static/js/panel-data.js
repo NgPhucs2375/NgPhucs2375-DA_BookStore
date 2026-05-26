@@ -44,8 +44,8 @@
             sessionStorage.removeItem('accessToken'); 
             sessionStorage.removeItem('access_token'); 
         } catch(e){}
-        if (window.location.pathname !== '/login' && window.location.pathname.indexOf('/admin') !== -1) {
-          window.location.href = '/login';
+        if (window.location.pathname !== '/main/auth') {
+          window.location.href = '/main/auth';
         }
         throw new Error("Unauthorized: " + res.status);
       }

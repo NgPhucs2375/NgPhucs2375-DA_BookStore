@@ -53,9 +53,10 @@ public class OrderService {
     }
 
     @Transactional
-    public CheckoutResponse checkoutFromCurrentBuyer(Long buyerId, String shippingAddress) {
-        return checkoutInternal(buyerId, shippingAddress, null);
+    public CheckoutResponse checkoutFromCurrentBuyer(Long buyerId, String shippingAddress, String couponCode) {
+        return checkoutInternal(buyerId, shippingAddress, couponCode);
     }
+
 
     private CheckoutResponse checkoutInternal(Long buyerId, String shippingAddress, String couponCode) {
         User buyer = userRepository.findById(buyerId)
@@ -138,13 +139,23 @@ public class OrderService {
             orderTotal += subTotal;
         }
 
-        // Handle Coupon
+        // Handle Coupon with cross-seller validation
+        double originalTotal = orderTotal;
         if (couponCode != null && !couponCode.trim().isEmpty()) {
-            Integer discount = couponService.calculateDiscount(couponCode, (int) orderTotal);
+            // Extract seller IDs from cart to validate coupon ownership
+            List<Long> sellerIdsInCart = itemsBySeller.keySet().stream()
+                    .map(User::getId)
+                    .collect(Collectors.toList());
+
+            // Validate coupon against sellers in cart (prevents cross-seller usage)
+            Coupon coupon = couponService.validateCouponForSellerList(
+                    couponCode.trim(), sellerIdsInCart, (int) orderTotal);
+
+            Integer discount = coupon.calculateDiscount((int) orderTotal);
             order.setCouponCode(couponCode.trim().toUpperCase());
             order.setDiscountAmount((double) discount);
             orderTotal = Math.max(0, orderTotal - discount);
-            
+
             // Mark coupon as used
             couponService.useCoupon(couponCode);
         }
@@ -162,8 +173,12 @@ public class OrderService {
                 .buyerId(buyer.getId())
                 .shippingAddress(saved.getShippingAddress())
                 .totalAmount(saved.getTotalAmount())
+                .originalAmount(originalTotal)
+                .discountAmount(saved.getDiscountAmount())
+                .couponCode(saved.getCouponCode())
                 .subOrderCount(saved.getSubOrders() == null ? 0 : saved.getSubOrders().size())
                 .build();
+
     }
 
     @Transactional(readOnly = true)

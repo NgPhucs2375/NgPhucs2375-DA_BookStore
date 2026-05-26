@@ -7,8 +7,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin("*")
@@ -20,39 +24,52 @@ public class CouponController {
 
     /**
      * Validate coupon for checkout (Public endpoint)
-     * GET /api/coupons/{code}/validate?orderAmount=500000
+     * GET /api/coupons/{code}/validate?orderAmount=500000&sellerIds=1,2,3
+     * sellerIds is optional - if provided, validates coupon belongs to one of the sellers in cart
      */
     @GetMapping("/{code}/validate")
     public ResponseEntity<?> validateCoupon(
             @PathVariable String code,
-            @RequestParam Integer orderAmount
+            @RequestParam Integer orderAmount,
+            @RequestParam(required = false) String sellerIds
     ) {
         try {
-            // Validate coupon
-            Coupon coupon = couponService.validateCoupon(code, orderAmount);
+            Coupon coupon;
+            if (sellerIds != null && !sellerIds.isEmpty()) {
+                // Parse seller IDs and validate against seller list (prevent cross-seller)
+                List<Long> sellerIdList = Arrays.stream(sellerIds.split(","))
+                        .map(String::trim)
+                        .map(Long::parseLong)
+                        .collect(Collectors.toList());
+                coupon = couponService.validateCouponForSellerList(code, sellerIdList, orderAmount);
+            } else {
+                // Fallback to basic validation (no seller check)
+                coupon = couponService.validateCoupon(code, orderAmount);
+            }
 
             // Calculate discount
             Integer discount = coupon.calculateDiscount(orderAmount);
             Integer finalAmount = orderAmount - discount;
 
-            return ResponseEntity.ok(Map.of(
-                    "valid", true,
-                    "code", coupon.getCode(),
-                    "description", coupon.getDescription(),
-                    "type", coupon.getType().toString(),
-                    "originalAmount", orderAmount,
-                    "discount", discount,
-                    "finalAmount", finalAmount,
-                    "message", "Mã giảm giá hợp lệ"
-            ));
+            Map<String, Object> successBody = new HashMap<>();
+            successBody.put("valid", true);
+            successBody.put("code", coupon.getCode());
+            successBody.put("description", coupon.getDescription());
+            successBody.put("type", coupon.getType() != null ? coupon.getType().toString() : null);
+            successBody.put("originalAmount", orderAmount);
+            successBody.put("discount", discount);
+            successBody.put("finalAmount", finalAmount);
+            successBody.put("message", "Mã giảm giá hợp lệ");
+            return ResponseEntity.ok(successBody);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "valid", false,
-                    "code", code,
-                    "error", e.getMessage()
-            ));
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("valid", false);
+            errorBody.put("code", code);
+            errorBody.put("error", e.getMessage() != null ? e.getMessage() : "Lỗi không xác định");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody);
         }
     }
+
 
     /**
      * Get coupon details (Public endpoint)
@@ -69,18 +86,18 @@ public class CouponController {
             }
 
             Coupon c = coupon.get();
-            return ResponseEntity.ok(Map.of(
-                    "code", c.getCode(),
-                    "description", c.getDescription(),
-                    "type", c.getType().toString(),
-                    "amount", c.getAmount(),
-                    "minOrderAmount", c.getMinOrderAmount(),
-                    "isValid", c.isValid()
-            ));
+            Map<String, Object> detailBody = new HashMap<>();
+            detailBody.put("code", c.getCode());
+            detailBody.put("description", c.getDescription());
+            detailBody.put("type", c.getType() != null ? c.getType().toString() : null);
+            detailBody.put("amount", c.getAmount());
+            detailBody.put("minOrderAmount", c.getMinOrderAmount());
+            detailBody.put("isValid", c.isValid());
+            return ResponseEntity.ok(detailBody);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Lỗi: " + e.getMessage()
-            ));
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("error", "Lỗi: " + (e.getMessage() != null ? e.getMessage() : "không xác định"));
+            return ResponseEntity.badRequest().body(errorBody);
         }
     }
 
@@ -96,9 +113,9 @@ public class CouponController {
                     "message", "Mã giảm giá đã được sử dụng"
             ));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", e.getMessage()
-            ));
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("error", e.getMessage() != null ? e.getMessage() : "Lỗi không xác định");
+            return ResponseEntity.badRequest().body(errorBody);
         }
     }
 }

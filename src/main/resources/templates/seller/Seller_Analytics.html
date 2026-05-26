@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/panel_head :: head('BOOKOM SELLER - Phan tich', true)}"></head>
-<body class="font-sans bg-[#fbfaf8] text-[#5D4037]">
+<bogeminidy class="font-sans bg-[#fbfaf8] text-[#5D4037]">
 <div class="flex min-h-screen">
     <div th:replace="~{fragments/seller_layout :: sidebar(${activeMenu})}"></div>
     <div class="flex-1 min-w-0">
@@ -22,5 +22,5 @@
 </div>
 <script th:src="@{/js/panel-data.js}"></script>
 <script>BookomPanelData.initSellerAnalytics();</script>
-</body>
+</bogeminidy>
 </html>

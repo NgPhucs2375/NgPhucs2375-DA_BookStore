@@ -44,8 +44,9 @@ public class OrderController {
             org.springframework.security.core.Authentication auth
     ) {
         Long buyerId = com.example.bookstore.security.AuthenticationUtil.getCurrentUserId(auth);
-        return orderService.checkoutFromCurrentBuyer(buyerId, request.getShippingAddress());
+        return orderService.checkoutFromCurrentBuyer(buyerId, request.getShippingAddress(), request.getCouponCode());
     }
+
 
     @GetMapping("/buyer/{buyerId}")
     @PreAuthorize("hasPermission(#buyerId, 'User', 'read')")

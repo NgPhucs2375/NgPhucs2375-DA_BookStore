@@ -15,7 +15,43 @@ import java.util.List;
 
 @Repository
 public interface SubOrderRepository extends JpaRepository<SubOrder, Long> {
-    List<SubOrder> findBySeller(User seller);
+
+    /**
+     * Find sub-orders by seller with JOIN FETCH to avoid LazyInitializationException.
+     * Fetches: seller (User), parentOrder (Order), parentOrder.buyer (User),
+     * items (List<OrderItem>), and items.book (Book) in a single query.
+     */
+    @Query("SELECT DISTINCT so FROM SubOrder so " +
+           "JOIN FETCH so.seller " +
+           "JOIN FETCH so.parentOrder o " +
+           "JOIN FETCH o.buyer " +
+           "LEFT JOIN FETCH so.items " +
+           "WHERE so.seller = :seller " +
+           "ORDER BY so.id DESC")
+    List<SubOrder> findBySellerOrderByIdDesc(@Param("seller") User seller);
+
+    /**
+     * Find sub-orders by seller with JOIN FETCH to avoid LazyInitializationException.
+     */
+    @Query("SELECT DISTINCT so FROM SubOrder so " +
+           "JOIN FETCH so.seller " +
+           "JOIN FETCH so.parentOrder o " +
+           "JOIN FETCH o.buyer " +
+           "LEFT JOIN FETCH so.items " +
+           "WHERE so.seller = :seller")
+    List<SubOrder> findBySeller(@Param("seller") User seller);
+
+    /**
+     * Find sub-orders by seller and status with JOIN FETCH.
+     */
+    @Query("SELECT DISTINCT so FROM SubOrder so " +
+           "JOIN FETCH so.seller " +
+           "JOIN FETCH so.parentOrder o " +
+           "JOIN FETCH o.buyer " +
+           "LEFT JOIN FETCH so.items " +
+           "WHERE so.seller = :seller AND so.status = :status")
+    List<SubOrder> findBySellerAndStatus(@Param("seller") User seller,
+                                         @Param("status") OrderStatus status);
 
               @Query("""
                                           SELECT CASE WHEN COUNT(so) > 0 THEN TRUE ELSE FALSE END
@@ -33,32 +69,43 @@ public interface SubOrderRepository extends JpaRepository<SubOrder, Long> {
                                           """)
               boolean existsByIdAndBuyerId(@Param("subOrderId") Long subOrderId, @Param("buyerId") Long buyerId);
 
-    List<SubOrder> findBySellerOrderByIdDesc(User seller);
-
-    List<SubOrder> findBySellerAndStatus(User seller, OrderStatus status);
-
     /**
-     * Find sub-orders by seller and status
+     * Find sub-orders by seller and status (ordered) with JOIN FETCH.
      */
-    @Query("SELECT so FROM SubOrder so WHERE so.seller = :seller AND so.status = :status " +
+    @Query("SELECT DISTINCT so FROM SubOrder so " +
+           "JOIN FETCH so.seller " +
+           "JOIN FETCH so.parentOrder o " +
+           "JOIN FETCH o.buyer " +
+           "LEFT JOIN FETCH so.items " +
+           "WHERE so.seller = :seller AND so.status = :status " +
            "ORDER BY so.id DESC")
     List<SubOrder> findBySellerAndStatusOrdered(@Param("seller") User seller,
                                                 @Param("status") OrderStatus status);
 
     /**
-     * Find sub-orders by seller with date range filter
+     * Find sub-orders by seller with date range filter with JOIN FETCH.
      */
-    @Query("SELECT so FROM SubOrder so WHERE so.seller = :seller " +
-           "AND so.parentOrder.createdAt >= :createdFrom AND so.parentOrder.createdAt <= :createdTo " +
-           "ORDER BY so.parentOrder.createdAt DESC")
+    @Query("SELECT DISTINCT so FROM SubOrder so " +
+           "JOIN FETCH so.seller " +
+           "JOIN FETCH so.parentOrder o " +
+           "JOIN FETCH o.buyer " +
+           "LEFT JOIN FETCH so.items " +
+           "WHERE so.seller = :seller " +
+           "AND o.createdAt >= :createdFrom AND o.createdAt <= :createdTo " +
+           "ORDER BY o.createdAt DESC")
     List<SubOrder> findBySellerAndDateRange(@Param("seller") User seller,
                                             @Param("createdFrom") LocalDateTime createdFrom,
                                             @Param("createdTo") LocalDateTime createdTo);
 
     /**
-     * Find sub-orders by seller with price range filter
+     * Find sub-orders by seller with price range filter with JOIN FETCH.
      */
-    @Query("SELECT so FROM SubOrder so WHERE so.seller = :seller " +
+    @Query("SELECT DISTINCT so FROM SubOrder so " +
+           "JOIN FETCH so.seller " +
+           "JOIN FETCH so.parentOrder o " +
+           "JOIN FETCH o.buyer " +
+           "LEFT JOIN FETCH so.items " +
+           "WHERE so.seller = :seller " +
            "AND so.subTotal >= :minPrice AND so.subTotal <= :maxPrice " +
            "ORDER BY so.id DESC")
     List<SubOrder> findBySellerAndPriceRange(@Param("seller") User seller,
@@ -66,15 +113,28 @@ public interface SubOrderRepository extends JpaRepository<SubOrder, Long> {
                                              @Param("maxPrice") Double maxPrice);
 
     /**
-     * Find sub-orders with combined filters for seller
+     * Find sub-orders with combined filters for seller with JOIN FETCH.
+     * Note: For paginated queries with JOIN FETCH on collections, we use DISTINCT
+     * and count query separately to avoid issues with pagination.
      */
-    @Query("SELECT so FROM SubOrder so WHERE so.seller = :seller " +
+    @Query(value = "SELECT DISTINCT so FROM SubOrder so " +
+           "JOIN FETCH so.seller " +
+           "JOIN FETCH so.parentOrder o " +
+           "JOIN FETCH o.buyer " +
+           "LEFT JOIN FETCH so.items " +
+           "WHERE so.seller = :seller " +
            "AND (:status IS NULL OR so.status = :status) " +
-           "AND (:createdFrom IS NULL OR so.parentOrder.createdAt >= :createdFrom) " +
-           "AND (:createdTo IS NULL OR so.parentOrder.createdAt <= :createdTo) " +
+           "AND (:createdFrom IS NULL OR o.createdAt >= :createdFrom) " +
+           "AND (:createdTo IS NULL OR o.createdAt <= :createdTo) " +
            "AND (:minPrice IS NULL OR so.subTotal >= :minPrice) " +
-           "AND (:maxPrice IS NULL OR so.subTotal <= :maxPrice) " +
-           "ORDER BY so.id DESC")
+           "AND (:maxPrice IS NULL OR so.subTotal <= :maxPrice)",
+           countQuery = "SELECT COUNT(DISTINCT so) FROM SubOrder so " +
+                        "WHERE so.seller = :seller " +
+                        "AND (:status IS NULL OR so.status = :status) " +
+                        "AND (:createdFrom IS NULL OR so.parentOrder.createdAt >= :createdFrom) " +
+                        "AND (:createdTo IS NULL OR so.parentOrder.createdAt <= :createdTo) " +
+                        "AND (:minPrice IS NULL OR so.subTotal >= :minPrice) " +
+                        "AND (:maxPrice IS NULL OR so.subTotal <= :maxPrice)")
     Page<SubOrder> findBySellerWithFilters(@Param("seller") User seller,
                                            @Param("status") OrderStatus status,
                                            @Param("createdFrom") LocalDateTime createdFrom,
@@ -84,10 +144,15 @@ public interface SubOrderRepository extends JpaRepository<SubOrder, Long> {
                                            Pageable pageable);
 
     /**
-     * Find sub-orders by seller and buyer name pattern
+     * Find sub-orders by seller and buyer name pattern with JOIN FETCH.
      */
-    @Query("SELECT so FROM SubOrder so WHERE so.seller = :seller " +
-           "AND LOWER(so.parentOrder.buyer.username) LIKE LOWER(CONCAT('%', :buyerName, '%')) " +
+    @Query("SELECT DISTINCT so FROM SubOrder so " +
+           "JOIN FETCH so.seller " +
+           "JOIN FETCH so.parentOrder o " +
+           "JOIN FETCH o.buyer b " +
+           "LEFT JOIN FETCH so.items " +
+           "WHERE so.seller = :seller " +
+           "AND LOWER(b.username) LIKE LOWER(CONCAT('%', :buyerName, '%')) " +
            "ORDER BY so.id DESC")
     List<SubOrder> findBySellerAndBuyerNameContaining(@Param("seller") User seller,
                                                       @Param("buyerName") String buyerName);

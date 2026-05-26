@@ -199,4 +199,127 @@ public class CouponService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return couponRepository.findAll(pageable);
     }
+
+    // ========== SELLER-SPECIFIC METHODS ==========
+
+    /**
+     * Validate coupon for a specific seller (prevent cross-seller usage)
+     * Ensures buyer is using coupon from the seller they're purchasing from
+     */
+    public Coupon validateCouponForSeller(String code, Long sellerId, Integer orderAmount) {
+        Coupon coupon = couponRepository.findValidVoucherForSeller(code, sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
+                    "Mã giảm giá không có sẵn cho cửa hàng này"));
+
+        // Check minimum order amount
+        if (coupon.getMinOrderAmount() != null && orderAmount < coupon.getMinOrderAmount()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Đơn hàng tối thiểu " + coupon.getMinOrderAmount() + " VND");
+        }
+
+        return coupon;
+    }
+
+    /**
+     * Get seller's coupon by ID (verify ownership)
+     */
+    public Coupon getSellerVoucher(Long voucherId, Long sellerId) {
+        Coupon coupon = couponRepository.findById(voucherId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mã giảm giá không tồn tại"));
+
+        // Verify ownership
+        if (coupon.getSeller() == null || !coupon.getSeller().getId().equals(sellerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền truy cập mã giảm giá này");
+        }
+
+        return coupon;
+    }
+
+    /**
+     * List seller's coupons with pagination
+     */
+    public Page<Coupon> listSellerCoupons(Long sellerId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return couponRepository.findBySeller_IdOrderByCreatedAtDesc(sellerId, pageable);
+    }
+
+    /**
+     * Search seller's coupons
+     */
+    public Page<Coupon> searchSellerCoupons(Long sellerId, String keyword, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return couponRepository.searchSellerCoupons(sellerId, keyword, pageable);
+    }
+
+    /**
+     * Create coupon for seller
+     */
+    @Transactional
+    public Coupon createSellerCoupon(Coupon coupon, Long sellerId) {
+        // Verify code uniqueness within seller's coupons
+        if (couponRepository.existsByCodeIgnoreCaseAndSeller_Id(coupon.getCode(), sellerId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã giảm giá đã tồn tại cho cửa hàng của bạn");
+        }
+
+        // Validate coupon data
+        if (coupon.getAmount() == null || coupon.getAmount() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số tiền giảm phải > 0");
+        }
+
+        if (coupon.getType() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Loại giảm giá là bắt buộc");
+        }
+
+        // Validate date ranges
+        if (coupon.getStartDate() != null && coupon.getExpiresAt() != null 
+            && coupon.getStartDate().isAfter(coupon.getExpiresAt())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày bắt đầu phải trước ngày kết thúc");
+        }
+
+        coupon.setCreatedAt(LocalDateTime.now());
+        coupon.setUsedCount(0);
+        // totalQuantity will default to -1 (unlimited) if not set
+
+        return couponRepository.save(coupon);
+    }
+
+    /**
+     * Update seller's own coupon
+     */
+    @Transactional
+    public Coupon updateSellerCoupon(Long voucherId, Long sellerId, Coupon updates) {
+        Coupon coupon = getSellerVoucher(voucherId, sellerId);
+
+        // Only allow certain fields to be updated
+        if (updates.getDescription() != null) {
+            coupon.setDescription(updates.getDescription());
+        }
+        // Note: isActive is primitive boolean, no null check needed
+        coupon.setActive(updates.isActive());
+
+        // Note: Cannot update code, amount, type after creation (business rule)
+        // Can update: description, isActive
+
+        coupon.setUpdatedAt(LocalDateTime.now());
+        return couponRepository.save(coupon);
+    }
+
+    /**
+     * Deactivate (soft delete) seller's coupon
+     */
+    @Transactional
+    public void deactivateSellerCoupon(Long voucherId, Long sellerId) {
+        Coupon coupon = getSellerVoucher(voucherId, sellerId);
+        coupon.setActive(false);
+        coupon.setUpdatedAt(LocalDateTime.now());
+        couponRepository.save(coupon);
+    }
+
+    /**
+     * Get all valid coupons for a seller (for display to buyers)
+     */
+    public List<Coupon> getValidCouponsForSeller(Long sellerId) {
+        return couponRepository.findAllValidVouchersForSeller(sellerId);
+    }
 }
+

@@ -17,8 +17,9 @@ import com.example.bookstore.repository.CartRepository;
 import com.example.bookstore.repository.OrderRepository;
 import com.example.bookstore.repository.SubOrderRepository;
 import com.example.bookstore.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
     private final UserRepository userRepository;
@@ -164,6 +166,7 @@ public class OrderService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public List<Order> getBuyerOrders(Long buyerId) {
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
@@ -171,11 +174,12 @@ public class OrderService {
         return orderRepository.findByBuyerOrderByCreatedAtDesc(buyer);
     }
 
+    @Transactional(readOnly = true)
     public List<Order> getCurrentBuyerOrders(Long buyerId) {
         return getBuyerOrders(buyerId);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<OrderSummaryResponse> getCurrentBuyerOrderSummaries(Long buyerId) {
         return getBuyerOrders(buyerId).stream()
             .map(this::toOrderSummary)
@@ -188,7 +192,7 @@ public class OrderService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
 
         if (!canBuyerCancelOrder(order)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only pending orders can be cancelled");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ có thể hủy đơn hàng ở trạng thái chờ thanh toán hoặc chờ xác nhận");
         }
 
         if (order.getSubOrders() != null) {
@@ -201,7 +205,7 @@ public class OrderService {
         return toOrderSummary(order);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public OrderDetailResponse getCurrentBuyerOrderDetail(Long buyerId, Long orderId) {
         User buyer = userRepository.findById(buyerId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
@@ -305,7 +309,7 @@ public class OrderService {
                 .build();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<SubOrderSummaryResponse> getSellerSubOrders(Long sellerId) {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
@@ -340,13 +344,96 @@ public class OrderService {
                 // fire-and-forget; NotificationService will persist and enqueue delivery with retry
                 try {
                     notificationService.createNotification(sellerId, buyerId, req);
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    log.warn("Failed to send notification for sub-order status update (subOrderId={}, status={}): {}", subOrderId, status, e.getMessage());
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("Failed to prepare notification for sub-order status update (subOrderId={}, status={}): {}", subOrderId, status, e.getMessage());
         }
 
         return toSubOrderSummary(saved);
+    }
+
+    /**
+     * Seller xác nhận đơn hàng - tự động chuyển trạng thái dựa trên trạng thái hiện tại:
+     * - PROCESSING  -> COMFIRMED  (xác nhận đơn)
+     * - COMFIRMED   -> SHIPPING   (xác nhận đang giao)
+     * - SHIPPING    -> COMPLETED  (xác nhận hoàn thành)
+     * Các trạng thái khác -> throw lỗi
+     */
+    @Transactional
+    public SubOrderSummaryResponse confirmSubOrderForSeller(Long sellerId, Long subOrderId) {
+        SubOrder subOrder = subOrderRepository.findById(subOrderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sub order not found"));
+
+        // Xác định trạng thái tiếp theo dựa trên trạng thái hiện tại
+        OrderStatus currentStatus = subOrder.getStatus();
+        OrderStatus nextStatus;
+
+        switch (currentStatus) {
+            case PENDING_PAYMENT:
+                nextStatus = OrderStatus.PROCESSING;
+                break;
+            case PROCESSING:
+                nextStatus = OrderStatus.COMFIRMED;
+                break;
+            case COMFIRMED:
+                nextStatus = OrderStatus.SHIPPING;
+                break;
+            case SHIPPING:
+                nextStatus = OrderStatus.COMPLETED;
+                break;
+            default:
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        String.format("Không thể xác nhận đơn hàng ở trạng thái '%s'. Chỉ có thể xác nhận đơn ở trạng thái: PENDING_PAYMENT, PROCESSING, COMFIRMED, SHIPPING",
+                                currentStatus));
+        }
+
+        subOrder.setStatus(nextStatus);
+        SubOrder saved = subOrderRepository.save(subOrder);
+
+        // Gửi notification cho buyer
+        try {
+            if (saved.getParentOrder() != null && saved.getParentOrder().getBuyer() != null) {
+                Long buyerId = saved.getParentOrder().getBuyer().getId();
+                com.example.bookstore.dto.NotificationCreateRequest req = new com.example.bookstore.dto.NotificationCreateRequest();
+                req.setUserId(buyerId);
+                req.setType(com.example.bookstore.model.enums.NotificationType.SUB_ORDER_STATUS_CHANGED);
+                req.setTitle("Trạng thái đơn hàng thay đổi");
+                req.setMessage(String.format("Đơn hàng #%d đã chuyển sang trạng thái: %s",
+                        saved.getParentOrder().getId(), getStatusDisplayName(nextStatus)));
+                req.setPayloadJson(String.format("{\"subOrderId\":%d,\"orderId\":%d,\"status\":\"%s\"}",
+                        saved.getId(), saved.getParentOrder().getId(), nextStatus.name()));
+                req.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
+
+                try {
+                    notificationService.createNotification(sellerId, buyerId, req);
+                } catch (Exception e) {
+                    log.warn("Failed to send notification for sub-order confirm (subOrderId={}, nextStatus={}): {}", subOrderId, nextStatus, e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to prepare notification for sub-order confirm (subOrderId={}, nextStatus={}): {}", subOrderId, nextStatus, e.getMessage());
+        }
+
+        return toSubOrderSummary(saved);
+    }
+
+    /**
+     * Helper: Lấy tên hiển thị cho trạng thái
+     */
+    private String getStatusDisplayName(OrderStatus status) {
+        if (status == null) return "Không xác định";
+        switch (status) {
+            case PENDING_PAYMENT: return "Chờ thanh toán";
+            case PROCESSING:      return "Đang xác nhận";
+            case COMFIRMED:       return "Đã xác nhận";
+            case SHIPPING:        return "Đang giao";
+            case COMPLETED:       return "Đã hoàn thành";
+            case CANCELLED:       return "Đã hủy";
+            default:              return status.name();
+        }
     }
 
     private SubOrderSummaryResponse toSubOrderSummary(SubOrder subOrder) {
@@ -387,13 +474,14 @@ public class OrderService {
                 .itemCount(itemCount)
                 .status(subOrder.getStatus())
                 .subTotal(subOrder.getSubTotal())
+                .totalAmount(subOrder.getSubTotal() != null ? subOrder.getSubTotal() : 0.0)
                 .build();
     }
 
     /**
      * Filter buyer orders with flexible filtering options
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public OrderFilterResponse filterBuyerOrders(Long buyerId, OrderFilterRequest filter) {
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
@@ -440,7 +528,7 @@ public class OrderService {
     /**
      * Filter seller's sub-orders with flexible filtering options
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public SubOrderFilterResponse filterSellerSubOrders(Long sellerId, SubOrderFilterRequest filter) {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
@@ -488,7 +576,7 @@ public class OrderService {
     /**
      * Search seller's sub-orders by buyer name
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public List<SubOrderSummaryResponse> searchSellerSubOrdersByBuyer(Long sellerId, String buyerName) {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
@@ -506,6 +594,7 @@ public class OrderService {
     /**
      * Get orders by status (for buyers)
      */
+    @Transactional(readOnly = true)
     public List<OrderSummaryResponse> getBuyerOrdersByStatus(Long buyerId, OrderStatus status) {
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));
@@ -521,6 +610,7 @@ public class OrderService {
     /**
      * Get sub-orders by status (for sellers)
      */
+    @Transactional(readOnly = true)
     public List<SubOrderSummaryResponse> getSellerSubOrdersByStatus(Long sellerId, OrderStatus status) {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
@@ -601,7 +691,11 @@ public class OrderService {
             return true;
         }
 
+        // Allow cancellation only if all sub-orders are in PENDING_PAYMENT or PROCESSING state
+        // Cannot cancel: COMFIRMED, SHIPPING, COMPLETED, CANCELLED
         return order.getSubOrders().stream()
-            .allMatch(subOrder -> subOrder.getStatus() == OrderStatus.PENDING_PAYMENT);
+            .allMatch(subOrder -> 
+                subOrder.getStatus() == OrderStatus.PENDING_PAYMENT ||
+                subOrder.getStatus() == OrderStatus.PROCESSING);
     }
 }

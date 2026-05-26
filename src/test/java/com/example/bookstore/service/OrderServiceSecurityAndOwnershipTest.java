@@ -95,7 +95,7 @@ class OrderServiceSecurityAndOwnershipTest {
                 .seller(owner)
                 .status(OrderStatus.PROCESSING)
                 .subTotal(210000.0)
-                .parentOrder(Order.builder().id(2L).build())
+                .parentOrder(Order.builder().id(2L).totalAmount(0.0).shippingAddress("").build())
                 .build();
 
         when(userRepository.findById(33L)).thenReturn(Optional.of(owner));

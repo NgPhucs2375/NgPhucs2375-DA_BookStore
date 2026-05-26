@@ -31,7 +31,7 @@ public class SubOrder {
     @JoinColumn(name = "order_id", nullable = false)
     private Order parentOrder;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
 
@@ -41,6 +41,10 @@ public class SubOrder {
 
     @Column(nullable = false)
     private Double subTotal;
+
+    @Version
+    @Builder.Default
+    private Long version = 0L;
 
     @OneToMany(mappedBy = "subOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore

@@ -73,4 +73,68 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
         AND c.isActive = true
     """)
     List<Coupon> findExpiringCoupons();
+
+    // ========== SELLER-SPECIFIC QUERIES ==========
+
+    /**
+     * Find all coupons owned by a specific seller (or global if seller_id is NULL)
+     */
+    Page<Coupon> findBySeller_IdOrderByCreatedAtDesc(Long sellerId, Pageable pageable);
+
+    /**
+     * Find active coupons owned by a seller
+     */
+    Page<Coupon> findBySeller_IdAndIsActiveTrueOrderByCreatedAtDesc(Long sellerId, Pageable pageable);
+
+    /**
+     * Find coupon by code and seller (ensure seller-specific coupon)
+     */
+    Optional<Coupon> findByCodeIgnoreCaseAndSeller_Id(String code, Long sellerId);
+
+    /**
+     * Find coupon by code and seller, ensuring it's valid for use
+     */
+    @Query("""
+        SELECT c FROM Coupon c 
+        WHERE LOWER(c.code) = LOWER(:code)
+        AND c.seller.id = :sellerId
+        AND c.isActive = true
+        AND (c.startDate IS NULL OR c.startDate <= CURRENT_TIMESTAMP)
+        AND (c.expiresAt IS NULL OR c.expiresAt > CURRENT_TIMESTAMP)
+        AND (c.totalQuantity < 0 OR c.usedCount < c.totalQuantity)
+    """)
+    Optional<Coupon> findValidVoucherForSeller(@Param("code") String code, @Param("sellerId") Long sellerId);
+
+    /**
+     * Check if seller already has a coupon with this code
+     */
+    boolean existsByCodeIgnoreCaseAndSeller_Id(String code, Long sellerId);
+
+    /**
+     * Find all valid (active, not expired, not exhausted) coupons for a seller
+     */
+    @Query("""
+        SELECT c FROM Coupon c 
+        WHERE c.seller.id = :sellerId
+        AND c.isActive = true
+        AND (c.startDate IS NULL OR c.startDate <= CURRENT_TIMESTAMP)
+        AND (c.expiresAt IS NULL OR c.expiresAt > CURRENT_TIMESTAMP)
+        AND (c.totalQuantity < 0 OR c.usedCount < c.totalQuantity)
+        ORDER BY c.createdAt DESC
+    """)
+    List<Coupon> findAllValidVouchersForSeller(@Param("sellerId") Long sellerId);
+
+    /**
+     * Search seller's coupons by code or description
+     */
+    @Query("""
+        SELECT c FROM Coupon c 
+        WHERE c.seller.id = :sellerId
+        AND (LOWER(c.code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+             OR LOWER(c.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        ORDER BY c.createdAt DESC
+    """)
+    Page<Coupon> searchSellerCoupons(@Param("sellerId") Long sellerId, 
+                                     @Param("keyword") String keyword, 
+                                     Pageable pageable);
 }

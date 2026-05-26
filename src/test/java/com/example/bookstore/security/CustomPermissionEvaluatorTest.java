@@ -5,6 +5,7 @@ import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.OrderRepository;
+import com.example.bookstore.repository.SellerShopRepository;
 import com.example.bookstore.repository.SubOrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,11 +34,14 @@ class CustomPermissionEvaluatorTest {
     @Mock
     private SubOrderRepository subOrderRepository;
 
+    @Mock
+    private SellerShopRepository sellerShopRepository;
+
     private CustomPermissionEvaluator evaluator;
 
     @BeforeEach
     void setUp() {
-        evaluator = new CustomPermissionEvaluator(bookRepository, orderRepository, subOrderRepository);
+        evaluator = new CustomPermissionEvaluator(bookRepository, orderRepository, subOrderRepository, sellerShopRepository);
     }
 
     @Test

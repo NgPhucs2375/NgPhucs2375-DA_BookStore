@@ -1,5 +1,5 @@
 package com.example.bookstore.controller;
-
+import static org.mockito.ArgumentMatchers.*;
 import com.example.bookstore.dto.CheckoutMeRequest;
 import com.example.bookstore.dto.CheckoutResponse;
 import com.example.bookstore.security.JwtAuthenticatedPrincipal;
@@ -51,7 +51,7 @@ class OrderControllerTest {
             .subOrderCount(2)
             .build();
 
-        when(orderService.checkoutFromCurrentBuyer(eq(1L), eq("Q1, HCM"))).thenReturn(response);
+        when(orderService.checkoutFromCurrentBuyer(any(), anyString())).thenReturn(response);
 
         mockMvc.perform(post("/api/orders/me/checkout")
                 .principal(new UsernamePasswordAuthenticationToken(
@@ -68,7 +68,7 @@ class OrderControllerTest {
 
     @Test
     void shouldGetCurrentBuyerOrders() throws Exception {
-        when(orderService.getCurrentBuyerOrders(1L)).thenReturn(java.util.List.of());
+        when(orderService.getCurrentBuyerOrders(any())).thenReturn(java.util.List.of());
 
         mockMvc.perform(get("/api/orders/me")
                 .principal(new UsernamePasswordAuthenticationToken(

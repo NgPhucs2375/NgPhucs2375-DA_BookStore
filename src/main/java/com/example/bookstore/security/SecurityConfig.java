@@ -58,7 +58,7 @@ public class SecurityConfig {
                         // Protected routes dựa trên Role
                         .requestMatchers("/api/seller/**").hasRole("SELLER")
                         .requestMatchers("/api/books/seller/**").hasRole("SELLER")
-                        
+
                         .requestMatchers("/api/panel/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/notifications/admin/**").hasRole("ADMIN")

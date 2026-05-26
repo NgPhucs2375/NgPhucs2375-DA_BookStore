@@ -165,6 +165,7 @@ public class DatabaseSeederService {
         AtomicInteger added = new AtomicInteger(0);
 
         ensureUser("admin@gmail.com", UserRole.ADMIN, "admin123", null, null, added);
+        ensureUser("buyer@gmail.com", UserRole.BUYER, "Buyer@123", null, null, added);
         User sellerNhaNam = ensureUser(
                 "shop_nha_nam@gmail.com",
                 UserRole.SELLER,

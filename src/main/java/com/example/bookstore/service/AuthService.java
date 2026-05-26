@@ -135,6 +135,29 @@ public class AuthService {
         return toUserProfileResponse(user);
     }
 
+    /**
+     * Upgrade a BUYER user to SELLER with optional shop info.
+     */
+    public User upgradeToSeller(Long userId, String shopName, String shopAddress) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getRole() == UserRole.SELLER) {
+            return user; // already a seller
+        }
+
+        if (user.getRole() != UserRole.BUYER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only buyers can be upgraded to seller");
+        }
+
+        user.setRole(UserRole.SELLER);
+        if (shopName != null && !shopName.isBlank()) user.setShopName(shopName.trim());
+        if (shopAddress != null && !shopAddress.isBlank()) user.setShopAddress(shopAddress.trim());
+
+        userRepository.save(user);
+        return user;
+    }
+
     private UserProfileResponse toUserProfileResponse(User user) {
         return UserProfileResponse.builder()
             .id(user.getId())

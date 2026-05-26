@@ -163,6 +163,19 @@ const ApiService = (() => {
                 body: JSON.stringify(data)
             });
             return response.json();
+        },
+        /**
+         * Upgrade current authenticated BUYER to SELLER
+         * @param {Object} payload { shopName, shopAddress }
+         * @returns {Object} response containing new accessToken and role info
+         */
+        becomeSeller: async (payload = {}) => {
+            const response = await fetch(`${API_BASE}/auth/become-seller`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(payload)
+            });
+            return handleResponse(response);
         }
     };
 

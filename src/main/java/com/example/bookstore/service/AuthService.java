@@ -4,9 +4,12 @@ import com.example.bookstore.dto.UserProfileResponse;
 import com.example.bookstore.dto.UserProfileUpdateRequest;
 import com.example.bookstore.model.Category;
 import com.example.bookstore.model.User;
+import com.example.bookstore.model.SellerShop;
 import com.example.bookstore.model.enums.UserRole;
+import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.UserRepository;
+import com.example.bookstore.repository.SellerShopRepository;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,6 +32,12 @@ public class AuthService {
 
     @Autowired
     private AuthOtpService authOtpService;
+
+    @Autowired
+    private SellerShopRepository sellerShopRepository;
+
+    @Autowired
+    private SellerShopService sellerShopService;
 
     //    Register
     public boolean register(String username, String rawPassword, String avatarUrl, List<Long> favoriteCategoryIds){
@@ -65,7 +74,20 @@ public class AuthService {
             .avatarUrl(normalizeAvatar(avatarUrl))
             .favoriteCategories(resolveFavoriteCategories(favoriteCategoryIds))
             .build();
-        userRepository.save(newUser);
+        User savedUser = userRepository.save(newUser);
+
+        // Create SellerShop automatically for new SELLER registrations
+        if (normalizedRole == UserRole.SELLER) {
+            String slug = sellerShopService.generateUniqueSlug(username);
+            SellerShop newSellerShop = SellerShop.builder()
+                    .seller(savedUser)
+                    .slug(slug)
+                    .shopName(username)
+                    .address("Chưa cập nhật")
+                    .approvalStatus(ApprovalStatus.PENDING)
+                    .build();
+            sellerShopRepository.save(newSellerShop);
+        }
 
         System.out.println("Đăng ký thành công");
         return true;

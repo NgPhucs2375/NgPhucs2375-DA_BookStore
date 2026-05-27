@@ -4,6 +4,7 @@ import com.example.bookstore.dto.AuthLoginRequest;
 import com.example.bookstore.dto.AuthRegisterRequest;
 import com.example.bookstore.dto.EmailOtpRequest;
 import com.example.bookstore.dto.EmailOtpVerifyRequest;
+import com.example.bookstore.dto.FirebaseLoginRequest;
 import com.example.bookstore.dto.UserProfileResponse;
 import com.example.bookstore.dto.UserProfileUpdateRequest;
 import com.example.bookstore.model.User;
@@ -11,6 +12,7 @@ import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.security.JwtTokenProvider;
 import com.example.bookstore.service.AuthOtpService;
 import com.example.bookstore.service.AuthService;
+import com.example.bookstore.service.FirebaseAuthService;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,13 +31,16 @@ import java.util.Map;
 public class AuthController {
 
     @Autowired
-    private AuthService authService; //Thêm bộ não xử lý
+    AuthService authService; //Thêm bộ não xử lý
 
     @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    JwtTokenProvider jwtTokenProvider;
 
     @Autowired
-    private AuthOtpService authOtpService;
+    AuthOtpService authOtpService;
+
+    @Autowired
+    FirebaseAuthService firebaseAuthService;
 
     @PostMapping("/otp/request")
     public ResponseEntity<?> requestRegisterOtp(@Valid @RequestBody EmailOtpRequest request) {
@@ -159,8 +164,135 @@ public class AuthController {
         response.put("sellerId", sellerId);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout() {
+        // Since JWT is stateless, logout on server side doesn't invalidate the token
+        // Client should remove token from localStorage/sessionStorage
+        return ResponseEntity.ok("Đăng xuất thành công");
+    }
+
+    /**
+     * DEV-ONLY: Quick login for seeded accounts (no OTP required)
+     * Used in development when email cannot receive OTP
+     * 
+     * Example:
+     * POST /api/auth/dev-login
+     * {
+     *   "username": "shop_nha_nam@gmail.com",
+     *   "password": "seller123"
+     * }
+     * 
+     * Response:
+     * {
+     *   "tokenType": "Bearer",
+     *   "accessToken": "eyJ0eXAi...",
+     *   "userId": 2,
+     *   "role": "SELLER",
+     *   "sellerId": 2
+     * }
+     */
+    @PostMapping("/dev-login")
+    public ResponseEntity<?> devLogin(@Valid @RequestBody AuthLoginRequest request) {
+        // No OTP verification needed - directly authenticate
+        User authenticated = authService.authenticateUser(request.getUsername(), request.getPassword());
+        if (authenticated == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Sai tên đăng nhập hoặc mật khẩu");
+        }
+
+        if (!authenticated.isActive()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("Tài khoản bị từ chối đăng nhập");
+        }
+
+        Long sellerId = authenticated.getRole() == UserRole.SELLER
+            ? authenticated.getId()
+            : null;
+        java.util.List<String> roles = java.util.List.of(authenticated.getRole().name());
+        String token = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+
+        java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("tokenType", "Bearer");
+        response.put("accessToken", token);
+        response.put("userId", authenticated.getId());
+        response.put("role", authenticated.getRole().name());
+        response.put("roles", roles);
+        response.put("sellerId", sellerId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Firebase Google Login
+     * POST /api/auth/firebase/google
+     * 
+     * Frontend gửi Firebase ID Token lên, backend xác thực và trả về JWT token
+     * 
+     * Request body:
+     * {
+     *   "idToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+     * }
+     * 
+     * Response:
+     * {
+     *   "tokenType": "Bearer",
+     *   "accessToken": "eyJ0eXAi...",
+     *   "userId": 1,
+     *   "role": "BUYER",
+     *   "roles": ["BUYER"],
+     *   "sellerId": null,
+     *   "email": "user@gmail.com",
+     *   "name": "Nguyen Van A"
+     * }
+     */
+    @PostMapping("/firebase/google")
+    public ResponseEntity<?> loginWithGoogle(@Valid @RequestBody FirebaseLoginRequest request) {
+        try {
+            // 1. Xác thực Firebase token
+            User user = firebaseAuthService.authenticateFirebaseToken(request.getIdToken());
+
+            // 2. Tạo JWT token như hệ thống cũ
+            Long sellerId = user.getRole() == UserRole.SELLER
+                ? user.getId()
+                : null;
+            java.util.List<String> roles = java.util.List.of(user.getRole().name());
+            String token = jwtTokenProvider.createToken(user.getId(), roles, sellerId);
+
+            // 3. Trả về response
+            java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
+            response.put("tokenType", "Bearer");
+            response.put("accessToken", token);
+            response.put("userId", user.getId());
+            response.put("role", user.getRole().name());
+            response.put("roles", roles);
+            response.put("sellerId", sellerId);
+            response.put("email", user.getEmail());
+            response.put("name", (user.getFirstName() != null ? user.getFirstName() : "") + " " + (user.getLastName() != null ? user.getLastName() : ""));
+            response.put("avatarUrl", user.getAvatarUrl());
+
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(java.util.Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(java.util.Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            // Log đầy đủ stack trace để debug
+            System.err.println("=== Firebase Google Login Error ===");
+            System.err.println("Exception type: " + e.getClass().getName());
+            System.err.println("Message: " + e.getMessage());
+            e.printStackTrace(System.err);
+            System.err.println("===================================");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(java.util.Map.of("error", "Firebase token không hợp lệ hoặc đã hết hạn"));
+        }
+    }
+
     @GetMapping("/profile/{userId}")
     public UserProfileResponse getProfile(@PathVariable Long userId) {
+
         return authService.getProfile(userId);
     }
 

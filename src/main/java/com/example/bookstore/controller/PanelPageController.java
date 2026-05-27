@@ -1,6 +1,7 @@
 // PanelPageController : dùng để điều hướng các trang admin và seller, mỗi phương thức sẽ trả về một view tương ứng với trang đó, đồng thời truyền vào model các thuộc tính như pageTitle, pageSubtitle và activeMenu để hiển thị thông tin trên giao diện và đánh dấu menu đang hoạt động.
 package com.example.bookstore.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -96,6 +97,14 @@ public class PanelPageController {
         return "seller/Seller_Analytics";
     }
 
+    @GetMapping("/seller/vouchers")
+    public String sellerVouchers(Model model) {
+        model.addAttribute("pageTitle", "Quan ly khuyen mai");
+        model.addAttribute("pageSubtitle", "Tao va quan ly ma giam gia cho cua hang");
+        model.addAttribute("activeMenu", "seller-vouchers");
+        return "seller/Seller_Vouchers";
+    }
+
     @GetMapping("/seller/shop")
     public String sellerShop(Model model) {
         model.addAttribute("pageTitle", "Ho so gian hang");
@@ -103,6 +112,7 @@ public class PanelPageController {
         model.addAttribute("activeMenu", "seller-shop");
         return "seller/Shop_Seller";
     }
+
 
     @GetMapping("/seller/product-detail")
     public String sellerProductDetail() {

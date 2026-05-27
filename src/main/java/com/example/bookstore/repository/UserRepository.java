@@ -27,4 +27,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     // 🆕 NEW: Tìm kiếm người dùng theo username (case-insensitive)
     List<User> findByUsernameContainingIgnoreCase(String username);
+
+    // 🆕 Firebase: Tìm user theo email
+    java.util.Optional<User> findByEmail(String email);
 }

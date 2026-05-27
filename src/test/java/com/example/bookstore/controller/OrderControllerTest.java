@@ -51,7 +51,8 @@ class OrderControllerTest {
             .subOrderCount(2)
             .build();
 
-        when(orderService.checkoutFromCurrentBuyer(any(), anyString())).thenReturn(response);
+        when(orderService.checkoutFromCurrentBuyer(any(), anyString(), any())).thenReturn(response);
+
 
         mockMvc.perform(post("/api/orders/me/checkout")
                 .principal(new UsernamePasswordAuthenticationToken(

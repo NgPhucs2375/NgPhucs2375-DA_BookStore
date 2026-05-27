@@ -164,6 +164,7 @@ public class SellerShopService {
                             .seller(seller)
                             .slug(slug)
                             .shopName(seller.getShopName() != null ? seller.getShopName() : seller.getUsername())
+                            .address(seller.getShopAddress() != null ? seller.getShopAddress() : "Chưa cập nhật")
                             .approvalStatus(ApprovalStatus.PENDING)
                             .build();
                     return shopRepository.save(newShop);
@@ -178,8 +179,9 @@ public class SellerShopService {
 
     /**
      * Generate unique slug from shop name
+     * Made public to be used during seller registration and seeding
      */
-    private String generateUniqueSlug(String shopName) {
+    public String generateUniqueSlug(String shopName) {
         // Convert to lowercase and replace spaces with hyphens
         String baseSlug = shopName.toLowerCase().replaceAll("\\s+", "-").replaceAll("[^a-z0-9-]", "");
         

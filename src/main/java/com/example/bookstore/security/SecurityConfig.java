@@ -42,7 +42,14 @@ public class SecurityConfig {
                 // 2. Xử lý lỗi
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Token is missing or invalid");
+                            String acceptHeader = request.getHeader("Accept");
+                            // Nếu là request từ browser (HTML), redirect về trang đăng nhập
+                            if (acceptHeader != null && acceptHeader.contains("text/html")) {
+                                response.sendRedirect("/main/auth");
+                            } else {
+                                // API request -> trả về 401
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Token is missing or invalid");
+                            }
                         })
                 )
 
@@ -51,7 +58,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register-admin").hasRole("ADMIN")
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/shops/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/admin", "/admin/**").permitAll()
+                        .requestMatchers("/admin", "/admin/**").permitAll()
+                        .requestMatchers("/seller", "/seller/**").permitAll()
+                        .requestMatchers("/buyer", "/buyer/**").permitAll()
 
                         .requestMatchers("/api/admin/seeder/**").hasRole("ADMIN")
 

@@ -657,6 +657,15 @@
             return;
         }
 
+        // Early auth check: redirect to login if no token
+        var token = localStorage.getItem('accessToken') || localStorage.getItem('access_token') ||
+            sessionStorage.getItem('accessToken') || sessionStorage.getItem('access_token');
+        if (!token) {
+            console.warn('No auth token found, redirecting to login');
+            window.location.href = '/main/auth';
+            return;
+        }
+
         // Setup period toggle
         setupPeriodToggle();
 

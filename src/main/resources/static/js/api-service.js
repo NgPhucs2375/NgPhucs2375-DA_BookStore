@@ -279,6 +279,17 @@ const ApiService = (() => {
         },
 
         /**
+         * Lấy chi tiết sách của seller hiện tại (Bảo mật - kiểm tra ownership)
+         * Chỉ trả về sách mà seller sở hữu
+         */
+        getOwnBook: async (bookId) => {
+            const response = await fetch(`${API_BASE}/books/seller/book/${bookId}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
          * Tạo sách mới (seller)
          */
         create: async (bookData) => {

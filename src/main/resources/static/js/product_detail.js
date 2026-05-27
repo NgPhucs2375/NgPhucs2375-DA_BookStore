@@ -60,7 +60,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             el.pageTitle.textContent = "Chỉnh sửa sách";
             el.skuDisplay.textContent = `Mã sách (ID): ${bookId}`;
             try {
-                const book = await ApiService.Book.getById(bookId);
+                // Gọi API secure để lấy sách của seller hiện tại
+                // Endpoint kiểm tra seller sở hữu sách trước khi trả về (IDOR Protection)
+                const book = await ApiService.Book.getOwnBook(bookId);
+
                 // Đổ data text vào
                 el.title.value = book.title || '';
                 el.author.value = book.author || '';
@@ -75,8 +78,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     imagePreview.classList.remove('hidden');
                     imagePlaceholder.classList.add('hidden');
                 }
+                
+                console.log('✅ Đã load thông tin sách thành công');
+                console.log('📦 Seller ID của sách:', book.seller?.id);
+                
             } catch (error) {
-                alert('❌ Lỗi: Không lấy được thông tin sách');
+                console.error('❌ Lỗi khi load sách:', error);
+                const errorMsg = error.data?.error || error.message || 'Không lấy được thông tin sách';
+                alert('❌ Lỗi: ' + errorMsg);
+                window.location.href = '/seller/inventory';
             }
         } else {
             el.pageTitle.textContent = "Thêm sách mới";

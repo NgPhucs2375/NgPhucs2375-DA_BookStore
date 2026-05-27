@@ -10,6 +10,8 @@ import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.UserRepository;
+import com.example.bookstore.repository.SellerShopRepository;
+import com.example.bookstore.model.SellerShop;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,8 @@ public class DatabaseSeederService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final SellerShopRepository sellerShopRepository;
+    private final SellerShopService sellerShopService;
     private final GeminiService geminiService;
 
     @Value("${app.seeder.max-books:300}")
@@ -183,6 +187,14 @@ public class DatabaseSeederService {
                 added
         );
 
+        // Create SellerShop records for seeded sellers if they don't already exist
+        if (sellerNhaNam != null) {
+            ensureSellerShop(sellerNhaNam, "Nha Nam Official");
+        }
+        if (sellerTre != null) {
+            ensureSellerShop(sellerTre, "NXB Tre Official");
+        }
+
         result.setUsersAdded(added.get());
         return List.of(sellerNhaNam, sellerTre).stream().filter(u -> u != null).toList();
     }
@@ -215,6 +227,40 @@ public class DatabaseSeederService {
         User saved = userRepository.save(builder.build());
         added.incrementAndGet();
         return saved;
+    }
+
+    /**
+     * Ensure SellerShop record exists for a seller user
+     * Creates SellerShop if it doesn't exist, with a unique slug generated from shop name
+     */
+    private void ensureSellerShop(User seller, String shopName) {
+        if (seller == null || seller.getRole() != UserRole.SELLER) {
+            return;
+        }
+
+        // Check if SellerShop already exists for this seller
+        if (sellerShopRepository.findBySellerId(seller.getId()).isPresent()) {
+            return;
+        }
+
+        // Generate unique slug using SellerShopService
+        String slug = sellerShopService.generateUniqueSlug(shopName);
+
+        // Create new SellerShop with all default values
+        SellerShop newSellerShop = SellerShop.builder()
+                .seller(seller)
+                .slug(slug)
+                .shopName(shopName)
+                .description("Cửa hàng sách chính thức của " + shopName)
+                .address(seller.getShopAddress() != null ? seller.getShopAddress() : shopName + " - Main Store")
+                .city("Ho Chi Minh")
+                .province("Ho Chi Minh")
+                .contactEmail(seller.getUsername())
+                .contactPhone("")
+                .approvalStatus(ApprovalStatus.PENDING)
+                .build();
+
+        sellerShopRepository.save(newSellerShop);
     }
 
     private List<Book> readAndSaveFromCsv(

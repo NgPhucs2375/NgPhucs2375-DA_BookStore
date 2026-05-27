@@ -125,6 +125,7 @@ public class UserService {
                 .seller(user)
                 .slug("shop-" + userId) // Slug mặc định, user có thể đổi sau
                 .shopName("Cửa hàng của " + user.getUsername())
+                .address(user.getShopAddress() != null ? user.getShopAddress() : "Chưa cập nhật")
                 .approvalStatus(ApprovalStatus.APPROVED) // Shop được tạo tự động khi duyệt -> đã duyệt luôn
                 .build();
 

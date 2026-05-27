@@ -10,5 +10,8 @@ public class CheckoutResponse {
     private Long buyerId;
     private String shippingAddress;
     private Double totalAmount;
+    private Double originalAmount;
+    private Double discountAmount;
+    private String couponCode;
     private Integer subOrderCount;
 }

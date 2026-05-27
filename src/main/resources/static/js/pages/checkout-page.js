@@ -136,6 +136,22 @@
         if (shippingFeeEl) shippingFeeEl.textContent = formatVnd(shippingFee);
         if (shopDiscountEl) shopDiscountEl.textContent = `-${formatVnd(shopDiscount)}`;
         if (voucherDiscountEl) voucherDiscountEl.textContent = `-${formatVnd(voucherDiscount)}`;
+
+        // Hiển thị giá gốc (trước giảm) khi có coupon - không thay đổi layout, chỉ thêm dòng
+        const originalBeforeDiscountEl = document.getElementById('checkout-original-before-discount');
+        if (appliedCoupon && voucherDiscount > 0) {
+            const originalAmount = subtotal + shippingFee;
+            if (originalBeforeDiscountEl) {
+                originalBeforeDiscountEl.classList.remove('hidden');
+                const originalAmountEl = originalBeforeDiscountEl.querySelector('.original-amount');
+                if (originalAmountEl) originalAmountEl.textContent = formatVnd(originalAmount);
+            }
+        } else {
+            if (originalBeforeDiscountEl) {
+                originalBeforeDiscountEl.classList.add('hidden');
+            }
+        }
+
         if (totalEl) totalEl.textContent = formatVnd(total);
         if (placeOrderBtn) {
             placeOrderBtn.disabled = totalItems === 0;
@@ -145,6 +161,15 @@
 
         if (estimatedDeliveryEl) estimatedDeliveryEl.textContent = computeEstimatedDeliveryText();
     };
+
+
+    // Helper: extract unique seller IDs from current cart
+    const getSellerIdsFromCart = () => {
+        if (!currentCart || !Array.isArray(currentCart.items)) return '';
+        const sellerIds = [...new Set(currentCart.items.map(item => item.sellerId).filter(id => id != null))];
+        return sellerIds.join(',');
+    };
+
 
     const fetchCart = async () => {
         const { userId, role } = ApiService.getAuth();
@@ -354,15 +379,20 @@
         });
     });
 
-    // Logic Mã giảm giá
+    // Logic Mã giảm giá - gửi kèm sellerIds để chống cross-seller
     applyCouponBtn?.addEventListener('click', async () => {
         const code = (couponInput?.value || '').trim().toUpperCase();
         if (!code) return alert('Nhập mã khuyến mãi');
 
         const subtotal = Number(currentCart?.totalAmount || 0);
+        const sellerIds = getSellerIdsFromCart();
 
         try {
-            const res = await fetch(`/api/coupons/${code}/validate?orderAmount=${subtotal}`);
+            let url = `/api/coupons/${code}/validate?orderAmount=${subtotal}`;
+            if (sellerIds) {
+                url += `&sellerIds=${sellerIds}`;
+            }
+            const res = await fetch(url);
             const data = await res.json();
 
             if (!data.valid) {
@@ -378,6 +408,7 @@
             alert('Không thể kiểm tra mã giảm giá');
         }
     });
+
 
     removeAppliedCouponBtn?.addEventListener('click', () => {
         appliedCoupon = null;

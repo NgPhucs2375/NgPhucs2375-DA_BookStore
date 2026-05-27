@@ -39,3 +39,13 @@ node_modules/
 application-secret.properties
 .env
 .env.*
+
+### Firebase config (contains API keys) ###
+src/main/resources/static/js/firebase-config.js
+
+### Firebase Admin SDK service account (contains private key) ###
+firebase-service-account.json
+src/main/resources/firebase-service-account.json
+
+
+

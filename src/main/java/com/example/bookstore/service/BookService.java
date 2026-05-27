@@ -2,6 +2,7 @@ package com.example.bookstore.service;
 
 import com.example.bookstore.dto.BookUpdateDto;
 import com.example.bookstore.model.Book;
+import com.example.bookstore.model.Category;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.repository.BookRepository;
@@ -20,6 +21,9 @@ public class BookService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private com.example.bookstore.repository.CategoryRepository categoryRepository;
 
     @Value("${app.uploads.covers-dir:uploads/covers}")
     private String coversDir;
@@ -154,6 +158,14 @@ public class BookService {
         // Dòng này giúp Seller 81 thêm sẽ có ID 81, 82 có ID 82
         book.setSeller(seller);
 
+        // 2.5 CONVERT categoryId -> Category object (FIX NULL CATEGORY)
+        // Frontend gửi categoryId (Long), nhưng model cần Category object
+        if (book.getCategory() == null && book.getCategoryId() != null && book.getCategoryId() > 0) {
+            Category category = categoryRepository.findById(book.getCategoryId())
+                    .orElse(null);
+            book.setCategory(category);
+        }
+
         // 3. GIÁP CHỐNG LỖI SQL SERVER (Chặn đứng NULL cho các cột NOT NULL)
         // Tác giả
         if (book.getAuthor() == null || book.getAuthor().trim().isEmpty()) {
@@ -191,10 +203,17 @@ public class BookService {
         if (bookDetails.getTitle() != null) existingBook.setTitle(bookDetails.getTitle());
         if (bookDetails.getDescription() != null) existingBook.setDescription(bookDetails.getDescription());
         if (bookDetails.getPrice() != null) existingBook.setPrice(bookDetails.getPrice());
-
-        // --- THÊM 2 DÒNG NÀY VÀO ĐỂ UPDATE TỒN KHO VÀ TÁC GIẢ ---
         if (bookDetails.getStockQuantity() != null) existingBook.setStockQuantity(bookDetails.getStockQuantity());
         if (bookDetails.getAuthor() != null) existingBook.setAuthor(bookDetails.getAuthor());
+
+        // UPDATE CATEGORY (FIX CATEGORY KHÔNG SAVE KHI EDIT)
+        if (bookDetails.getCategory() == null && bookDetails.getCategoryId() != null && bookDetails.getCategoryId() > 0) {
+            Category category = categoryRepository.findById(bookDetails.getCategoryId())
+                    .orElse(null);
+            existingBook.setCategory(category);
+        } else if (bookDetails.getCategory() != null) {
+            existingBook.setCategory(bookDetails.getCategory());
+        }
 
         existingBook.setApprovalStatus(ApprovalStatus.PENDING); // Sửa xong bắt duyệt lại
 

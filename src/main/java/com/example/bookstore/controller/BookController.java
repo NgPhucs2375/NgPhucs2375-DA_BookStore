@@ -130,11 +130,50 @@ public class BookController {
         return bookRepository.findBySellerIdAndKeywordAndCategory(sellerId, keyword, categoryId, pageable);
     }
 
-    // API take one book by id
+    // API take one book by id (Public API - không security check)
     // Dau ngoac nhon id nghia la gia tri nay se thay doi theo tren Url vd: /api/books/1
     @GetMapping("/{id}")
     public Book getBookById(@PathVariable Long id) {
         return bookService.getBookbyId(id);
+    }
+
+    /**
+     * API lấy chi tiết sách của chính seller hiện tại (Bảo mật)
+     * Endpoint: GET /api/books/seller/book/{id}
+     * Chỉ cho phép seller xem sách của họ
+     * Trả về đủ thông tin: book details + seller info
+     */
+    @GetMapping("/seller/book/{id}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> getSellerOwnBook(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
+    ) {
+        Long sellerId = currentSellerId(principal);
+        if (sellerId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bạn cần đăng nhập");
+        }
+
+        try {
+            Book book = bookService.getBookbyId(id);
+            
+            if (book == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(java.util.Map.of("error", "Sách không tồn tại"));
+            }
+
+            // Kiểm tra xem seller có sở hữu sách này không (IDOR Protection)
+            if (book.getSeller() == null || !book.getSeller().getId().equals(sellerId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("error", "Không có quyền xem sách này"));
+            }
+
+            return ResponseEntity.ok(book);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     // --- API add new book cho Seller - S03 ---

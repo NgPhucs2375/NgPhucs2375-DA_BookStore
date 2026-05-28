@@ -4,11 +4,11 @@
 
   function esc(v) {
     return String(v || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/\"/g, "&quot;")
-      .replace(/'/g, "&#39;");
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
   }
 
   function vnd(v) {
@@ -20,17 +20,17 @@
   }
 
   function authHeaders() {
-    var token = localStorage.getItem('accessToken') || localStorage.getItem('access_token') || 
-                sessionStorage.getItem('accessToken') || sessionStorage.getItem('access_token');
+    var token = localStorage.getItem('accessToken') || localStorage.getItem('access_token') ||
+        sessionStorage.getItem('accessToken') || sessionStorage.getItem('access_token');
     var headers = {
       'Content-Type': 'application/json'
     };
     if (token) headers['Authorization'] = 'Bearer ' + token;
-    
+
     // Fallback for dev mode
     var userId = localStorage.getItem('userId') || window.BookomDevUserId;
     if (!token && userId) headers['X-User-Id'] = String(userId);
-    
+
     return headers;
   }
 
@@ -38,14 +38,14 @@
     return fetch(url, { headers: authHeaders() }).then(function (res) {
       if (res.status === 401 || res.status === 403) {
         // Redirect to a login page or show auth modal for admin
-        try { 
-            localStorage.removeItem('accessToken'); 
-            localStorage.removeItem('access_token');
-            sessionStorage.removeItem('accessToken'); 
-            sessionStorage.removeItem('access_token'); 
+        try {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('access_token');
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('access_token');
         } catch(e){}
-        if (window.location.pathname !== '/login' && window.location.pathname.indexOf('/admin') !== -1) {
-          window.location.href = '/login';
+        if (window.location.pathname !== '/main/auth') {
+          window.location.href = '/main/auth';
         }
         throw new Error("Unauthorized: " + res.status);
       }
@@ -89,7 +89,7 @@
 
       var latestShops = data.latestShops || [];
       var rows = latestShops.map(function (s, idx) {
-          return (
+        return (
             "<tr>" +
             '<td class="px-6 py-4 font-bold text-[#5D4037]">' + esc(s.shopName) + "</td>" +
             '<td class="px-6 py-4">' + esc(s.owner) + "</td>" +
@@ -97,59 +97,59 @@
             '<td class="px-6 py-4 text-gray-500">' + esc(s.joined) + '</td>' +
             '<td class="px-6 py-4 text-right"><span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase text-emerald-600">' + esc(s.status) + '</span></td>' +
             "</tr>"
-          );
-        })
-        .join("");
+        );
+      })
+          .join("");
       setHtml("admin-dashboard-shops", rows || '<tr><td class="px-6 py-10 text-center" colspan="5">Không có dữ liệu gian hàng</td></tr>');
 
       var catStats = data.categoryStats || {};
       chart(
-        "admin-category-chart",
-        "bar",
-        {
-          labels: Object.keys(catStats),
-          datasets: [{
-            label: "Số lượng sách",
-            data: Object.keys(catStats).map(function (k) { return catStats[k]; }),
-            backgroundColor: "#D19C74",
-            borderRadius: 6
-          }]
-        },
-        { 
-          responsive: true, 
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
-            x: { grid: { display: false } }
+          "admin-category-chart",
+          "bar",
+          {
+            labels: Object.keys(catStats),
+            datasets: [{
+              label: "Số lượng sách",
+              data: Object.keys(catStats).map(function (k) { return catStats[k]; }),
+              backgroundColor: "#D19C74",
+              borderRadius: 6
+            }]
+          },
+          {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+              x: { grid: { display: false } }
+            }
           }
-        }
       );
 
       var stockBuckets = data.stockBuckets || {};
       chart(
-        "admin-stock-chart",
-        "doughnut",
-        {
-          labels: ["Thấp (Low)", "Bình thường", "Cao (High)"],
-          datasets: [{
-            data: [stockBuckets.low || 0, stockBuckets.normal || 0, stockBuckets.high || 0],
-            backgroundColor: ["#ea580c", "#D19C74", "#5D4037"],
-            borderWidth: 0,
-            hoverOffset: 10
-          }]
-        },
-        { 
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { 
-            legend: { 
-              position: 'bottom',
-              labels: { padding: 20, usePointStyle: true, font: { weight: 'bold' } }
-            } 
+          "admin-stock-chart",
+          "doughnut",
+          {
+            labels: ["Thấp (Low)", "Bình thường", "Cao (High)"],
+            datasets: [{
+              data: [stockBuckets.low || 0, stockBuckets.normal || 0, stockBuckets.high || 0],
+              backgroundColor: ["#ea580c", "#D19C74", "#5D4037"],
+              borderWidth: 0,
+              hoverOffset: 10
+            }]
           },
-          cutout: '70%'
-        }
+          {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { padding: 20, usePointStyle: true, font: { weight: 'bold' } }
+              }
+            },
+            cutout: '70%'
+          }
       );
       // populate small quick metrics from /dashboard if available
       getJson(API_ROOT + "/dashboard").then(function(dash) {
@@ -171,10 +171,10 @@
       return getJson("/api/categories").then(function (cats) {
         if (!cEl) return;
         var opts = ['<option value="all">Tat ca danh muc</option>']
-          .concat((cats || []).map(function (c) {
-            return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>';
-          }))
-          .join("");
+            .concat((cats || []).map(function (c) {
+              return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>';
+            }))
+            .join("");
         cEl.innerHTML = opts;
       }).catch(function () {
         if (cEl) cEl.innerHTML = '<option value="all">Tat ca danh muc</option>';
@@ -193,18 +193,22 @@
       return getJson(url).then(function (page) {
         var rows = (page.content || []).map(function (r) {
           var stockBadge = r.stockBucket === "low"
-            ? '<span class="rounded bg-rose-100 px-2 py-1 text-xs font-black text-rose-700">Low</span>'
-            : r.stockBucket === "normal"
-              ? '<span class="rounded bg-amber-100 px-2 py-1 text-xs font-black text-amber-700">Normal</span>'
-              : '<span class="rounded bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-700">High</span>';
+              ? '<span class="rounded bg-rose-100 px-2 py-1 text-xs font-black text-rose-700">Low</span>'
+              : r.stockBucket === "normal"
+                  ? '<span class="rounded bg-amber-100 px-2 py-1 text-xs font-black text-amber-700">Normal</span>'
+                  : '<span class="rounded bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-700">High</span>';
 
-          var appStatusClass = r.approvalStatus === "APPROVED" ? "text-emerald-600" 
-                             : r.approvalStatus === "PENDING" ? "text-amber-600" 
-                             : "text-rose-600";
-          
+          var appStatusClass = r.approvalStatus === "APPROVED" ? "text-emerald-600"
+              : r.approvalStatus === "PENDING" ? "text-amber-600"
+                  : "text-rose-600";
+
           var activeClass = r.active === "Active" ? "text-emerald-600" : "text-rose-600";
-          
+
           var actionBtns = '<div class="flex gap-2 justify-end">';
+          if (r.approvalStatus === "PENDING") {
+            actionBtns += '<button onclick="adminApproveBook(' + r.id + ')" class="rounded border border-emerald-200 bg-white px-3 py-1.5 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm" title="Duyệt sách">✓</button>';
+            actionBtns += '<button onclick="adminRejectBook(' + r.id + ')" class="rounded border border-rose-200 bg-white px-3 py-1.5 text-xs font-black text-rose-600 hover:bg-rose-50 transition-all shadow-sm" title="Từ chối sách">✗</button>';
+          }
           if (r.active === "Active") {
             actionBtns += '<button onclick="adminLockBook(' + r.id + ')" class="text-rose-600 hover:text-rose-800" title="Khóa">🔒</button>';
           } else {
@@ -214,15 +218,15 @@
           actionBtns += '</div>';
 
           return (
-            "<tr>" +
-            '<td class="px-4 py-3 font-bold">' + esc(r.title) + "</td>" +
-            '<td class="px-4 py-3">' + esc(r.author) + "</td>" +
-            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(r.price) + "</td>" +
-            '<td class="px-4 py-3">' + esc(r.category) + "</td>" +
-            '<td class="px-4 py-3 font-black ' + appStatusClass + '">' + esc(r.approvalStatus) + "</td>" +
-            '<td class="px-4 py-3 font-black ' + activeClass + '">' + esc(r.active) + "</td>" +
-            '<td class="px-4 py-3 text-right">' + actionBtns + "</td>" +
-            "</tr>"
+              "<tr>" +
+              '<td class="px-4 py-3 font-bold">' + esc(r.title) + "</td>" +
+              '<td class="px-4 py-3">' + esc(r.author) + "</td>" +
+              '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(r.price) + "</td>" +
+              '<td class="px-4 py-3">' + esc(r.category) + "</td>" +
+              '<td class="px-4 py-3 font-black ' + appStatusClass + '">' + esc(r.approvalStatus) + "</td>" +
+              '<td class="px-4 py-3 font-black ' + activeClass + '">' + esc(r.active) + "</td>" +
+              '<td class="px-4 py-3 text-right">' + actionBtns + "</td>" +
+              "</tr>"
           );
         }).join("");
 
@@ -242,43 +246,73 @@
   window.adminLockBook = function(id) {
     if (!confirm("Bạn có chắc chắn muốn khóa sách này? Sách sẽ không hiển thị cho người mua.")) return;
     fetch("/api/admin/books/" + id + "/lock", { method: "PUT", headers: authHeaders() })
-      .then(function(res) { 
-        if(res.ok) { 
-          BookomToast.success("Đã khóa sách thành công"); 
-          document.getElementById("books-q").dispatchEvent(new Event("input")); 
-        } else {
-          return res.text().then(function(text) {
-            BookomToast.error("Lỗi khi khóa sách: " + (text || res.status));
-          });
-        }
-      });
+        .then(function(res) {
+          if(res.ok) {
+            BookomToast.success("Đã khóa sách thành công");
+            document.getElementById("books-q").dispatchEvent(new Event("input"));
+          } else {
+            return res.text().then(function(text) {
+              BookomToast.error("Lỗi khi khóa sách: " + (text || res.status));
+            });
+          }
+        });
   };
   window.adminUnlockBook = function(id) {
     fetch("/api/admin/books/" + id + "/unlock", { method: "PUT", headers: authHeaders() })
-      .then(function(res) { 
-        if(res.ok) { 
-          BookomToast.success("Đã mở khóa sách thành công"); 
-          document.getElementById("books-q").dispatchEvent(new Event("input")); 
-        } else {
-          return res.text().then(function(text) {
-            BookomToast.error("Lỗi khi mở khóa sách: " + (text || res.status));
-          });
-        }
-      });
+        .then(function(res) {
+          if(res.ok) {
+            BookomToast.success("Đã mở khóa sách thành công");
+            document.getElementById("books-q").dispatchEvent(new Event("input"));
+          } else {
+            return res.text().then(function(text) {
+              BookomToast.error("Lỗi khi mở khóa sách: " + (text || res.status));
+            });
+          }
+        });
   };
   window.adminDeleteBook = function(id) {
     if (!confirm("Xóa vĩnh viễn sách này? Thao tác này không thể hoàn tác.")) return;
     fetch("/api/admin/books/" + id, { method: "DELETE", headers: authHeaders() })
-      .then(function(res) { 
-        if(res.ok) { 
-          BookomToast.success("Đã xóa sách khỏi hệ thống"); 
-          document.getElementById("books-q").dispatchEvent(new Event("input")); 
-        } else {
-          return res.text().then(function(text) {
-            BookomToast.error("Lỗi khi xóa sách: " + (text || res.status));
-          });
-        }
-      });
+        .then(function(res) {
+          if(res.ok) {
+            BookomToast.success("Đã xóa sách khỏi hệ thống");
+            document.getElementById("books-q").dispatchEvent(new Event("input"));
+          } else {
+            return res.text().then(function(text) {
+              BookomToast.error("Lỗi khi xóa sách: " + (text || res.status));
+            });
+          }
+        });
+  };
+
+  window.adminApproveBook = function(id) {
+    if (!confirm("Duyệt sách này để cho phép bán trên hệ thống?")) return;
+    fetch("/api/admin/books/" + id + "/status?status=APPROVED", { method: "PUT", headers: authHeaders() })
+        .then(function(res) {
+          if (res.ok) {
+            BookomToast.success("Đã duyệt sách thành công");
+            document.getElementById("books-q").dispatchEvent(new Event("input"));
+          } else {
+            return res.text().then(function(text) {
+              BookomToast.error("Lỗi khi duyệt sách: " + (text || res.status));
+            });
+          }
+        });
+  };
+
+  window.adminRejectBook = function(id) {
+    if (!confirm("Từ chối sách này?")) return;
+    fetch("/api/admin/books/" + id + "/status?status=REJECTED", { method: "PUT", headers: authHeaders() })
+        .then(function(res) {
+          if (res.ok) {
+            BookomToast.success("Đã từ chối sách thành công");
+            document.getElementById("books-q").dispatchEvent(new Event("input"));
+          } else {
+            return res.text().then(function(text) {
+              BookomToast.error("Lỗi khi từ chối sách: " + (text || res.status));
+            });
+          }
+        });
   };
 
   function initAdminOrders() {
@@ -297,22 +331,22 @@
 
       return getJson(url).then(function (page) {
         var rows = (page.content || []).map(function (o) {
-          var statusClass = o.status === "PENDING_PAYMENT" ? "text-amber-600" 
-            : o.status === "PROCESSING" ? "text-indigo-600"
-            : o.status === "SHIPPED" ? "text-blue-600"
-            : o.status === "COMPLETED" ? "text-emerald-600"
-            : "text-rose-600";
-          
+          var statusClass = o.status === "PENDING_PAYMENT" ? "text-amber-600"
+              : o.status === "PROCESSING" ? "text-indigo-600"
+                  : o.status === "SHIPPED" ? "text-blue-600"
+                      : o.status === "COMPLETED" ? "text-emerald-600"
+                          : "text-rose-600";
+
           return (
-            "<tr>" +
-            '<td class="px-4 py-3 font-bold">#' + esc(o.id) + "</td>" +
-            '<td class="px-4 py-3">' + esc(o.buyer) + "</td>" +
-            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(o.total) + "</td>" +
-            '<td class="px-4 py-3 text-xs">' + esc(o.address) + "</td>" +
-            '<td class="px-4 py-3 font-black ' + statusClass + '">' + esc(o.status) + "</td>" +
-            '<td class="px-4 py-3">' + esc(new Date(o.date).toLocaleDateString("vi-VN")) + "</td>" +
-            '<td class="px-4 py-3 text-right"><button onclick="viewOrderDetail(' + o.id + ')" class="rounded border border-brand-accent px-3 py-1 text-xs font-black">Chi tiết</button></td>' +
-            "</tr>"
+              "<tr>" +
+              '<td class="px-4 py-3 font-bold">#' + esc(o.id) + "</td>" +
+              '<td class="px-4 py-3">' + esc(o.buyer) + "</td>" +
+              '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(o.total) + "</td>" +
+              '<td class="px-4 py-3 text-xs">' + esc(o.address) + "</td>" +
+              '<td class="px-4 py-3 font-black ' + statusClass + '">' + esc(o.status) + "</td>" +
+              '<td class="px-4 py-3">' + esc(new Date(o.date).toLocaleDateString("vi-VN")) + "</td>" +
+              '<td class="px-4 py-3 text-right"><button onclick="viewOrderDetail(' + o.id + ')" class="rounded border border-brand-accent px-3 py-1 text-xs font-black">Chi tiết</button></td>' +
+              "</tr>"
           );
         }).join("");
 
@@ -348,25 +382,25 @@
 
       return getJson(url).then(function (rows) {
         var html = (rows || []).map(function (u) {
-          var roleClass = u.role === "ADMIN" ? "bg-rose-50 text-rose-600" 
-                        : u.role === "SELLER" ? "bg-violet-50 text-violet-600" 
-                        : "bg-blue-50 text-blue-600";
-          
+          var roleClass = u.role === "ADMIN" ? "bg-rose-50 text-rose-600"
+              : u.role === "SELLER" ? "bg-violet-50 text-violet-600"
+                  : "bg-blue-50 text-blue-600";
+
           var statusClass = u.status === "Active" ? "text-emerald-600" : "text-rose-600";
-          
-          var actionBtn = u.status === "Active" 
-            ? '<button class="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-black text-rose-600 hover:bg-rose-50 transition-all shadow-sm" onclick="adminLockUser(' + u.id + ')"><span>🔒</span> Khóa</button>'
-            : '<button class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm" onclick="adminUnlockUser(' + u.id + ')"><span>🔓</span> Mở khóa</button>';
-          
+
+          var actionBtn = u.status === "Active"
+              ? '<button class="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-black text-rose-600 hover:bg-rose-50 transition-all shadow-sm" onclick="adminLockUser(' + u.id + ')"><span>🔒</span> Khóa</button>'
+              : '<button class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm" onclick="adminUnlockUser(' + u.id + ')"><span>🔓</span> Mở khóa</button>';
+
           return (
-            "<tr class='hover:bg-gray-50/50 transition-colors'>" +
-            '<td class="px-6 py-4 font-bold text-[#5D4037]">' + esc(u.name) + "</td>" +
-            '<td class="px-6 py-4 text-gray-500">' + esc(u.email) + "</td>" +
-            '<td class="px-6 py-4"><span class="rounded-full px-3 py-1 text-[10px] font-black uppercase ' + roleClass + '">' + esc(u.role) + "</span></td>" +
-            '<td class="px-6 py-4 text-gray-500">' + esc(u.joined) + "</td>" +
-            '<td class="px-6 py-4 font-black ' + statusClass + '">' + (u.status === 'Active' ? 'Hoạt động' : 'Đang khóa') + "</td>" +
-            '<td class="px-6 py-4 text-right">' + actionBtn + '</td>' +
-            "</tr>"
+              "<tr class='hover:bg-gray-50/50 transition-colors'>" +
+              '<td class="px-6 py-4 font-bold text-[#5D4037]">' + esc(u.name) + "</td>" +
+              '<td class="px-6 py-4 text-gray-500">' + esc(u.email) + "</td>" +
+              '<td class="px-6 py-4"><span class="rounded-full px-3 py-1 text-[10px] font-black uppercase ' + roleClass + '">' + esc(u.role) + "</span></td>" +
+              '<td class="px-6 py-4 text-gray-500">' + esc(u.joined) + "</td>" +
+              '<td class="px-6 py-4 font-black ' + statusClass + '">' + (u.status === 'Active' ? 'Hoạt động' : 'Đang khóa') + "</td>" +
+              '<td class="px-6 py-4 text-right">' + actionBtn + '</td>' +
+              "</tr>"
           );
         }).join("");
 
@@ -385,26 +419,26 @@
   // Khóa tài khoản người dùng
   window.adminLockUser = function(userId) {
     if (!confirm("Bạn có chắc chắn muốn KHÓA tài khoản này? Người dùng sẽ không thể đăng nhập.")) return;
-    
+
     fetch("/api/admin/users/" + userId + "/lock", {
       method: "PUT",
       headers: authHeaders()
     })
-    .then(function(res) {
-      if (!res.ok) {
-        return res.text().then(function(text) {
-          throw new Error(text || ("Lỗi HTTP " + res.status));
+        .then(function(res) {
+          if (!res.ok) {
+            return res.text().then(function(text) {
+              throw new Error(text || ("Lỗi HTTP " + res.status));
+            });
+          }
+          return res.json();
+        })
+        .then(function() {
+          BookomToast.success("Đã khóa tài khoản thành công");
+          document.getElementById("users-q").dispatchEvent(new Event("input"));
+        })
+        .catch(function(err) {
+          BookomToast.error("Lỗi khi khóa tài khoản: " + err.message);
         });
-      }
-      return res.json();
-    })
-    .then(function() {
-      BookomToast.success("Đã khóa tài khoản thành công");
-      document.getElementById("users-q").dispatchEvent(new Event("input"));
-    })
-    .catch(function(err) {
-      BookomToast.error("Lỗi khi khóa tài khoản: " + err.message);
-    });
   };
 
   // Mở khóa tài khoản người dùng
@@ -413,21 +447,21 @@
       method: "PUT",
       headers: authHeaders()
     })
-    .then(function(res) {
-      if (!res.ok) {
-        return res.text().then(function(text) {
-          throw new Error(text || ("Lỗi HTTP " + res.status));
+        .then(function(res) {
+          if (!res.ok) {
+            return res.text().then(function(text) {
+              throw new Error(text || ("Lỗi HTTP " + res.status));
+            });
+          }
+          return res.json();
+        })
+        .then(function() {
+          BookomToast.success("Đã mở khóa tài khoản thành công");
+          document.getElementById("users-q").dispatchEvent(new Event("input"));
+        })
+        .catch(function(err) {
+          BookomToast.error("Lỗi khi mở khóa: " + err.message);
         });
-      }
-      return res.json();
-    })
-    .then(function() {
-      BookomToast.success("Đã mở khóa tài khoản thành công");
-      document.getElementById("users-q").dispatchEvent(new Event("input"));
-    })
-    .catch(function(err) {
-      BookomToast.error("Lỗi khi mở khóa: " + err.message);
-    });
   };
 
   function initAdminShops() {
@@ -438,14 +472,14 @@
       return getJson(url).then(function (rows) {
         var html = (rows || []).map(function (s) {
           return (
-            "<tr>" +
-            '<td class="px-4 py-3 font-bold">' + esc(s.shopName) + "</td>" +
-            '<td class="px-4 py-3">' + esc(s.owner) + "</td>" +
-            '<td class="px-4 py-3">' + esc(s.legal) + "</td>" +
-            '<td class="px-4 py-3">' + esc(s.products) + "</td>" +
-            '<td class="px-4 py-3">' + esc(s.joined) + "</td>" +
-            '<td class="px-4 py-3 text-right"><button class="rounded-lg bg-emerald-500 px-3 py-1.5 text-white text-xs font-black">Phe duyet</button></td>' +
-            "</tr>"
+              "<tr>" +
+              '<td class="px-4 py-3 font-bold">' + esc(s.shopName) + "</td>" +
+              '<td class="px-4 py-3">' + esc(s.owner) + "</td>" +
+              '<td class="px-4 py-3">' + esc(s.legal) + "</td>" +
+              '<td class="px-4 py-3">' + esc(s.products) + "</td>" +
+              '<td class="px-4 py-3">' + esc(s.joined) + "</td>" +
+              '<td class="px-4 py-3 text-right"><button class="rounded-lg bg-emerald-500 px-3 py-1.5 text-white text-xs font-black">Phe duyet</button></td>' +
+              "</tr>"
           );
         }).join("");
 
@@ -468,10 +502,10 @@
         if (!listEl) return;
         var html = (rows || []).map(function(c) {
           return '<tr>' +
-            '<td class="px-4 py-3 font-bold">' + esc(c.name) + '</td>' +
-            '<td class="px-4 py-3">' + esc(c.description || '') + '</td>' +
-            '<td class="px-4 py-3 text-right"><button class="text-rose-600" data-id="' + c.id + '">Xóa</button></td>' +
-            '</tr>';
+              '<td class="px-4 py-3 font-bold">' + esc(c.name) + '</td>' +
+              '<td class="px-4 py-3">' + esc(c.description || '') + '</td>' +
+              '<td class="px-4 py-3 text-right"><button class="text-rose-600" data-id="' + c.id + '">Xóa</button></td>' +
+              '</tr>';
         }).join('');
         listEl.innerHTML = html || '<tr><td class="px-4 py-3" colspan="3">Không có danh mục</td></tr>';
         // wire delete buttons
@@ -480,7 +514,7 @@
             var id = btn.getAttribute('data-id');
             if (!confirm('Xóa danh mục?')) return;
             fetch('/api/admin/categories/' + id, { method: 'DELETE', headers: authHeaders() })
-              .then(function(res) { if(res.ok) { BookomToast.success('Đã xóa'); load(); } else { return res.text().then(function(t){ BookomToast.error(t || 'Lỗi'); }); } });
+                .then(function(res) { if(res.ok) { BookomToast.success('Đã xóa'); load(); } else { return res.text().then(function(t){ BookomToast.error(t || 'Lỗi'); }); } });
           });
         });
       });
@@ -492,7 +526,7 @@
         var desc = (descInput && descInput.value) || '';
         if (!name) return BookomToast.error('Tên danh mục bắt buộc');
         fetch('/api/admin/categories', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ name: name, description: desc }) })
-          .then(function(res) { if (res.status === 201 || res.ok) { BookomToast.success('Đã tạo'); nameInput.value=''; if(descInput) descInput.value=''; load(); } else { return res.text().then(function(t){ BookomToast.error(t || 'Lỗi'); }); } });
+            .then(function(res) { if (res.status === 201 || res.ok) { BookomToast.success('Đã tạo'); nameInput.value=''; if(descInput) descInput.value=''; load(); } else { return res.text().then(function(t){ BookomToast.error(t || 'Lỗi'); }); } });
       });
     }
 
@@ -509,13 +543,13 @@
       var orders = ana.recentOrders || [];
       var html = orders.map(function (o) {
         return (
-          "<tr>" +
-          '<td class="px-4 py-3 font-bold">#' + esc(o.id) + "</td>" +
-          '<td class="px-4 py-3">' + esc(o.customer) + "</td>" +
-          '<td class="px-4 py-3 text-xs">' + esc(o.item) + "</td>" +
-          '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(o.value) + "</td>" +
-          '<td class="px-4 py-3 text-right text-[10px] font-black uppercase">' + esc(o.status) + "</td>" +
-          "</tr>"
+            "<tr>" +
+            '<td class="px-4 py-3 font-bold">#' + esc(o.id) + "</td>" +
+            '<td class="px-4 py-3">' + esc(o.customer) + "</td>" +
+            '<td class="px-4 py-3 text-xs">' + esc(o.item) + "</td>" +
+            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(o.value) + "</td>" +
+            '<td class="px-4 py-3 text-right text-[10px] font-black uppercase">' + esc(o.status) + "</td>" +
+            "</tr>"
         );
       }).join("");
 
@@ -531,9 +565,11 @@
     function getStatusColor(status) {
       switch(status) {
         case 'PENDING_PAYMENT': return 'text-red-600';
-        case 'CONFIRMED': return 'text-amber-600';
-        case 'SHIPPING': return 'text-indigo-600';
-        case 'DELIVERED': return 'text-emerald-600';
+        case 'PROCESSING': return 'text-indigo-600';
+        case 'COMFIRMED': return 'text-amber-600';
+        case 'SHIPPING': return 'text-blue-600';
+        case 'COMPLETED': return 'text-emerald-600';
+        case 'CANCELLED': return 'text-slate-500';
         default: return 'text-gray-600';
       }
     }
@@ -541,9 +577,11 @@
     function getStatusLabel(status) {
       var labels = {
         'PENDING_PAYMENT': 'Chờ thanh toán',
-        'CONFIRMED': 'Đã xác nhận',
+        'PROCESSING': 'Đang xử lý',
+        'COMFIRMED': 'Đã xác nhận',
         'SHIPPING': 'Đang giao',
-        'DELIVERED': 'Đã giao'
+        'COMPLETED': 'Đã hoàn thành',
+        'CANCELLED': 'Đã hủy'
       };
       return labels[status] || status;
     }
@@ -566,9 +604,9 @@
           var itemSummary = (order.itemSummary || "").toLowerCase();
 
           var matchQuery = !query ||
-            orderId.includes(query) ||
-            buyerName.includes(query) ||
-            itemSummary.includes(query);
+              orderId.includes(query) ||
+              buyerName.includes(query) ||
+              itemSummary.includes(query);
 
           var matchStatus = statusFilter === "all" || String(order.status) === statusFilter;
 
@@ -581,17 +619,27 @@
           var buyerName = order.buyerUsername || "--";
           var itemSummary = order.itemSummary || "--";
 
+          var actionButtons = '';
+          if (order.status === "COMPLETED" || order.status === "CANCELLED") {
+            actionButtons = '<button class="rounded border border-brand-accent px-3 py-1 text-xs font-bold hover:bg-brand-accent hover:text-white transition" onclick="viewOrderDetail(' + (order.orderId || 0) + ')">Xem chi tiết</button>';
+          } else {
+            actionButtons = '<div class="flex gap-2 justify-end">' +
+                '<button class="rounded border border-emerald-500 px-3 py-1 text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition" onclick="confirmSellerOrder(' + (order.subOrderId || 0) + ',\'' + (order.status || "PENDING_PAYMENT") + '\')">' +
+                'Xác nhận</button>' +
+                '<button class="rounded border border-rose-500 px-3 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 transition" onclick="cancelSellerOrder(' + (order.subOrderId || 0) + ')">Hủy</button>' +
+                '<button class="rounded border border-brand-accent px-3 py-1 text-xs font-bold hover:bg-brand-accent hover:text-white transition" onclick="viewOrderDetail(' + (order.orderId || 0) + ')">Xem chi tiết</button>' +
+                '</div>';
+          }
+
           return (
-            '<tr>' +
-            '<td class="px-4 py-3 font-bold">#' + esc(order.orderId || order.subOrderId || "?") + '</td>' +
-            '<td class="px-4 py-3 text-sm">' + esc(buyerName) + '</td>' +
-            '<td class="px-4 py-3 text-sm">' + esc(itemSummary) + '</td>' +
-            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(order.subTotal) + '</td>' +
-            '<td class="px-4 py-3 font-black ' + statusColor + '">' + esc(statusLabel) + '</td>' +
-            '<td class="px-4 py-3 text-right">' +
-              '<button class="rounded border border-brand-accent px-3 py-1 text-xs font-bold hover:bg-gray-50 transition" onclick="viewOrderDetail(' + (order.orderId || 0) + ')">Chi tiết</button>' +
-            '</td>' +
-            '</tr>'
+              '<tr>' +
+              '<td class="px-4 py-3 font-bold">#' + esc(order.orderId || order.subOrderId || "?") + '</td>' +
+              '<td class="px-4 py-3 text-sm">' + esc(buyerName) + '</td>' +
+              '<td class="px-4 py-3 text-sm">' + esc(itemSummary) + '</td>' +
+              '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(order.totalAmount) + '</td>' +
+              '<td class="px-4 py-3 font-black ' + statusColor + '">' + esc(statusLabel) + '</td>' +
+              '<td class="px-4 py-3 text-right">' + actionButtons + '</td>' +
+              '</tr>'
           );
         }).join("");
 
@@ -608,7 +656,56 @@
     });
 
     window.viewOrderDetail = function(orderId) {
-      alert('Xem chi tiết đơn hàng #' + orderId + ' (chưa có trang chi tiết cho seller)');
+      window.location.href = '/main/order-details?orderId=' + orderId;
+    };
+
+    window.confirmSellerOrder = function(subOrderId, currentStatus) {
+      var statusLabel = {
+        'PENDING_PAYMENT': 'Đang xử lý',
+        'PROCESSING': 'Đã xác nhận',
+        'COMFIRMED': 'Đang giao',
+        'SHIPPING': 'Đã hoàn thành'
+      }[currentStatus] || 'xác nhận';
+
+      if (!confirm("Bạn có chắc muốn cập nhật trạng thái thành '" + statusLabel + "'?")) return;
+
+      BookomToast.info('Đang cập nhật...');
+
+      if (!window.ApiService || !ApiService.Order || !ApiService.Order.confirmSubOrder) {
+        BookomToast.error('ApiService không khả dụng');
+        return;
+      }
+
+      ApiService.Order.confirmSubOrder(subOrderId)
+          .then(function(response) {
+            BookomToast.success('✓ Cập nhật trạng thái thành công');
+            setTimeout(function() { location.reload(); }, 800);
+          })
+          .catch(function(error) {
+            BookomToast.error('❌ Lỗi: ' + (error.message || 'Cập nhật thất bại'));
+            console.error(error);
+          });
+    };
+
+    window.cancelSellerOrder = function(subOrderId) {
+      if (!confirm("Bạn có chắc muốn hủy đơn hàng này? Hành động này không thể hoàn tác.")) return;
+
+      BookomToast.info('Đang hủy đơn hàng...');
+
+      if (!window.ApiService || !ApiService.Order || !ApiService.Order.updateSubOrderStatus) {
+        BookomToast.error('ApiService không khả dụng');
+        return;
+      }
+
+      ApiService.Order.updateSubOrderStatus(subOrderId, 'CANCELLED')
+          .then(function(response) {
+            BookomToast.success('✓ Đơn hàng đã được hủy');
+            setTimeout(function() { location.reload(); }, 800);
+          })
+          .catch(function(error) {
+            BookomToast.error('❌ Lỗi: ' + (error.message || 'Hủy thất bại'));
+            console.error(error);
+          });
     };
 
     return load();
@@ -623,8 +720,8 @@
       return getJson("/api/categories").then(function (cats) {
         if (!cEl) return;
         var opts = ['<option value="all">Tat ca danh muc</option>']
-          .concat((cats || []).map(function (c) { return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>'; }))
-          .join("");
+            .concat((cats || []).map(function (c) { return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>'; }))
+            .join("");
         cEl.innerHTML = opts;
       });
     }
@@ -639,11 +736,11 @@
 
       var categoryId = (cEl && cEl.value !== "all") ? cEl.value : null;
       var query = qEl ? qEl.value : "";
-      
+
       return ApiService.Book.getSellerBooks(query, categoryId, 0, 500).then(function(result) {
         // Handle both Page<Book> format and array format
         var books = result.content || result || [];
-        
+
         if (!Array.isArray(books)) {
           books = [];
         }
@@ -661,23 +758,23 @@
         }
 
         var html = books.map(function(book) {
-          var statusColor = book.approvalStatus === 'APPROVED' ? 'text-emerald-600' : 
-                           book.approvalStatus === 'PENDING' ? 'text-amber-600' : 'text-red-600';
+          var statusColor = book.approvalStatus === 'APPROVED' ? 'text-emerald-600' :
+              book.approvalStatus === 'PENDING' ? 'text-amber-600' : 'text-red-600';
           var badge = book.stockQuantity < 10
-            ? '<span class="rounded bg-rose-100 px-2 py-1 text-xs font-black text-rose-700">Low</span>'
-            : book.stockQuantity < 50
-              ? '<span class="rounded bg-amber-100 px-2 py-1 text-xs font-black text-amber-700">Normal</span>'
-              : '<span class="rounded bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-700">High</span>';
-          
+              ? '<span class="rounded bg-rose-100 px-2 py-1 text-xs font-black text-rose-700">Low</span>'
+              : book.stockQuantity < 50
+                  ? '<span class="rounded bg-amber-100 px-2 py-1 text-xs font-black text-amber-700">Normal</span>'
+                  : '<span class="rounded bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-700">High</span>';
+
           return (
-            "<tr>" +
-            '<td class="px-4 py-3 font-bold">' + esc(book.title || '?') + "</td>" +
-            '<td class="px-4 py-3">' + esc(book.author || '?') + "</td>" +
-            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(book.price || 0) + "</td>" +
-            '<td class="px-4 py-3">' + (book.stockQuantity || 0) + "</td>" +
-            '<td class="px-4 py-3">' + badge + "</td>" +
-            '<td class="px-4 py-3 text-right"><button class="rounded border border-brand-accent px-3 py-1 text-xs font-black" onclick="editBook(' + book.id + ')">Cập nhật</button></td>' +
-            "</tr>"
+              "<tr>" +
+              '<td class="px-4 py-3 font-bold">' + esc(book.title || '?') + "</td>" +
+              '<td class="px-4 py-3">' + esc(book.author || '?') + "</td>" +
+              '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(book.price || 0) + "</td>" +
+              '<td class="px-4 py-3">' + (book.stockQuantity || 0) + "</td>" +
+              '<td class="px-4 py-3">' + badge + "</td>" +
+              '<td class="px-4 py-3 text-right"><button class="rounded border border-brand-accent px-3 py-1 text-xs font-black" onclick="editBook(' + book.id + ')">Cập nhật</button></td>' +
+              "</tr>"
           );
         }).join("");
 
@@ -707,34 +804,34 @@
       var categoryRevenue = ana.categoryRevenue || {};
       var rows = Object.keys(categoryCounts).map(function (k) {
         return (
-          "<tr>" +
-          '<td class="px-4 py-3 font-bold">' + esc(k) + "</td>" +
-          '<td class="px-4 py-3">' + esc(categoryCounts[k]) + "</td>" +
-          '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(categoryRevenue[k]) + "</td>" +
-          "</tr>"
+            "<tr>" +
+            '<td class="px-4 py-3 font-bold">' + esc(k) + "</td>" +
+            '<td class="px-4 py-3">' + esc(categoryCounts[k]) + "</td>" +
+            '<td class="px-4 py-3 font-black text-brand-orange">' + vnd(categoryRevenue[k]) + "</td>" +
+            "</tr>"
         );
       }).join("");
       setHtml("seller-analytics-body", rows || '<tr><td class="px-4 py-3" colspan="3">Khong co du lieu</td></tr>');
 
       chart(
-        "seller-category-chart",
-        "bar",
-        {
-          labels: Object.keys(categoryRevenue),
-          datasets: [{ label: "Doanh thu", data: Object.keys(categoryRevenue).map(function (k) { return categoryRevenue[k]; }), backgroundColor: "#D19C74" }]
-        },
-        { responsive: true, plugins: { legend: { display: false } } }
+          "seller-category-chart",
+          "bar",
+          {
+            labels: Object.keys(categoryRevenue),
+            datasets: [{ label: "Doanh thu", data: Object.keys(categoryRevenue).map(function (k) { return categoryRevenue[k]; }), backgroundColor: "#D19C74" }]
+          },
+          { responsive: true, plugins: { legend: { display: false } } }
       );
 
       var orderStatus = ana.orderStatusCounts || {};
       chart(
-        "seller-order-status-chart",
-        "doughnut",
-        {
-          labels: Object.keys(orderStatus),
-          datasets: [{ data: Object.keys(orderStatus).map(function (k) { return orderStatus[k]; }), backgroundColor: ["#ea580c", "#D19C74", "#5D4037"] }]
-        },
-        { responsive: true }
+          "seller-order-status-chart",
+          "doughnut",
+          {
+            labels: Object.keys(orderStatus),
+            datasets: [{ data: Object.keys(orderStatus).map(function (k) { return orderStatus[k]; }), backgroundColor: ["#ea580c", "#D19C74", "#5D4037"] }]
+          },
+          { responsive: true }
       );
     });
   }

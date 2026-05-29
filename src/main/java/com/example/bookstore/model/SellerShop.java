@@ -18,11 +18,11 @@ import java.time.LocalDateTime;
 @Builder
 public class SellerShop {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id", referencedColumnName = "id",nullable = false,unique = true)
+    @OneToOne(fetch = FetchType.EAGER)
+    @MapsId
+    @JoinColumn(name = "seller_id", referencedColumnName = "id", nullable = false, unique = true)
     private User seller;
 
     @Column(nullable = false, unique = true)
@@ -52,7 +52,7 @@ public class SellerShop {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(length = 50)
+    @Column(length = 50, columnDefinition = "NVARCHAR(50)")
     private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
 
     @CreationTimestamp

@@ -5,12 +5,16 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "category")
 @Data
+@ToString(exclude = {"books"})
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
 public class Category {
@@ -19,9 +23,10 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, columnDefinition = "NVARCHAR(255)")
     private String name;
 
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     // Quan hệ 1-Nhiều: 1 Thể loại có nhiều Cuốn sách

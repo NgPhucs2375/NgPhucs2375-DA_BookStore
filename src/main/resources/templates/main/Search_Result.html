@@ -27,19 +27,22 @@
 
 <header class="bg-white sticky top-0 z-50 shadow-sm border-b border-brand-border px-6 py-4">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-8">
-        <a th:href="@{/}" class="text-2xl font-black tracking-tighter flex items-center gap-2 flex-shrink-0">
+        <a th:href="@{/}" class="text-2xl font-black tracking-tighter flex items-center gap-2 shrink-0">
             <div class="bg-brand-brown text-white p-1 rounded-lg">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
             </div>
             BOOKOM
         </a>
 
-        <div class="flex-grow max-w-2xl hidden md:flex">
-            <div class="w-full flex items-center bg-gray-100 rounded-full px-4 py-2 border border-transparent focus-within:border-brand-brown focus-within:bg-white transition-all">
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                <input type="text" value="Tâm lý học" class="w-full bg-transparent outline-none px-3 font-medium text-sm text-brand-dark" placeholder="Tìm kiếm tựa sách, tác giả...">
-                <button class="bg-brand-dark text-white px-4 py-1.5 rounded-full text-xs font-bold hover:bg-brand-brown transition">Tìm kiếm</button>
-            </div>
+        <div class="grow max-w-2xl hidden md:flex">
+            <form id="search-result-search-form" class="relative w-full">
+                <div class="w-full flex items-center bg-gray-100 rounded-full px-4 py-2 border border-transparent focus-within:border-brand-brown focus-within:bg-white transition-all">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input id="search-keyword-input" type="text" value="Tâm lý học" class="w-full bg-transparent outline-none px-3 font-medium text-sm text-brand-dark" placeholder="Tìm kiếm tựa sách, tác giả..." autocomplete="off">
+                    <button class="bg-brand-dark text-white px-4 py-1.5 rounded-full text-xs font-bold hover:bg-brand-brown transition" type="submit">Tìm kiếm</button>
+                </div>
+                <div id="search-suggestion-panel" class="absolute left-0 right-0 top-[calc(100%+0.75rem)] bg-white border border-brand-border rounded-2xl shadow-lg overflow-hidden hidden z-30"></div>
+            </form>
         </div>
 
         <div class="flex items-center gap-4">
@@ -58,62 +61,82 @@
             <span>/</span>
             <span class="text-brand-dark">Kết quả tìm kiếm</span>
         </div>
-        <h1 class="text-2xl font-black">
-            Tìm thấy <span class="text-brand-orange">124</span> kết quả cho: <span class="italic">"Tâm lý học"</span>
-        </h1>
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-black text-brand-dark">
+                    Tìm thấy <span id="search-result-total" class="text-brand-orange">0</span> kết quả cho: <span id="search-result-query" class="italic">""</span>
+                </h1>
+                <p id="search-result-summary" class="text-sm text-gray-500 mt-2">Lọc theo giá, tác giả và năm xuất bản để thu hẹp kết quả nhanh hơn.</p>
+            </div>
+            <div class="flex items-center gap-3 bg-white border border-brand-border rounded-xl px-4 py-3 shadow-sm w-full lg:w-auto">
+                <span class="text-sm font-bold text-gray-500 uppercase">Sắp xếp theo:</span>
+                <select id="search-sort-select" class="bg-gray-50 border border-gray-200 px-4 py-2 rounded-lg text-sm font-bold outline-none focus:border-brand-brown w-full lg:w-auto">
+                    <option value="latest">Mới nhất</option>
+                    <option value="price-asc">Giá: Thấp đến Cao</option>
+                    <option value="price-desc">Giá: Cao đến Thấp</option>
+                    <option value="title-asc">Tên: A-Z</option>
+                    <option value="author-asc">Tác giả: A-Z</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <div class="flex flex-col lg:flex-row gap-8">
 
-        <aside class="w-full lg:w-1/4 flex-shrink-0 space-y-6">
+        <aside class="w-full lg:w-1/4 shrink-0 space-y-6">
             <div class="bg-white p-6 rounded-2xl border border-brand-border shadow-sm sticky top-24">
                 <div class="flex items-center justify-between mb-4 border-b border-brand-border pb-2">
                     <h2 class="font-bold text-lg uppercase tracking-wider flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                         Bộ lọc
                     </h2>
-                    <button class="text-xs text-brand-orange font-bold hover:underline">Xóa lọc</button>
+                    <button id="search-reset-filters-btn" type="button" class="text-xs text-brand-orange font-bold hover:underline">Xóa lọc</button>
                 </div>
 
                 <div class="mb-6">
                     <h3 class="font-bold text-sm mb-3 text-gray-500 uppercase">Danh mục</h3>
+                    <div id="search-category-list" class="space-y-2">
+                        <div class="rounded-lg border border-dashed border-brand-border bg-brand-cream/30 px-3 py-2 text-xs text-gray-500">
+                            Đang tải danh mục...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6 border-t border-brand-border pt-4">
+                    <h3 class="font-bold text-sm mb-3 text-gray-500 uppercase">Tác giả</h3>
                     <div class="space-y-2">
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" checked class="w-4 h-4 accent-brand-orange rounded">
-                            <span class="text-sm font-medium group-hover:text-brand-orange transition">Tâm lý học (86)</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" class="w-4 h-4 accent-brand-orange rounded">
-                            <span class="text-sm font-medium group-hover:text-brand-orange transition">Kỹ năng sống (30)</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" class="w-4 h-4 accent-brand-orange rounded">
-                            <span class="text-sm font-medium group-hover:text-brand-orange transition">Kinh tế (8)</span>
-                        </label>
+                        <input id="search-author-input" type="text" placeholder="Nhập tên tác giả" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-brand-brown">
                     </div>
                 </div>
 
                 <div class="mb-6 border-t border-brand-border pt-4">
                     <h3 class="font-bold text-sm mb-3 text-gray-500 uppercase">Khoảng giá</h3>
                     <div class="flex items-center gap-2 mb-3">
-                        <input type="number" placeholder="Từ đ" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-brand-brown">
+                        <input id="search-min-price-input" type="number" placeholder="Từ đ" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-brand-brown">
                         <span class="text-gray-400">-</span>
-                        <input type="number" placeholder="Đến đ" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-brand-brown">
+                        <input id="search-max-price-input" type="number" placeholder="Đến đ" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-brand-brown">
                     </div>
-                    <button class="w-full py-2 bg-brand-dark text-white text-xs font-bold rounded hover:bg-brand-brown transition">ÁP DỤNG</button>
+                    <button id="search-apply-filters-btn" type="button" class="w-full py-2 bg-brand-dark text-white text-xs font-bold rounded hover:bg-brand-brown transition">ÁP DỤNG</button>
                 </div>
 
                 <div class="border-t border-brand-border pt-4">
-                    <h3 class="font-bold text-sm mb-3 text-gray-500 uppercase">Loại bìa</h3>
+                    <h3 class="font-bold text-sm mb-3 text-gray-500 uppercase">Năm xuất bản</h3>
                     <div class="space-y-2">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="w-4 h-4 accent-brand-orange rounded">
-                            <span class="text-sm font-medium">Bìa mềm</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="w-4 h-4 accent-brand-orange rounded">
-                            <span class="text-sm font-medium">Bìa cứng</span>
-                        </label>
+                        <div class="flex items-center gap-2 mb-3">
+                            <input id="search-year-from-input" type="number" placeholder="Từ năm" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-brand-brown">
+                            <span class="text-gray-400">-</span>
+                            <input id="search-year-to-input" type="number" placeholder="Đến năm" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-brand-brown">
+                        </div>
+                        <p class="text-xs text-gray-400 leading-relaxed">Lọc theo năm xuất bản hiện có trong dữ liệu sách.</p>
+                    </div>
+                </div>
+
+                <div class="border-t border-brand-border pt-4">
+                    <h3 class="font-bold text-sm mb-3 text-gray-500 uppercase">Khám phá nhanh</h3>
+                    <div class="space-y-2">
+                        <button type="button" data-search-chip="sách mới" class="w-full text-left px-3 py-2 rounded-lg bg-brand-cream border border-brand-accent text-sm font-bold text-brand-dark hover:border-brand-brown hover:text-brand-brown transition">Sách mới</button>
+                        <button type="button" data-search-chip="best seller" class="w-full text-left px-3 py-2 rounded-lg bg-brand-cream border border-brand-accent text-sm font-bold text-brand-dark hover:border-brand-brown hover:text-brand-brown transition">Best sellers</button>
+                        <button type="button" data-search-chip="trending" class="w-full text-left px-3 py-2 rounded-lg bg-brand-cream border border-brand-accent text-sm font-bold text-brand-dark hover:border-brand-brown hover:text-brand-brown transition">Trending</button>
                     </div>
                 </div>
             </div>
@@ -122,62 +145,49 @@
         <div class="w-full lg:w-3/4">
 
             <div class="flex justify-between items-center mb-6 bg-white p-3 rounded-xl border border-brand-border shadow-sm">
-                <span class="text-sm font-medium hidden md:inline">Hiển thị 1 - 12 của 124 kết quả</span>
-                <div class="flex items-center gap-3 w-full md:w-auto">
-                    <span class="text-sm font-bold text-gray-500 uppercase">Sắp xếp theo:</span>
-                    <select class="bg-gray-50 border border-gray-200 px-4 py-2 rounded-lg text-sm font-bold outline-none focus:border-brand-brown w-full md:w-auto">
-                        <option>Bán chạy nhất</option>
-                        <option>Mới nhất</option>
-                        <option>Giá: Thấp đến Cao</option>
-                        <option>Giá: Cao đến Thấp</option>
-                    </select>
+                <span id="search-result-range" class="text-sm font-medium hidden md:inline">Hiển thị 0 - 0 của 0 kết quả</span>
+                <div class="flex items-center gap-2 text-xs text-gray-500 font-semibold">
+                    <span class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-brand-cream border border-brand-accent"><span class="w-2 h-2 rounded-full bg-brand-biscuit"></span>Autocomplete</span>
+                    <span class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-brand-cream border border-brand-accent"><span class="w-2 h-2 rounded-full bg-brand-biscuit"></span>Lọc nâng cao</span>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-                <div class="bg-white p-4 rounded-xl border border-brand-border hover:shadow-lg transition-all group relative cursor-pointer">
-                    <div class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded z-10">-20%</div>
-                    <div class="w-full aspect-[2/3] bg-[#2c3e50] border-2 border-gray-100 flex items-center justify-center mb-4 group-hover:-translate-y-2 transition-transform duration-300 shadow-sm text-white text-[10px] font-bold text-center">TÂM LÝ HỌC ĐÁM ĐÔNG</div>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Gustave Le Bon</p>
-                    <h3 class="font-bold text-brand-dark text-sm line-clamp-2 mb-2 group-hover:text-brand-orange transition">Tâm Lý Học Đám Đông (Tái bản 2024)</h3>
-                    <div class="flex items-end gap-2 mb-3">
-                        <span class="font-black text-brand-orange text-base">85.000đ</span>
-                        <span class="text-xs text-gray-400 line-through pb-0.5">105.000đ</span>
+            <div id="search-results-grid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+            <div class="grid lg:grid-cols-2 gap-6 mt-8">
+                <div class="bg-white border border-brand-border rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.25em] text-brand-brown font-black">Best sellers</p>
+                            <h3 class="text-lg font-black text-brand-dark">Đang được mua nhiều</h3>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-brand-cream text-brand-dark text-xs font-black">Top</span>
                     </div>
-                    <button class="w-full py-2 border border-brand-brown text-brand-brown rounded-lg font-bold text-xs group-hover:bg-brand-brown group-hover:text-white transition">Thêm vào giỏ</button>
+                    <div id="search-best-sellers" class="space-y-3"></div>
                 </div>
 
-                <div class="bg-white p-4 rounded-xl border border-brand-border hover:shadow-lg transition-all group relative cursor-pointer">
-                    <div class="w-full aspect-[2/3] bg-[#8e44ad] border-2 border-gray-100 flex items-center justify-center mb-4 group-hover:-translate-y-2 transition-transform duration-300 shadow-sm text-white text-[10px] font-bold text-center">TƯ DUY NHANH VÀ CHẬM</div>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Daniel Kahneman</p>
-                    <h3 class="font-bold text-brand-dark text-sm line-clamp-2 mb-2 group-hover:text-brand-orange transition">Tư Duy Nhanh Và Chậm (Bìa Mềm)</h3>
-                    <div class="flex items-end gap-2 mb-3">
-                        <span class="font-black text-brand-orange text-base">180.000đ</span>
+                <div class="bg-white border border-brand-border rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.25em] text-brand-brown font-black">Trending</p>
+                            <h3 class="text-lg font-black text-brand-dark">Xu hướng gần đây</h3>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-brand-cream text-brand-dark text-xs font-black">Now</span>
                     </div>
-                    <button class="w-full py-2 border border-brand-brown text-brand-brown rounded-lg font-bold text-xs group-hover:bg-brand-brown group-hover:text-white transition">Thêm vào giỏ</button>
+                    <div id="search-trending" class="space-y-3"></div>
                 </div>
-
             </div>
 
-            <div class="mt-12 flex justify-center items-center gap-2">
-                <button class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-                <button class="w-10 h-10 rounded-full bg-brand-brown text-white font-bold shadow-md">1</button>
-                <button class="w-10 h-10 rounded-full border border-gray-200 text-brand-dark font-bold hover:bg-gray-50 transition">2</button>
-                <button class="w-10 h-10 rounded-full border border-gray-200 text-brand-dark font-bold hover:bg-gray-50 transition">3</button>
-                <span class="px-2 text-gray-400">...</span>
-                <button class="w-10 h-10 rounded-full border border-gray-200 text-brand-dark font-bold hover:bg-gray-50 transition">12</button>
-                <button class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-brand-dark hover:bg-gray-50 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
-            </div>
+            <div id="search-pagination" class="mt-12 flex justify-center items-center gap-2"></div>
 
         </div>
     </div>
 </main>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script src="/js/api-service.js"></script>
+<script src="/js/pages/search-result-page.js"></script>
 
 </body>
 </html>

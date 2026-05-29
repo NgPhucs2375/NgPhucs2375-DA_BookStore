@@ -160,7 +160,10 @@ public class OrderService {
             couponService.useCoupon(couponCode);
         }
 
-        order.setTotalAmount(orderTotal);
+        // Compute shipping fee (flat rate for now)
+        double shippingFee = 30000.0;
+        order.setShippingFee(shippingFee);
+        order.setTotalAmount(orderTotal + shippingFee);
         order.setSubOrders(subOrders);
 
         Order saved = orderRepository.save(order);
@@ -172,7 +175,8 @@ public class OrderService {
                 .orderId(saved.getId())
                 .buyerId(buyer.getId())
                 .shippingAddress(saved.getShippingAddress())
-                .totalAmount(saved.getTotalAmount())
+            .totalAmount(saved.getTotalAmount())
+            .shippingFee(saved.getShippingFee())
                 .originalAmount(originalTotal)
                 .discountAmount(saved.getDiscountAmount())
                 .couponCode(saved.getCouponCode())
@@ -229,6 +233,8 @@ public class OrderService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
 
         List<OrderDetailResponse.SubOrderDetail> subOrderDetails = new ArrayList<>();
+        List<OrderDetailResponse.OrderItemFlat> flatItems = new ArrayList<>();
+        int totalItemsCount = 0;
 
         if (order.getSubOrders() != null) {
             for (SubOrder subOrder : order.getSubOrders()) {
@@ -242,6 +248,17 @@ public class OrderService {
                                 .quantity(item.getQuantity())
                                 .subtotal(item.getUnitPrice() * item.getQuantity())
                                 .build());
+                    // add flat item for frontend
+                    flatItems.add(OrderDetailResponse.OrderItemFlat.builder()
+                        .bookId(item.getBook() == null ? null : item.getBook().getId())
+                        .title(item.getBook() == null ? "N/A" : item.getBook().getTitle())
+                        .author(item.getBook() == null ? "" : item.getBook().getAuthor())
+                        .quantity(item.getQuantity())
+                        .lineTotal(item.getUnitPrice() * item.getQuantity())
+                        .sellerName(subOrder.getSeller() == null ? "N/A" : (subOrder.getSeller().getShopName() == null ? subOrder.getSeller().getUsername() : subOrder.getSeller().getShopName()))
+                        .subOrderStatus(subOrder.getStatus() == null ? null : subOrder.getStatus().toString())
+                        .build());
+                    totalItemsCount += item.getQuantity() == null ? 0 : item.getQuantity();
                     }
                 }
 
@@ -258,11 +275,16 @@ public class OrderService {
         return OrderDetailResponse.builder()
                 .id(order.getId())
                 .buyerName(buyer.getUsername())
+                .buyerUsername(buyer.getUsername())
+                .buyerId(buyer.getId())
                 .buyerEmail(buyer.getUsername() + "@bookom.vn")
                 .totalAmount(order.getTotalAmount())
+                .shippingFee(order.getShippingFee())
                 .shippingAddress(order.getShippingAddress())
                 .createdAt(order.getCreatedAt())
                 .subOrders(subOrderDetails)
+                .items(flatItems)
+                .totalItems(totalItemsCount)
                 .build();
     }
 

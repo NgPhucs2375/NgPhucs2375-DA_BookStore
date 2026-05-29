@@ -746,6 +746,18 @@ const ApiService = (() => {
     // ==========================================
     // PUBLIC API
     // ==========================================
+    /**
+     * Fetch wrapper that adds authentication headers (keeps caller able to inspect response)
+     * @param {string} path - absolute or relative path
+     * @param {object} options - fetch options
+     */
+    const fetchWithAuth = async (path, options = {}) => {
+        const merged = Object.assign({}, options);
+        const baseHeaders = getHeaders();
+        // If caller passed headers, merge; otherwise use baseHeaders
+        merged.headers = Object.assign({}, baseHeaders, options.headers || {});
+        return fetch(path, merged);
+    };
 
     return {
         // Utility

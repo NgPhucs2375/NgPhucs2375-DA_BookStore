@@ -34,6 +34,10 @@ public class Order {
     @Column(nullable = false)
     private Double totalAmount;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Double shippingFee = 0.0;
+
     @Column(nullable = false, length = 500)
     private String shippingAddress;
 

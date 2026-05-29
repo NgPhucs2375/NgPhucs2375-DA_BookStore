@@ -42,12 +42,19 @@ public class DistributedLockService {
         // Đảm bảo bản ghi lock luôn tồn tại trong DB trống (Idempotent initialization)
         if (!lockRepository.existsById(lockName)) {
             try {
-                lockRepository.save(new DistributedLock(lockName));
+                DistributedLock initialLock = new DistributedLock(lockName);
+                // Bơm thêm các thông số bắt buộc để vượt qua ải NOT NULL
+                initialLock.setInstanceId("UNOWNED");
+                initialLock.setLockHolderId("UNOWNED");
+                initialLock.setAcquiredAt(LocalDateTime.now()); // Chìa khóa fix lỗi đây bro
+                initialLock.setLockExpiresAt(LocalDateTime.now());
+
+                lockRepository.save(initialLock);
             } catch (Exception e) {
                 // Phòng trường hợp instance khác đã nhanh tay insert trước
+                log.debug("Lock row already initialized by another instance.");
             }
         }
-
         String instanceId = getInstanceId();
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expiresAt = now.plusSeconds(lockTtlSeconds);

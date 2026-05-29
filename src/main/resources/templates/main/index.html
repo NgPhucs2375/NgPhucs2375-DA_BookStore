@@ -35,84 +35,65 @@
     </script>
 
     <style>
+        :root {
+            --brand-brown: #cda27a;
+            --brand-dark: #4a3b32;
+            --brand-hero: #f4d9c0;
+            --brand-bg: #f6f3ea;
+            --brand-orange: #d96a4a;
+            --brand-border: #eaddcf;
+            --card-radius: 1rem;
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --card-hover-shadow: 0 20px 40px rgba(0,0,0,0.06);
+        }
+
+        /* Accessibility: visible focus for interactable cards/links */
+        .product-card a:focus-visible,
+        .product-card:focus-within {
+            outline: 3px solid rgba(34,197,94,0.12);
+            outline-offset: 4px;
+            border-radius: var(--card-radius);
+        }
+
+        /* Make product cards slightly more physical and performant */
+        .product-card-inner { will-change: transform; backface-visibility: hidden; }
+        .product-card .book-cover { will-change: transform; transform-origin: center; }
+        .product-card .book-cover, .product-card img { object-fit: contain; object-position: center; }
+
+        /* Tweak grid gap on small screens for denser layout */
+        @media (max-width: 640px) {
+            #books-grid { gap: 12px; }
+        }
+
+        /* Subtle entrance animation for cards when loaded */
+        .product-card { animation: fadeInUp 450ms ease forwards; }
+        @keyframes fadeInUp { from { opacity: 1; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
         /* Tùy chỉnh thanh cuộn cho toàn bộ trang và sidebar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f6f3ea;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cda27a;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #b58d67;
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--brand-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--brand-brown); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b58d67; }
 
         /* Thanh cuộn nhỏ cho sidebar */
-        .sidebar-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
 
         /* Hiệu ứng hover mượt mà cho thẻ sản phẩm */
-        .product-card-inner {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .product-card:hover .product-card-inner {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px -5px rgba(74, 59, 50, 0.15);
-            border-color: #cda27a;
-        }
+        .product-card-inner { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .product-card:hover .product-card-inner { transform: translateY(-5px); box-shadow: var(--card-hover-shadow); border-color: var(--brand-brown); }
 
         /* Hiệu ứng zoom ảnh bìa sách */
-        .book-cover {
-            transition: transform 0.5s ease;
-        }
-        .product-card:hover .book-cover {
-            transform: scale(1.05);
-        }
+        .book-cover { transition: transform 0.5s ease; }
+        .product-card:hover .book-cover { transform: scale(1.05); }
 
         /* Nút Quick action hiện lên khi hover */
-        .quick-action-group {
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
-        }
-        .product-card:hover .quick-action-group {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .quick-action-group { opacity: 0; transform: translateY(10px); transition: all 0.3s ease; }
+        .product-card:hover .quick-action-group { opacity: 1; transform: translateY(0); }
 
         /* Checkbox custom */
-        input[type="checkbox"].custom-cb {
-            appearance: none;
-            background-color: #fff;
-            margin: 0;
-            font: inherit;
-            color: currentColor;
-            width: 1.15em;
-            height: 1.15em;
-            border: 1px solid #cda27a;
-            border-radius: 0.15em;
-            display: grid;
-            place-content: center;
-            cursor: pointer;
-        }
-        input[type="checkbox"].custom-cb::before {
-            content: "";
-            width: 0.65em;
-            height: 0.65em;
-            transform: scale(0);
-            transition: 120ms transform ease-in-out;
-            box-shadow: inset 1em 1em #cda27a;
-            background-color: #cda27a;
-            transform-origin: center;
-            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-        }
-        input[type="checkbox"].custom-cb:checked::before {
-            transform: scale(1);
-        }
+        input[type="checkbox"].custom-cb { appearance: none; background-color: #fff; margin: 0; font: inherit; color: currentColor; width: 1.15em; height: 1.15em; border: 1px solid var(--brand-brown); border-radius: 0.15em; display: grid; place-content: center; cursor: pointer; }
+        input[type="checkbox"].custom-cb::before { content: ""; width: 0.65em; height: 0.65em; transform: scale(0); transition: 120ms transform ease-in-out; box-shadow: inset 1em 1em var(--brand-brown); background-color: var(--brand-brown); transform-origin: center; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }
+        input[type="checkbox"].custom-cb:checked::before { transform: scale(1); }
     </style>
 </head>
 <body class="bg-brand-bg font-sans text-brand-dark min-h-screen flex flex-col antialiased selection:bg-brand-brown selection:text-white">
@@ -147,7 +128,7 @@
                 Sách
                 <span class="absolute bottom-0 left-0 w-full h-0.5 bg-brand-dark transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
             </a>
-            <a href="/main/discovery" class="relative group py-2 flex items-center gap-1">
+            <a id="nav-category-link" href="#danh-muc-sach" class="relative group py-2 flex items-center gap-1">
                 Thể loại
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                 <span class="absolute bottom-0 left-0 w-full h-0.5 bg-brand-dark transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
@@ -167,11 +148,11 @@
             </form>
 
             <div class="flex items-center gap-5 text-brand-dark">
-                <a href="/main/auth" class="hover:text-white transition flex flex-col items-center gap-1 group">
+                <a href="/main/auth" id="header-account-link" class="hover:text-white transition flex flex-col items-center gap-1 group">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 group-hover:-translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span class="text-[10px] font-bold hidden md:block">Tài khoản</span>
+                    <span id="header-account-text" class="text-[10px] font-bold hidden md:block">Tài khoản</span>
                 </a>
 
                 <a href="/main/cart" class="relative hover:text-white transition flex flex-col items-center gap-1 group">
@@ -300,24 +281,24 @@
 
                 <div class="mb-8">
                     <h3 class="font-bold text-brand-dark mb-4 uppercase text-sm tracking-wider">Đánh giá</h3>
-                    <ul class="space-y-3">
+                    <ul class="space-y-3" id="rating-filter-list">
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-cb">
+                                <input type="checkbox" class="rating-filter-checkbox" data-min-rating="5">
                                 <div class="flex text-yellow-400 text-sm tracking-widest">★★★★★</div>
                                 <span class="text-sm text-brand-dark group-hover:text-brand-brown transition">(Từ 5 sao)</span>
                             </label>
                         </li>
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-cb" checked>
+                                <input type="checkbox" class="rating-filter-checkbox" data-min-rating="4">
                                 <div class="flex text-yellow-400 text-sm tracking-widest">★★★★<span class="text-gray-300">★</span></div>
                                 <span class="text-sm text-brand-dark group-hover:text-brand-brown transition">(Từ 4 sao)</span>
                             </label>
                         </li>
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-cb">
+                                <input type="checkbox" class="rating-filter-checkbox" data-min-rating="3">
                                 <div class="flex text-yellow-400 text-sm tracking-widest">★★★<span class="text-gray-300">★★</span></div>
                                 <span class="text-sm text-brand-dark group-hover:text-brand-brown transition">(Từ 3 sao)</span>
                             </label>
@@ -329,7 +310,7 @@
 
                 <div class="mb-4">
                     <h3 class="font-bold text-brand-dark mb-4 uppercase text-sm tracking-wider">Nhà Xuất Bản</h3>
-                    <ul class="space-y-3 text-sm font-medium text-brand-dark">
+                    <ul id="publisher-filter-list" class="space-y-3 text-sm font-medium text-brand-dark">
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
                                 <input type="checkbox" class="custom-cb">
@@ -387,320 +368,14 @@
             </div>
 
             <div id="books-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-xs font-bold px-2.5 py-1 rounded shadow-sm">-20%</div>
-
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3 leading-snug">
-                                NHÀ GIẢ KIM
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button title="Thêm vào giỏ" class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button title="Xem nhanh" class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Tiểu thuyết</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Nhà Giả Kim (The Alchemist)</h3>
-                            <div class="text-sm text-gray-600 mb-3">Paulo Coelho</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★★ <span class="text-gray-400 ml-1 font-medium">(254)</span></div>
-
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-gray-400 text-xs line-through mb-0.5">89.000 đ</div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">71.200 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                ĐẮC NHÂN TÂM
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Kỹ năng</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Đắc Nhân Tâm</h3>
-                            <div class="text-sm text-gray-600 mb-3">Dale Carnegie</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★<span class="text-gray-300">★</span> <span class="text-gray-400 ml-1 font-medium">(890)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">86.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-xs font-bold px-2.5 py-1 rounded shadow-sm">Bán Chạy</div>
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                NGHĨ GIÀU LÀM GIÀU
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Kinh tế</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Nghĩ Giàu Và Làm Giàu</h3>
-                            <div class="text-sm text-gray-600 mb-3">Napoleon Hill</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★★ <span class="text-gray-400 ml-1 font-medium">(412)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">110.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                SAPIENS
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Lịch sử</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Sapiens - Lược Sử Loài Người</h3>
-                            <div class="text-sm text-gray-600 mb-3">Yuval Noah Harari</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★★ <span class="text-gray-400 ml-1 font-medium">(1023)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">255.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-xs font-bold px-2.5 py-1 rounded shadow-sm">-10%</div>
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                TUỔI TRẺ ĐÁNG GIÁ
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Tâm lý</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Tuổi Trẻ Đáng Giá Bao Nhiêu</h3>
-                            <div class="text-sm text-gray-600 mb-3">Rosie Nguyễn</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★<span class="text-gray-300">★</span> <span class="text-gray-400 ml-1 font-medium">(567)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-gray-400 text-xs line-through mb-0.5">80.000 đ</div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">72.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                CLEAN CODE
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">CNTT</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Clean Code: A Handbook of Agile</h3>
-                            <div class="text-sm text-gray-600 mb-3">Robert C. Martin</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★★ <span class="text-gray-400 ml-1 font-medium">(88)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">350.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="absolute top-3 left-3 z-10 bg-brand-dark text-white text-xs font-bold px-2.5 py-1 rounded shadow-sm">Mới</div>
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                TÂM LÝ HỌC
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Tâm lý</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Tâm Lý Học Tội Phạm</h3>
-                            <div class="text-sm text-gray-600 mb-3">Stanton E. Samenow</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★<span class="text-gray-300">★</span> <span class="text-gray-400 ml-1 font-medium">(132)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">145.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                HARRY POTTER
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Tiểu thuyết</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Harry Potter Và Hòn Đá Phù Thủy</h3>
-                            <div class="text-sm text-gray-600 mb-3">J.K. Rowling</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★★ <span class="text-gray-400 ml-1 font-medium">(2100)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">120.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-xs font-bold px-2.5 py-1 rounded shadow-sm">-30%</div>
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                BẮT TRẺ ĐỒNG XANH
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Văn học</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Bắt Trẻ Đồng Xanh</h3>
-                            <div class="text-sm text-gray-600 mb-3">J.D. Salinger</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★<span class="text-gray-300">★</span> <span class="text-gray-400 ml-1 font-medium">(340)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-gray-400 text-xs line-through mb-0.5">90.000 đ</div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">63.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                TỪ ĐIỂN ANH VIỆT
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Ngoại ngữ</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Từ Điển Anh Việt 300.000 Từ</h3>
-                            <div class="text-sm text-gray-600 mb-3">NXB Giáo Dục</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★<span class="text-gray-300">★★</span> <span class="text-gray-400 ml-1 font-medium">(56)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">180.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                TIẾNG GỌI NƠI HOANG DÃ
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Tiểu thuyết</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Tiếng Gọi Nơi Hoang Dã</h3>
-                            <div class="text-sm text-gray-600 mb-3">Jack London</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★★ <span class="text-gray-400 ml-1 font-medium">(219)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">55.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <a th:href="@{/book/1}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="absolute top-3 left-3 z-10 bg-brand-orange text-white text-xs font-bold px-2.5 py-1 rounded shadow-sm">-5%</div>
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            <div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3">
-                                DẠY CON LÀM GIÀU
-                            </div>
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-                                <button class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">Kinh tế</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">Dạy Con Làm Giàu (Tập 1)</h3>
-                            <div class="text-sm text-gray-600 mb-3">Robert Kiyosaki</div>
-                            <div class="flex text-yellow-400 text-xs mb-4">★★★★<span class="text-gray-300">★</span> <span class="text-gray-400 ml-1 font-medium">(999)</span></div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div>
-                                    <div class="text-gray-400 text-xs line-through mb-0.5">100.000 đ</div>
-                                    <div class="text-brand-dark font-medium">Giá: <span class="text-brand-orange text-xl font-bold">95.000 đ</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
+                <!-- Fallback card for when Thymeleaf model is empty, for layout preview -->
+                <div th:if="${books == null or #lists.isEmpty(books)}">
+                    <div th:replace="~{fragments/book_card :: card('How to Make an American Quilt','Whitney Otto','/static/images/sample-book.jpg',203000,20,'/book/1')}"></div>
+                </div>
+                <!-- Book card loop -->
+                <th:block th:each="book : ${books}">
+                    <div th:replace="~{fragments/book_card :: card(${book.title}, ${book.author}, ${book.imageUrl}, ${book.price}, 0, @{/book/{id}(id=${book.id})})}"></div>
+                </th:block>
             </div>
 
             <div class="flex justify-center mt-6 mb-10">
@@ -820,314 +495,7 @@
     </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script>
-    (function () {
-        const booksGrid = document.getElementById('books-grid');
-        const homeCategoryGrid = document.getElementById('home-category-grid');
-        const sidebarCategoryList = document.getElementById('sidebar-category-list');
-        const paginationNav = document.getElementById('books-pagination');
-        const searchForm = document.getElementById('index-search-form');
-        const searchInput = document.getElementById('index-search-input');
-        const sortSelect = document.getElementById('sort-select');
-        const priceMinInput = document.getElementById('price-min-input');
-        const priceMaxInput = document.getElementById('price-max-input');
-        const applyPriceFilterBtn = document.getElementById('apply-price-filter-btn');
-        if (!booksGrid) {
-            return;
-        }
-
-        const state = {
-            page: 0,
-            size: 12,
-            q: '',
-            categoryId: null,
-            minPrice: null,
-            maxPrice: null,
-            sort: 'latest'
-        };
-
-        const formatPriceVnd = (value) => {
-            if (value === null || value === undefined || Number.isNaN(Number(value))) {
-                return 'Liên hệ';
-            }
-            return new Intl.NumberFormat('vi-VN').format(Number(value)) + ' đ';
-        };
-
-        const escapeHtml = (text) => {
-            const div = document.createElement('div');
-            div.textContent = text ?? '';
-            return div.innerHTML;
-        };
-
-        const applySort = (books) => {
-            const sorted = [...books];
-            if (state.sort === 'priceAsc') {
-                sorted.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
-            } else if (state.sort === 'priceDesc') {
-                sorted.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
-            } else if (state.sort === 'titleAsc') {
-                sorted.sort((a, b) => String(a.title ?? '').localeCompare(String(b.title ?? '')));
-            }
-            return sorted;
-        };
-
-        const applyPriceFilter = (books) => {
-            return books.filter((book) => {
-                const price = Number(book.price ?? 0);
-                if (state.minPrice !== null && price < state.minPrice) {
-                    return false;
-                }
-                if (state.maxPrice !== null && price > state.maxPrice) {
-                    return false;
-                }
-                return true;
-            });
-        };
-
-        const setCategory = (categoryId) => {
-            state.categoryId = categoryId;
-            state.page = 0;
-            loadBooks();
-        };
-
-        const renderCategories = (categories) => {
-            if (homeCategoryGrid) {
-                homeCategoryGrid.innerHTML = categories.map((category) => `
-                    <button type="button" data-category-id="${category.id}" class="home-category-btn w-36 h-36 bg-brand-bg border-2 border-brand-brown rounded-lg flex flex-col items-center justify-center text-brand-dark hover:bg-brand-brown hover:text-white transition-colors duration-300 shadow-sm group">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-brand-brown group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                        <span class="font-bold text-sm">${escapeHtml(category.name)}</span>
-                    </button>
-                `).join('');
-            }
-
-            if (sidebarCategoryList) {
-                sidebarCategoryList.innerHTML = categories.map((category) => `
-                    <li>
-                        <button type="button" data-category-id="${category.id}" class="sidebar-category-btn w-full text-left flex items-center justify-between group">
-                            <span class="group-hover:text-brand-brown transition-colors">${escapeHtml(category.name)}</span>
-                        </button>
-                    </li>
-                `).join('');
-            }
-        };
-
-        const bindCategoryEvents = () => {
-            document.querySelectorAll('.home-category-btn, .sidebar-category-btn').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const categoryId = Number(btn.getAttribute('data-category-id'));
-                    if (!Number.isNaN(categoryId)) {
-                        setCategory(categoryId);
-                    }
-                });
-            });
-        };
-
-        const loadCategories = async () => {
-            try {
-                const response = await axios.get('/api/categories');
-                const categories = Array.isArray(response.data) ? response.data : [];
-                if (categories.length > 0) {
-                    renderCategories(categories);
-                    bindCategoryEvents();
-                }
-            } catch (error) {
-                console.error('Load categories failed:', error);
-            }
-        };
-
-        const buildCard = (book) => {
-            const title = escapeHtml(book.title || 'Chua co ten sach');
-            const author = escapeHtml(book.author || 'Chua co tac gia');
-            const categoryName = escapeHtml(book.category?.name || 'Sach');
-            const imageUrl = book.imageUrl ? escapeHtml(book.imageUrl) : '';
-            const detailUrl = '/book/' + book.id;
-            const price = formatPriceVnd(book.price);
-
-            const coverHtml = imageUrl
-                ? `<img src="${imageUrl}" alt="${title}" class="book-cover w-full h-full object-cover" loading="lazy">`
-                : `<div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3 leading-snug">${title}</div>`;
-
-            return `
-                <a href="${detailUrl}" class="product-card group cursor-pointer h-full">
-                    <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
-                        <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                            ${coverHtml}
-                            <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
-                                <button type="button" title="Them vao gio" data-add-to-cart="true" data-book-id="${book.id}" class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col">
-                            <div class="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wider">${categoryName}</div>
-                            <h3 class="text-lg font-bold text-brand-dark leading-tight mb-2 line-clamp-2 group-hover:text-brand-brown transition-colors">${title}</h3>
-                            <div class="text-sm text-gray-600 mb-3">${author}</div>
-                            <div class="mt-auto border-t border-brand-border pt-3 flex items-end justify-between">
-                                <div class="text-brand-dark font-medium">Gia: <span class="text-brand-orange text-xl font-bold">${price}</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            `;
-        };
-
-        const showError = () => {
-            booksGrid.innerHTML = `
-                <div class="col-span-full bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 font-semibold">
-                    Khong tai duoc danh sach sach. Vui long thu lai sau.
-                </div>
-            `;
-        };
-
-        const getAuthContext = () => {
-            const userId = localStorage.getItem('userId');
-            const token = localStorage.getItem('accessToken');
-            const role = localStorage.getItem('userRole');
-            return { userId, token, role };
-        };
-
-        const addToCart = async (bookId, quantity = 1) => {
-            const { userId, token, role } = getAuthContext();
-            if (!userId || role !== 'BUYER') {
-                alert('Vui long dang nhap tai khoan BUYER de them vao gio hang.');
-                window.location.href = '/main/auth';
-                return;
-            }
-
-            const headers = { 'X-User-Id': userId };
-            if (token) {
-                headers.Authorization = `Bearer ${token}`;
-            }
-
-            try {
-                await axios.post(`/api/carts/buyer/${userId}/items`, {
-                    bookId: Number(bookId),
-                    quantity
-                }, { headers });
-                alert('Da them san pham vao gio hang.');
-            } catch (error) {
-                const message = error?.response?.data || 'Them vao gio hang that bai.';
-                alert(typeof message === 'string' ? message : 'Them vao gio hang that bai.');
-            }
-        };
-
-        const renderPagination = (currentPage, totalPages) => {
-            if (!paginationNav) {
-                return;
-            }
-
-            if (!totalPages || totalPages <= 1) {
-                paginationNav.innerHTML = '';
-                return;
-            }
-
-            let html = '';
-            html += `<button type="button" data-page="${Math.max(0, currentPage - 1)}" class="page-btn relative inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-500 hover:bg-brand-bg transition-colors ${currentPage === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPage === 0 ? 'disabled' : ''}>Prev</button>`;
-
-            const start = Math.max(0, currentPage - 2);
-            const end = Math.min(totalPages - 1, currentPage + 2);
-            for (let i = start; i <= end; i++) {
-                const active = i === currentPage;
-                html += `<button type="button" data-page="${i}" class="page-btn relative inline-flex items-center px-4 py-2 rounded-md text-sm mx-1 ${active ? 'font-bold bg-brand-brown text-white' : 'font-medium text-brand-dark hover:bg-brand-bg transition-colors'}">${i + 1}</button>`;
-            }
-
-            html += `<button type="button" data-page="${Math.min(totalPages - 1, currentPage + 1)}" class="page-btn relative inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-500 hover:bg-brand-bg transition-colors ${currentPage >= totalPages - 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>Next</button>`;
-            paginationNav.innerHTML = html;
-
-            paginationNav.querySelectorAll('.page-btn').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const nextPage = Number(btn.getAttribute('data-page'));
-                    if (!Number.isNaN(nextPage) && nextPage !== state.page) {
-                        state.page = nextPage;
-                        loadBooks();
-                    }
-                });
-            });
-        };
-
-        const loadBooks = async () => {
-            booksGrid.innerHTML = `
-                <div class="col-span-full bg-white border border-brand-border text-brand-dark rounded-xl px-4 py-3 font-semibold">
-                    Dang tai danh sach sach...
-                </div>
-            `;
-
-            try {
-                const params = {
-                    page: state.page,
-                    size: state.size
-                };
-                if (state.q) {
-                    params.q = state.q;
-                }
-                if (state.categoryId) {
-                    params.categoryId = state.categoryId;
-                }
-
-                const response = await axios.get('/api/books/search', {
-                    params
-                });
-
-                const serverBooks = Array.isArray(response?.data?.content) ? response.data.content : [];
-                const books = applySort(applyPriceFilter(serverBooks));
-
-                if (books.length === 0) {
-                    booksGrid.innerHTML = `
-                        <div class="col-span-full bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl px-4 py-3 font-semibold">
-                            Chua co sach de hien thi.
-                        </div>
-                    `;
-                    renderPagination(0, 0);
-                    return;
-                }
-
-                booksGrid.innerHTML = books.map(buildCard).join('');
-                renderPagination(response?.data?.number ?? state.page, response?.data?.totalPages ?? 0);
-            } catch (error) {
-                showError();
-                console.error('Load books failed:', error);
-            }
-        };
-
-        booksGrid.addEventListener('click', (event) => {
-            const targetButton = event.target.closest('button[data-add-to-cart="true"]');
-            if (!targetButton) {
-                return;
-            }
-            event.preventDefault();
-            event.stopPropagation();
-            const bookId = targetButton.getAttribute('data-book-id');
-            if (bookId) {
-                addToCart(bookId, 1);
-            }
-        });
-
-        searchForm?.addEventListener('submit', (event) => {
-            event.preventDefault();
-            state.q = (searchInput?.value || '').trim();
-            state.page = 0;
-            loadBooks();
-        });
-
-        sortSelect?.addEventListener('change', () => {
-            state.sort = sortSelect.value;
-            loadBooks();
-        });
-
-        applyPriceFilterBtn?.addEventListener('click', () => {
-            const min = Number(priceMinInput?.value);
-            const max = Number(priceMaxInput?.value);
-            state.minPrice = Number.isNaN(min) || min < 0 ? null : min;
-            state.maxPrice = Number.isNaN(max) || max < 0 ? null : max;
-            state.page = 0;
-            loadBooks();
-        });
-
-        loadCategories();
-        loadBooks();
-    })();
-</script>
-
+<script src="/js/api-service.js"></script>
+<script src="/js/pages/index-page.js"></script>
 </body>
 </html>

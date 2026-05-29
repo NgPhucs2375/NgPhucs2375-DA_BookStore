@@ -52,6 +52,34 @@ const ApiService = (() => {
         }).format(value || 0);
     };
 
+    /**
+     * Parse JSON or text response safely
+     */
+    const parseResponse = async (response) => {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            return response.json();
+        }
+        const text = await response.text();
+        return text;
+    };
+
+    /**
+     * Handle API response with error normalization
+     */
+    const handleResponse = async (response) => {
+        const data = await parseResponse(response);
+        if (!response.ok) {
+            const message = typeof data === 'string' && data.trim()
+                ? data
+                : 'Request failed';
+            const error = new Error(message);
+            error.data = data;
+            throw error;
+        }
+        return data;
+    };
+
     // ==========================================
     // 2. AUTHENTICATION APIs
     // ==========================================
@@ -67,7 +95,7 @@ const ApiService = (() => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -81,7 +109,7 @@ const ApiService = (() => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, otp })
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -98,7 +126,7 @@ const ApiService = (() => {
                     favoriteCategoryIds
                 })
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -135,6 +163,19 @@ const ApiService = (() => {
                 body: JSON.stringify(data)
             });
             return response.json();
+        },
+        /**
+         * Upgrade current authenticated BUYER to SELLER
+         * @param {Object} payload { shopName, shopAddress }
+         * @returns {Object} response containing new accessToken and role info
+         */
+        becomeSeller: async (payload = {}) => {
+            const response = await fetch(`${API_BASE}/auth/become-seller`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(payload)
+            });
+            return handleResponse(response);
         }
     };
 
@@ -146,18 +187,67 @@ const ApiService = (() => {
         /**
          * Tìm kiếm sách APPROVED cho BUYER
          */
-        search: async (query = '', categoryId = null, page = 0, size = 20) => {
-            const params = new URLSearchParams({
-                q: query,
-                page: page,
-                size: size
-            });
+        search: async (query = '', categoryId = null, page = 0, size = 20, filters = {}) => {
+            const params = new URLSearchParams();
+            params.set('q', query || '');
+            params.set('page', page);
+            params.set('size', size);
             if (categoryId) params.append('categoryId', categoryId);
+
+            const appendIfPresent = (key, value) => {
+                if (value !== null && value !== undefined && `${value}`.trim() !== '') {
+                    params.append(key, value);
+                }
+            };
+
+            appendIfPresent('author', filters.author);
+            appendIfPresent('minPrice', filters.minPrice);
+            appendIfPresent('maxPrice', filters.maxPrice);
+            appendIfPresent('publishYearFrom', filters.publishYearFrom);
+            appendIfPresent('publishYearTo', filters.publishYearTo);
+            appendIfPresent('sort', filters.sort);
 
             const response = await fetch(`${API_BASE}/books/search?${params}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
+        },
+
+        /**
+         * Gợi ý tìm kiếm nhanh theo tiêu đề/tác giả
+         */
+        suggestions: async (query = '', size = 8) => {
+            const params = new URLSearchParams();
+            params.set('q', query || '');
+            params.set('size', size);
+
+            const response = await fetch(`${API_BASE}/books/suggestions?${params}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Sách bán chạy nhất
+         */
+        bestSellers: async (size = 8) => {
+            const response = await fetch(`${API_BASE}/books/discovery/best-sellers?size=${encodeURIComponent(size)}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Sách đang trending theo đơn gần đây
+         */
+        trending: async (size = 8, days = 30) => {
+            const params = new URLSearchParams();
+            params.set('size', size);
+            params.set('days', days);
+            const response = await fetch(`${API_BASE}/books/discovery/trending?${params}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
         },
 
         /**
@@ -175,7 +265,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/books/seller/me?${params}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -185,31 +275,42 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/books/${bookId}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
+        },
+
+        /**
+         * Lấy chi tiết sách của seller hiện tại (Bảo mật - kiểm tra ownership)
+         * Chỉ trả về sách mà seller sở hữu
+         */
+        getOwnBook: async (bookId) => {
+            const response = await fetch(`${API_BASE}/books/seller/book/${bookId}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
         },
 
         /**
          * Tạo sách mới (seller)
          */
         create: async (bookData) => {
-            const response = await fetch(`${API_BASE}/books`, {
+            const response = await fetch(`${API_BASE}/books/seller`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify(bookData)
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
          * Cập nhật sách
          */
         update: async (bookId, bookData) => {
-            const response = await fetch(`${API_BASE}/books/${bookId}`, {
+            const response = await fetch(`${API_BASE}/books/seller/${bookId}`, {
                 method: 'PUT',
                 headers: getHeaders(),
                 body: JSON.stringify(bookData)
             });
-            return response.json();
+            return handleResponse(response);
         },
         uploadCover: async (bookId, formData) => {
                     // CẦN LƯU Ý: Khi dùng fetch với FormData, KHÔNG set header Content-Type.
@@ -244,11 +345,169 @@ const ApiService = (() => {
          * Xóa sách
          */
         delete: async (bookId) => {
-            const response = await fetch(`${API_BASE}/books/${bookId}`, {
+            const response = await fetch(`${API_BASE}/books/seller/${bookId}`, {
                 method: 'DELETE',
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
+        }
+    };
+
+    const WISHLIST_STORAGE_PREFIX = 'bookom:wishlist:';
+
+    const getWishlistKey = (userId = getAuth().userId) => `${WISHLIST_STORAGE_PREFIX}${userId || 'guest'}`;
+
+    const readWishlist = (userId = getAuth().userId) => {
+        try {
+            const raw = localStorage.getItem(getWishlistKey(userId));
+            if (!raw) {
+                return [];
+            }
+
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed)
+                ? parsed.filter((item) => item && item.id !== undefined && item.id !== null)
+                : [];
+        } catch (error) {
+            return [];
+        }
+    };
+
+    const writeWishlist = (userId, items) => {
+        localStorage.setItem(getWishlistKey(userId), JSON.stringify(items));
+    };
+
+    const normalizeWishlistBook = (book) => {
+        const bookId = Number(book?.id);
+        return {
+            id: bookId,
+            title: book?.title || '',
+            author: book?.author || '',
+            price: Number(book?.price || 0),
+            imageUrl: book?.imageUrl || '',
+            categoryName: book?.categoryName || book?.category?.name || 'Sach',
+            stockQuantity: Number(book?.stockQuantity || 0),
+            shopName: book?.shopName || book?.seller?.shopName || '',
+            savedAt: Date.now()
+        };
+    };
+
+    const normalizeWishlistItems = (items) => {
+        if (!Array.isArray(items)) {
+            return [];
+        }
+
+        return items
+            .filter((item) => item && item.id !== undefined && item.id !== null)
+            .map((item) => ({
+                id: Number(item.id),
+                title: item.title || '',
+                author: item.author || '',
+                price: Number(item.price || 0),
+                imageUrl: item.imageUrl || '',
+                categoryName: item.categoryName || 'Sach',
+                stockQuantity: Number(item.stockQuantity || 0),
+                shopName: item.shopName || '',
+                savedAt: Number(item.savedAt || Date.now())
+            }));
+    };
+
+    const syncWishlistCache = (userId, items) => {
+        writeWishlist(userId, normalizeWishlistItems(items));
+    };
+
+    const Wishlist = {
+        bootstrap: async (buyerId = null) => {
+            return Wishlist.getItems(buyerId);
+        },
+
+        getItems: async (buyerId = null) => {
+            const id = buyerId || getAuth().userId;
+            if (!id) {
+                return readWishlist(id).slice().sort((a, b) => Number(b.savedAt || 0) - Number(a.savedAt || 0));
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/wishlist/me`, {
+                    headers: getHeaders()
+                });
+                const items = await handleResponse(response);
+                syncWishlistCache(id, items);
+                return readWishlist(id).slice().sort((a, b) => Number(b.savedAt || 0) - Number(a.savedAt || 0));
+            } catch (error) {
+                return readWishlist(id).slice().sort((a, b) => Number(b.savedAt || 0) - Number(a.savedAt || 0));
+            }
+        },
+
+        count: (buyerId = null) => readWishlist(buyerId).length,
+
+        isSaved: (bookId, buyerId = null) => {
+            const id = Number(bookId);
+            if (!id) {
+                return false;
+            }
+            return readWishlist(buyerId).some((item) => Number(item.id) === id);
+        },
+
+        toggle: async (book, buyerId = null) => {
+            const id = buyerId || getAuth().userId;
+            if (!id) {
+                throw new Error('Vui long dang nhap de luu vao Wishlist.');
+            }
+
+            const snapshot = normalizeWishlistBook(book);
+            if (!snapshot.id) {
+                throw new Error('Khong the luu sach nay.');
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/wishlist/me/${snapshot.id}`, {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+                const data = await handleResponse(response);
+                syncWishlistCache(id, data?.items || []);
+                return {
+                    saved: !!data?.saved,
+                    count: Number(data?.count || 0),
+                    items: readWishlist(id)
+                };
+            } catch (error) {
+                const items = readWishlist(id);
+                const index = items.findIndex((item) => Number(item.id) === snapshot.id);
+                let saved = true;
+
+                if (index >= 0) {
+                    items.splice(index, 1);
+                    saved = false;
+                } else {
+                    items.unshift(snapshot);
+                }
+
+                writeWishlist(id, items);
+                return { saved, count: items.length, items };
+            }
+        },
+
+        remove: async (bookId, buyerId = null) => {
+            const id = buyerId || getAuth().userId;
+            if (!id) {
+                return [];
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/wishlist/me/${Number(bookId)}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+                const data = await handleResponse(response);
+                syncWishlistCache(id, data?.items || []);
+                return readWishlist(id);
+            } catch (error) {
+                const items = readWishlist(id).filter((item) => Number(item.id) !== Number(bookId));
+                writeWishlist(id, items);
+                return items;
+            }
         }
     };
 
@@ -265,7 +524,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/carts/buyer/${id}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -278,7 +537,7 @@ const ApiService = (() => {
                 headers: getHeaders(),
                 body: JSON.stringify(itemData)
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -293,7 +552,7 @@ const ApiService = (() => {
                     headers: getHeaders()
                 }
             );
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -308,7 +567,7 @@ const ApiService = (() => {
                     headers: getHeaders()
                 }
             );
-            return response.json();
+            return handleResponse(response);
         }
     };
 
@@ -320,13 +579,16 @@ const ApiService = (() => {
         /**
          * Checkout từ giỏ hàng
          */
-        checkout: async (shippingAddress) => {
+        checkout: async (shippingAddress, couponCode = null) => {
+            const body = { shippingAddress };
+            if (couponCode) body.couponCode = couponCode;
+            
             const response = await fetch(`${API_BASE}/orders/me/checkout`, {
                 method: 'POST',
                 headers: getHeaders(),
-                body: JSON.stringify({ shippingAddress })
+                body: JSON.stringify(body)
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -336,7 +598,19 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/orders/me`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
+        },
+
+        /**
+         * Lấy danh sách đơn hàng dạng summary cho buyer
+         */
+        getBuyerOrderSummaries: async () => {
+            const response = await fetch(`${API_BASE}/orders/me/filter/summary`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({})
+            });
+            return handleResponse(response);
         },
 
         /**
@@ -346,22 +620,39 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/orders/me/${orderId}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
          * Lấy sub-orders của seller
          */
         getSellerOrders: async (sellerId = null) => {
-            const id = sellerId || getAuth().userId;
-            const response = await fetch(`${API_BASE}/orders/seller/${id}/sub-orders`, {
+            const url = sellerId
+                ? `${API_BASE}/orders/seller/${sellerId}/sub-orders`
+                : `${API_BASE}/orders/seller/me/sub-orders`;
+            const response = await fetch(url, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
-         * Cập nhật trạng thái sub-order
+         * Xác nhận sub-order - tự động chuyển trạng thái theo luồng:
+         * PROCESSING -> CONFIRMED -> SHIPPING -> COMPLETED
+         */
+        confirmSubOrder: async (subOrderId) => {
+            const response = await fetch(
+                `${API_BASE}/orders/sub-orders/${subOrderId}/confirm`,
+                {
+                    method: 'POST',
+                    headers: getHeaders()
+                }
+            );
+            return handleResponse(response);
+        },
+
+        /**
+         * Cập nhật trạng thái sub-order (dùng cho hủy đơn)
          */
         updateSubOrderStatus: async (subOrderId, status) => {
             const response = await fetch(
@@ -371,7 +662,18 @@ const ApiService = (() => {
                     headers: getHeaders()
                 }
             );
-            return response.json();
+            return handleResponse(response);
+        },
+
+        /**
+         * Hủy đơn hàng của buyer
+         */
+        cancelBuyerOrder: async (orderId) => {
+            const response = await fetch(`${API_BASE}/orders/me/${orderId}/cancel`, {
+                method: 'PATCH',
+                headers: getHeaders()
+            });
+            return handleResponse(response);
         }
     };
 
@@ -387,7 +689,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/seller/me/shop`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -399,7 +701,7 @@ const ApiService = (() => {
                 headers: getHeaders(),
                 body: JSON.stringify(shopData)
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -411,7 +713,7 @@ const ApiService = (() => {
                 headers: getHeaders(),
                 body: JSON.stringify(shopData)
             });
-            return response.json();
+            return handleResponse(response);
         },
 
         /**
@@ -421,7 +723,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/shops/${slug}`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         }
     };
 
@@ -437,7 +739,7 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/categories`, {
                 headers: getHeaders()
             });
-            return response.json();
+            return handleResponse(response);
         }
     };
 
@@ -455,6 +757,7 @@ const ApiService = (() => {
         Auth,
         Book,
         Cart,
+        Wishlist,
         Order,
         SellerShop,
         Category,

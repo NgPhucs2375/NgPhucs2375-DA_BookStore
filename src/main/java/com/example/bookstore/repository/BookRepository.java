@@ -18,10 +18,34 @@ public interface BookRepository extends JpaRepository<Book, Long>{
 
     List<Book> findBySeller(User seller);
 
+    @Query("SELECT b.approvalStatus FROM Book b WHERE b.id = :bookId")
+    ApprovalStatus findApprovalStatusById(@Param("bookId") Long bookId);
+
+    @Query("""
+            SELECT CASE WHEN COUNT(b) > 0 THEN TRUE ELSE FALSE END
+            FROM Book b
+            WHERE b.id = :bookId
+              AND b.seller.id = :sellerId
+            """)
+    boolean existsByIdAndSellerId(@Param("bookId") Long bookId, @Param("sellerId") Long sellerId);
+
     // S02: Lấy sách theo trạng thái (Có phân trang cho Admin)
     Page<Book> findByApprovalStatus(ApprovalStatus approvalStatus, Pageable pageable);
 
     List<Book> findByApprovalStatus(ApprovalStatus approvalStatus);
+
+    // 🆕 NEW: Các phương thức hỗ trợ Admin quản lý
+    List<Book> findByIsActive(boolean isActive);
+
+    Page<Book> findByIsActive(boolean isActive, Pageable pageable);
+
+    Page<Book> findByApprovalStatusAndIsActive(
+            ApprovalStatus status,
+            boolean isActive,
+            Pageable pageable
+    );
+
+    Page<Book> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 
         @Query("""
             SELECT b FROM Book b
@@ -31,18 +55,89 @@ public interface BookRepository extends JpaRepository<Book, Long>{
                 :q IS NULL
                 OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
                 OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(COALESCE(b.publisher, '')) LIKE LOWER(CONCAT('%', :q, '%'))
               )
               AND (
                 :categoryId IS NULL
                 OR c.id = :categoryId
               )
+              AND (
+                :author IS NULL
+                OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%'))
+              )
+              AND (
+                :minPrice IS NULL
+                OR b.price >= :minPrice
+              )
+              AND (
+                :maxPrice IS NULL
+                OR b.price <= :maxPrice
+              )
+              AND (
+                :publishYearFrom IS NULL
+                OR b.publishYear >= :publishYearFrom
+              )
+              AND (
+                :publishYearTo IS NULL
+                OR b.publishYear <= :publishYearTo
+              )
             """)
         Page<Book> searchApprovedBooks(
             @Param("q") String q,
             @Param("categoryId") Long categoryId,
+            @Param("author") String author,
+            @Param("minPrice") Double minPrice,
+            @Param("maxPrice") Double maxPrice,
+            @Param("publishYearFrom") Integer publishYearFrom,
+            @Param("publishYearTo") Integer publishYearTo,
             @Param("status") ApprovalStatus status,
             Pageable pageable
         );
+
+    @Query("""
+            SELECT b FROM Book b
+            WHERE b.approvalStatus = :status
+              AND (
+                :q IS NULL
+                OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
+            ORDER BY
+              CASE
+                WHEN :q IS NOT NULL AND LOWER(b.title) LIKE LOWER(CONCAT(:q, '%')) THEN 0
+                WHEN :q IS NOT NULL AND LOWER(b.author) LIKE LOWER(CONCAT(:q, '%')) THEN 1
+                ELSE 2
+              END,
+              b.title ASC
+            """)
+    List<Book> findSuggestions(@Param("q") String q,
+                               @Param("status") ApprovalStatus status,
+                               Pageable pageable);
+
+    @Query("""
+            SELECT b FROM Book b
+            JOIN OrderItem oi ON oi.book = b
+            JOIN oi.subOrder so
+            JOIN so.parentOrder o
+            WHERE b.approvalStatus = :status
+            GROUP BY b
+            ORDER BY SUM(oi.quantity) DESC, MAX(o.createdAt) DESC, b.id DESC
+            """)
+    List<Book> findBestSellingBooks(@Param("status") ApprovalStatus status, Pageable pageable);
+
+    @Query("""
+            SELECT b FROM Book b
+            JOIN OrderItem oi ON oi.book = b
+            JOIN oi.subOrder so
+            JOIN so.parentOrder o
+            WHERE b.approvalStatus = :status
+              AND o.createdAt >= :since
+            GROUP BY b
+            ORDER BY SUM(oi.quantity) DESC, MAX(o.createdAt) DESC, b.id DESC
+            """)
+    List<Book> findTrendingBooks(@Param("status") ApprovalStatus status,
+                                 @Param("since") java.time.LocalDateTime since,
+                                 Pageable pageable);
 
     /**
      * Tìm sách của seller (dùng cho Inventory Management - S03)

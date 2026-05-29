@@ -1,4 +1,23 @@
 services:
+  # SQL Server staging database used by the containerized Spring Boot app
+  bookom-mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: bookom-mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-BookomStaging!123}"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks:
+      - bookom-network
+    healthcheck:
+      test: ["CMD-SHELL", "bash -lc 'exec 3<>/dev/tcp/localhost/1433'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
   # Load Balancer Nginx
   nginx-lb:
     image: nginx:latest
@@ -19,6 +38,13 @@ services:
   bookom-app-1:
     image: eclipse-temurin:17-jdk-alpine
     container_name: bookom-app-1
+    depends_on:
+      bookom-mssql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://bookom-mssql:1433;databaseName=BookstoreDB;encrypt=true;trustServerCertificate=true
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: ${MSSQL_SA_PASSWORD:-BookomStaging!123}
     volumes:
       # TRỎ ĐÚNG FILE JAR CHO APP JAVA
       - ./target/BookStore-0.0.1-SNAPSHOT.jar:/app/bookom.jar
@@ -30,6 +56,13 @@ services:
   bookom-app-2:
     image: eclipse-temurin:17-jdk-alpine
     container_name: bookom-app-2
+    depends_on:
+      bookom-mssql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://bookom-mssql:1433;databaseName=BookstoreDB;encrypt=true;trustServerCertificate=true
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: ${MSSQL_SA_PASSWORD:-BookomStaging!123}
     volumes:
       # TRỎ ĐÚNG FILE JAR CHO APP JAVA
       - ./target/BookStore-0.0.1-SNAPSHOT.jar:/app/bookom.jar
@@ -41,6 +74,13 @@ services:
   bookom-app-3:
     image: eclipse-temurin:17-jdk-alpine
     container_name: bookom-app-3
+    depends_on:
+      bookom-mssql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://bookom-mssql:1433;databaseName=BookstoreDB;encrypt=true;trustServerCertificate=true
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: ${MSSQL_SA_PASSWORD:-BookomStaging!123}
     volumes:
       # TRỎ ĐÚNG FILE JAR CHO APP JAVA
       - ./target/BookStore-0.0.1-SNAPSHOT.jar:/app/bookom.jar
@@ -52,3 +92,6 @@ services:
 networks:
   bookom-network:
     driver: bridge
+
+volumes:
+  mssql-data:

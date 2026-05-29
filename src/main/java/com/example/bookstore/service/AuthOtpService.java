@@ -1,13 +1,11 @@
 package com.example.bookstore.service;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.http.HttpStatus;
 
 @Service
 public class AuthOtpService {
@@ -22,21 +20,30 @@ public class AuthOtpService {
         this.mailService = mailService;
     }
 
-    public void requestOtp(String email) {
+    public String requestOtp(String email) {
         String normalizedEmail = normalize(email);
         String otp = String.format("%06d", random.nextInt(1_000_000));
         Instant expiresAt = Instant.now().plusSeconds(OTP_EXPIRE_SECONDS);
         otpStore.put(normalizedEmail, new OtpEntry(otp, expiresAt, false));
+        System.out.println(">> [OTP GENERATED] Email: " + normalizedEmail + " | OTP: " + otp);
+
+        if (!mailService.isConfigured()) {
+            // Keep OTP in store even if mail not configured, so it can be tested via console output
+            System.out.println(">> [WARNING] SMTP chua cau hinh. OTP chi co trong console, khong gui email.");
+            // Return OTP for dev/test fallback
+            return otp;
+        }
 
         try {
             mailService.sendOtpEmail(normalizedEmail, otp, OTP_EXPIRE_SECONDS / 60);
         } catch (Exception ex) {
-            otpStore.remove(normalizedEmail);
-            throw new ResponseStatusException(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Khong the gui OTP qua email. Vui long thu lai sau."
-            );
+            // Keep OTP in store even if send fails, so user can still verify via other means
+            System.err.println(">> [WARNING] Failed to send OTP email to " + normalizedEmail + ": " + ex.getMessage());
+            System.out.println(">> [FALLBACK] OTP still available for verification: " + otp);
+            // Return OTP for dev/test fallback if email send fails
+            return otp;
         }
+        return null; // OTP sent successfully via email
     }
 
     public boolean verifyOtp(String email, String otp) {

@@ -5,9 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -16,9 +18,12 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -37,7 +42,14 @@ public class SecurityConfig {
                 // 2. Xử lý lỗi
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Token is missing or invalid");
+                            String acceptHeader = request.getHeader("Accept");
+                            // Nếu là request từ browser (HTML), redirect về trang đăng nhập
+                            if (acceptHeader != null && acceptHeader.contains("text/html")) {
+                                response.sendRedirect("/main/auth");
+                            } else {
+                                // API request -> trả về 401
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Token is missing or invalid");
+                            }
                         })
                 )
 
@@ -46,18 +58,22 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register-admin").hasRole("ADMIN")
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/shops/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/panel/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/admin", "/admin/**").permitAll()
+                        .requestMatchers("/admin", "/admin/**").permitAll()
+                        .requestMatchers("/seller", "/seller/**").permitAll()
+                        .requestMatchers("/buyer", "/buyer/**").permitAll()
 
-                        // Đã bổ sung bảo mật cho API Sách của Seller
-                        .requestMatchers("/api/books/seller/**").hasRole("SELLER")
+                        .requestMatchers("/api/admin/seeder/**").hasRole("ADMIN")
 
                         // Protected routes dựa trên Role
                         .requestMatchers("/api/seller/**").hasRole("SELLER")
-                        .requestMatchers("/api/panel/**").hasRole("ADMIN")
+                        .requestMatchers("/api/books/seller/**").hasRole("SELLER")
 
-                        // Yêu cầu đăng nhập cho Carts và Orders
-                        .requestMatchers("/api/carts/**", "/api/orders/**").authenticated()
+                        .requestMatchers("/api/panel/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/notifications/admin/**").hasRole("ADMIN")
+
+                        // Yêu cầu đăng nhập cho Carts, Orders và Notifications
+                        .requestMatchers("/api/carts/**", "/api/orders/**", "/api/notifications/**").authenticated()
 
                         .anyRequest().permitAll()
                 )
@@ -80,5 +96,18 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    // Provide a PasswordEncoder bean required by services that encode/verify passwords
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public MethodSecurityExpressionHandler methodSecurityExpressionHandler(CustomPermissionEvaluator customPermissionEvaluator) {
+        DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+        handler.setPermissionEvaluator(customPermissionEvaluator);
+        return handler;
     }
 }

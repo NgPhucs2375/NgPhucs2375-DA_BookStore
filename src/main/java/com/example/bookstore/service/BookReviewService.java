@@ -14,6 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class BookReviewService {
@@ -45,6 +49,16 @@ public class BookReviewService {
      */
     @Transactional
     public BookReview addReview(User user, Long bookId, Integer rating, String comment) {
+        // Validation: Rating phải từ 1-5
+        if (rating == null || rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Đánh giá phải từ 1 đến 5 sao");
+        }
+
+        // Validation: Comment tối đa 2000 ký tự
+        if (comment != null && comment.length() > 2000) {
+            throw new IllegalArgumentException("Bình luận tối đa 2000 ký tự");
+        }
+
         // 1. Kiểm tra sách có tồn tại không
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sách với ID: " + bookId));
@@ -65,12 +79,58 @@ public class BookReviewService {
                 .book(book)
                 .user(user)
                 .rating(rating)
-                .comment(comment)
+                .comment(comment != null ? comment.trim() : "")
                 .createdAt(LocalDateTime.now())
                 .isHidden(false)
                 .build();
 
         return reviewRepository.save(review);
+    }
+
+    /**
+     * Cập nhật đánh giá của người dùng
+     */
+    @Transactional
+    public BookReview updateReview(Long reviewId, Long userId, Integer rating, String comment) {
+        // Validation: Rating phải từ 1-5
+        if (rating == null || rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Đánh giá phải từ 1 đến 5 sao");
+        }
+
+        // Validation: Comment tối đa 2000 ký tự
+        if (comment != null && comment.length() > 2000) {
+            throw new IllegalArgumentException("Bình luận tối đa 2000 ký tự");
+        }
+
+        BookReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đánh giá"));
+
+        // Kiểm tra quyền sở hữu
+        if (!review.getUser().getId().equals(userId)) {
+            throw new IllegalStateException("Bạn không có quyền chỉnh sửa đánh giá này");
+        }
+
+        // Cập nhật
+        review.setRating(rating);
+        review.setComment(comment != null ? comment.trim() : "");
+
+        return reviewRepository.save(review);
+    }
+
+    /**
+     * Xóa đánh giá của người dùng
+     */
+    @Transactional
+    public void deleteReview(Long reviewId, Long userId) {
+        BookReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đánh giá"));
+
+        // Kiểm tra quyền sở hữu
+        if (!review.getUser().getId().equals(userId)) {
+            throw new IllegalStateException("Bạn không có quyền xóa đánh giá này");
+        }
+
+        reviewRepository.deleteById(reviewId);
     }
 
     /**
@@ -80,6 +140,19 @@ public class BookReviewService {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
         return reviewRepository.findByBookAndIsHiddenFalse(book, pageable);
+    }
+
+    /**
+     * Lọc đánh giá theo số sao
+     */
+    public Page<BookReview> getBookReviewsByRating(Long bookId, Integer rating, Pageable pageable) {
+        if (rating == null || rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Số sao phải từ 1 đến 5");
+        }
+
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
+        return reviewRepository.findByBookAndRatingAndIsHiddenFalse(book, rating, pageable);
     }
 
     /**
@@ -104,6 +177,64 @@ public class BookReviewService {
     }
 
     /**
+     * Lấy thống kê phân bố đánh giá theo từng mức sao (1-5 sao)
+     */
+    public Map<Integer, Long> getRatingDistribution(Long bookId) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
+
+        List<Map<String, Object>> results = reviewRepository.countRatingDistributionByBook(book);
+        
+        // Khởi tạo map với tất cả rating từ 1-5 có giá trị mặc định là 0
+        Map<Integer, Long> distribution = new HashMap<>();
+        for (int i = 1; i <= 5; i++) {
+            distribution.put(i, 0L);
+        }
+
+        // Điền dữ liệu từ database
+        for (Map<String, Object> result : results) {
+            Integer rating = (Integer) result.get("rating");
+            Long count = ((Number) result.get("count")).longValue();
+            distribution.put(rating, count);
+        }
+
+        return distribution;
+    }
+
+    /**
+     * Lấy tất cả đánh giá của một người dùng (có phân trang)
+     */
+    public Page<BookReview> getUserReviews(Long userId, Pageable pageable) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        return reviewRepository.findByUserAndIsHiddenFalse(user, pageable);
+    }
+
+    /**
+     * Kiểm tra xem người dùng đã đánh giá sách hay chưa
+     */
+    public boolean hasUserReviewedBook(Long userId, Long bookId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
+        
+        return reviewRepository.existsByBookAndUser(book, user);
+    }
+
+    /**
+     * Lấy đánh giá của người dùng cho sách cụ thể
+     */
+    public BookReview getUserReviewForBook(Long userId, Long bookId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
+        
+        return reviewRepository.findByBookAndUser(book, user);
+    }
+
+    /**
      * Ẩn hoặc hiện một đánh giá (Dành cho Admin kiểm duyệt)
      */
     @Transactional
@@ -121,8 +252,6 @@ public class BookReviewService {
     public Page<BookReview> getAllBookReviewsForAdmin(Long bookId, Pageable pageable) {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
-        // Ta cần thêm method này vào Repository nếu chưa có, hoặc dùng Example/Specification
-        // Nhưng đơn giản nhất là findByBook
         return reviewRepository.findAllByBook(book, pageable);
     }
 }

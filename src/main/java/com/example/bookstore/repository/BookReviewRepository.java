@@ -54,4 +54,19 @@ public interface BookReviewRepository extends JpaRepository<BookReview, Long> {
            "WHERE r.book = :book AND r.isHidden = false " +
            "GROUP BY r.rating")
     List<Map<String, Object>> countRatingDistributionByBook(@Param("book") Book book);
+
+    /**
+     * Tìm đánh giá của người dùng cho một cuốn sách cụ thể
+     */
+    BookReview findByBookAndUser(Book book, User user);
+
+    /**
+     * Lấy tất cả đánh giá của một người dùng (có phân trang)
+     */
+    Page<BookReview> findByUserAndIsHiddenFalse(User user, Pageable pageable);
+
+    /**
+     * Đếm số lượt đánh giá của một người dùng
+     */
+    long countByUserAndIsHiddenFalse(User user);
 }

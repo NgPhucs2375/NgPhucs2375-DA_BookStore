@@ -40,6 +40,25 @@ public class BookReviewController {
     }
 
     /**
+     * Lọc đánh giá theo số sao (Public)
+     */
+    @GetMapping("/book/{bookId}/by-rating/{rating}")
+    public ResponseEntity<?> getBookReviewsByRating(
+            @PathVariable Long bookId,
+            @PathVariable Integer rating,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Page<BookReview> reviews = reviewService.getBookReviewsByRating(bookId, rating, pageable);
+            return ResponseEntity.ok(reviews);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
      * Lấy thống kê đánh giá của một cuốn sách (Public)
      */
     @GetMapping("/book/{bookId}/stats")
@@ -48,6 +67,71 @@ public class BookReviewController {
         stats.put("averageRating", reviewService.getAverageRating(bookId));
         stats.put("totalReviews", reviewService.getTotalReviews(bookId));
         return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Lấy phân bố đánh giá theo từng mức sao (Public)
+     */
+    @GetMapping("/book/{bookId}/distribution")
+    public ResponseEntity<?> getRatingDistribution(@PathVariable Long bookId) {
+        try {
+            Map<Integer, Long> distribution = reviewService.getRatingDistribution(bookId);
+            return ResponseEntity.ok(distribution);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Kiểm tra xem người dùng đã đánh giá sách hay chưa (Yêu cầu đăng nhập)
+     */
+    @GetMapping("/book/{bookId}/user-review")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<?> getUserReviewStatus(
+            @PathVariable Long bookId,
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body("Vui lòng đăng nhập");
+        }
+
+        try {
+            boolean hasReviewed = reviewService.hasUserReviewedBook(principal.userId(), bookId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("hasReviewed", hasReviewed);
+
+            if (hasReviewed) {
+                BookReview review = reviewService.getUserReviewForBook(principal.userId(), bookId);
+                response.put("review", review);
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Lấy tất cả đánh giá của người dùng hiện tại (Yêu cầu đăng nhập)
+     */
+    @GetMapping("/my-reviews")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<?> getUserReviews(
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body("Vui lòng đăng nhập");
+        }
+
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Page<BookReview> reviews = reviewService.getUserReviews(principal.userId(), pageable);
+            return ResponseEntity.ok(reviews);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     /**
@@ -63,6 +147,11 @@ public class BookReviewController {
             if (principal == null) {
                 return ResponseEntity.status(401).body("Vui lòng đăng nhập để đánh giá");
             }
+
+            // Validation
+            if (request.getRating() == null || request.getBookId() == null) {
+                return ResponseEntity.badRequest().body("Sách và đánh giá là bắt buộc");
+            }
             
             BookReview review = reviewService.addReview(
                     principal.userId(),
@@ -71,6 +160,67 @@ public class BookReviewController {
                     request.getComment()
             );
             return ResponseEntity.ok(review);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Cập nhật đánh giá (Yêu cầu quyền sở hữu)
+     */
+    @PutMapping("/{reviewId}")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<?> updateReview(
+            @PathVariable Long reviewId,
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
+            @RequestBody ReviewRequest request
+    ) {
+        try {
+            if (principal == null) {
+                return ResponseEntity.status(401).body("Vui lòng đăng nhập");
+            }
+
+            // Validation
+            if (request.getRating() == null) {
+                return ResponseEntity.badRequest().body("Đánh giá là bắt buộc");
+            }
+
+            BookReview review = reviewService.updateReview(
+                    reviewId,
+                    principal.userId(),
+                    request.getRating(),
+                    request.getComment()
+            );
+            return ResponseEntity.ok(review);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Xóa đánh giá (Yêu cầu quyền sở hữu)
+     */
+    @DeleteMapping("/{reviewId}")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<?> deleteReview(
+            @PathVariable Long reviewId,
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
+    ) {
+        try {
+            if (principal == null) {
+                return ResponseEntity.status(401).body("Vui lòng đăng nhập");
+            }
+
+            reviewService.deleteReview(reviewId, principal.userId());
+            return ResponseEntity.ok("Xóa đánh giá thành công");
         } catch (IllegalStateException e) {
             return ResponseEntity.status(403).body(e.getMessage());
         } catch (RuntimeException e) {

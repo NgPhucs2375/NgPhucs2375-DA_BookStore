@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookId = Number(addButton.getAttribute('data-book-id'));
     let currentReviewPage = 0;
     const reviewSize = 10;
+    let currentEditingReviewId = null;
 
     const fetchReviewStats = async () => {
         try {
@@ -122,6 +123,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const fetchRatingDistribution = async () => {
+        try {
+            const response = await fetch(`/api/reviews/book/${bookId}/distribution`);
+            if (response.ok) {
+                const distribution = await response.json();
+                updateRatingDistributionDisplay(distribution);
+            }
+        } catch (error) {
+            console.error('Error fetching rating distribution:', error);
+        }
+    };
+
+    const updateRatingDistributionDisplay = (distribution) => {
+        const filters = document.getElementById('rating-filters');
+        if (!filters) return;
+
+        // Update the rating filter display with counts
+        filters.querySelectorAll('[data-filter]').forEach(btn => {
+            const filter = btn.dataset.filter;
+            if (filter !== 'all') {
+                const rating = parseInt(filter);
+                const count = distribution[rating] || 0;
+                const countSpan = btn.querySelector('.rating-count');
+                if (countSpan) {
+                    countSpan.textContent = `(${count})`;
+                } else {
+                    btn.innerHTML = `${btn.innerHTML} <span class="rating-count">(${count})</span>`;
+                }
+            } else {
+                const totalCount = Object.values(distribution).reduce((a, b) => a + b, 0);
+                const countSpan = btn.querySelector('.rating-count');
+                if (countSpan) {
+                    countSpan.textContent = `(${totalCount})`;
+                } else {
+                    btn.innerHTML = `${btn.innerHTML} <span class="rating-count">(${totalCount})</span>`;
+                }
+            }
+        });
+    };
+
+    const getCurrentUserId = () => {
+        const { userId } = ApiService.getAuth();
+        return userId;
+    };
+
     const fetchReviews = async (page = 0, append = false) => {
         const container = document.getElementById('reviews-list-container');
         const loadMoreBtnContainer = document.getElementById('load-more-reviews-container');
@@ -131,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const data = await response.json();
                 const reviews = data.content;
+                const currentUserId = getCurrentUserId();
                 
                 if (!append) {
                     container.innerHTML = '';
@@ -146,19 +193,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 reviews.forEach(review => {
                     const reviewEl = document.createElement('div');
-                    reviewEl.className = 'py-6 border-b border-brand-border flex gap-4';
+                    reviewEl.className = 'py-6 border-b border-brand-border flex gap-4 review-item';
+                    reviewEl.id = `review-${review.id}`;
                     
                     const initials = review.user.username.substring(0, 1).toUpperCase();
                     const dateStr = new Date(review.createdAt).toLocaleString('vi-VN');
+                    const isOwner = currentUserId && review.user.id === currentUserId;
+                    
+                    let actionButtons = '';
+                    if (isOwner) {
+                        actionButtons = `
+                            <div class="flex gap-2 ml-auto">
+                                <button class="edit-review-btn text-sm px-3 py-1 bg-brand-orange text-white rounded hover:bg-brand-brown transition" data-review-id="${review.id}">
+                                    Chỉnh sửa
+                                </button>
+                                <button class="delete-review-btn text-sm px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition" data-review-id="${review.id}">
+                                    Xóa
+                                </button>
+                            </div>
+                        `;
+                    }
                     
                     reviewEl.innerHTML = `
                         <div class="w-12 h-12 rounded-full bg-brand-hero border border-brand-border flex-shrink-0 flex items-center justify-center font-bold text-brand-brown">${initials}</div>
                         <div class="flex-grow">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-brand-dark text-sm">${review.user.username}</span>
-                                <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Đã mua hàng
-                                </span>
+                            <div class="flex items-center gap-2 mb-1 justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-brand-dark text-sm">${review.user.username}</span>
+                                    <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Đã mua hàng
+                                    </span>
+                                    ${isOwner ? '<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded">Đánh giá của bạn</span>' : ''}
+                                </div>
+                                ${actionButtons}
                             </div>
                             <div class="flex text-yellow-400 text-xs mb-2">${'★'.repeat(review.rating)}${'<span class="text-gray-300">★</span>'.repeat(5 - review.rating)}</div>
                             <div class="text-xs text-gray-400 mb-3">${dateStr}</div>
@@ -166,6 +233,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     `;
                     container.appendChild(reviewEl);
+                    
+                    // Add event listeners for edit/delete buttons
+                    const editBtn = reviewEl.querySelector('.edit-review-btn');
+                    const deleteBtn = reviewEl.querySelector('.delete-review-btn');
+                    
+                    if (editBtn) {
+                        editBtn.addEventListener('click', () => {
+                            loadReviewForEditing(review.id);
+                        });
+                    }
+                    
+                    if (deleteBtn) {
+                        deleteBtn.addEventListener('click', () => {
+                            if (confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
+                                deleteReview(review.id);
+                            }
+                        });
+                    }
                 });
 
                 if (data.last) {
@@ -182,12 +267,114 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const loadReviewForEditing = async (reviewId) => {
+        try {
+            // Fetch the specific review using the user's review endpoint
+            const response = await ApiService.fetchWithAuth('/api/reviews/my-reviews?page=0&size=100');
+            if (response.ok) {
+                const data = await response.json();
+                const review = data.content.find(r => r.id === reviewId);
+                
+                if (review) {
+                    // Pre-fill the form with the review data
+                    document.getElementById('selected-rating').value = review.rating;
+                    document.getElementById('review-comment').value = review.comment || '';
+                    
+                    // Update star display
+                    const stars = document.querySelectorAll('#star-rating-input .star');
+                    stars.forEach((s, i) => {
+                        if (i < review.rating) {
+                            s.classList.add('text-yellow-400', 'is-selected');
+                        } else {
+                            s.classList.remove('text-yellow-400', 'is-selected');
+                        }
+                    });
+                    
+                    currentEditingReviewId = reviewId;
+                    
+                    // Change form title and button
+                    document.querySelector('#review-form-container h3').textContent = 'Chỉnh sửa đánh giá của bạn';
+                    const submitBtn = document.querySelector('#review-form button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg><span>Cập nhật đánh giá</span>';
+                    }
+                    
+                    // Scroll to form
+                    document.getElementById('review-form-container').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('Không tìm thấy đánh giá để chỉnh sửa');
+                }
+            }
+        } catch (error) {
+            alert('Lỗi khi tải đánh giá: ' + error.message);
+        }
+    };
+
+    const deleteReview = async (reviewId) => {
+        try {
+            const response = await ApiService.fetchWithAuth(`/api/reviews/${reviewId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                alert('Xóa đánh giá thành công');
+                // Remove the review from DOM
+                const reviewEl = document.getElementById(`review-${reviewId}`);
+                if (reviewEl) {
+                    reviewEl.remove();
+                }
+                // Refresh stats
+                await fetchReviewStats();
+                await fetchRatingDistribution();
+            } else {
+                const errorText = await response.text();
+                alert(errorText || 'Xóa đánh giá thất bại');
+            }
+        } catch (error) {
+            alert(error.message || 'Đã có lỗi xảy ra');
+        }
+    };
+
+    const resetReviewForm = () => {
+        currentEditingReviewId = null;
+        document.getElementById('review-form').reset();
+        document.getElementById('selected-rating').value = '5';
+        document.getElementById('review-comment').value = '';
+        
+        // Reset stars
+        const stars = document.querySelectorAll('#star-rating-input .star');
+        stars.forEach((s, i) => {
+            if (i < 5) {
+                s.classList.add('text-yellow-400', 'is-selected');
+            } else {
+                s.classList.remove('text-yellow-400', 'is-selected');
+            }
+        });
+        
+        // Reset form title and button
+        document.querySelector('#review-form-container h3').textContent = 'Viết đánh giá của bạn';
+        const submitBtn = document.querySelector('#review-form button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg><span>Gửi đánh giá</span>';
+        }
+    };
+
     const checkReviewEligibility = async () => {
         const { userId, role } = ApiService.getAuth();
         if (userId && role === 'BUYER') {
-            // Check if user has purchased this book - In a real app, we'd have an API for this
-            // For now, let's just show the form if they are logged in as BUYER
-            // The backend will enforce the "has purchased" rule anyway.
+            // Check if user has already reviewed this book
+            try {
+                const response = await ApiService.fetchWithAuth(`/api/reviews/book/${bookId}/user-review`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.hasReviewed && data.review) {
+                        // User has already reviewed, show the review
+                        console.log('User already has a review for this book');
+                    }
+                }
+            } catch (error) {
+                console.log('Could not check review status:', error);
+            }
             document.getElementById('review-form-container').classList.remove('hidden');
         }
     };
@@ -232,41 +419,123 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('review-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const rating = parseInt(ratingInput.value);
-        const comment = document.getElementById('review-comment').value;
+        const comment = document.getElementById('review-comment').value?.trim() || '';
 
         try {
-            const response = await ApiService.fetchWithAuth('/api/reviews', {
-                method: 'POST',
-                body: JSON.stringify({
-                    bookId: bookId,
-                    rating: rating,
-                    comment: comment
-                })
-            });
+            let response;
+            if (currentEditingReviewId) {
+                // Update existing review
+                response = await ApiService.fetchWithAuth(`/api/reviews/${currentEditingReviewId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        bookId: bookId,
+                        rating: rating,
+                        comment: comment
+                    })
+                });
+            } else {
+                // Create new review
+                response = await ApiService.fetchWithAuth('/api/reviews', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        bookId: bookId,
+                        rating: rating,
+                        comment: comment
+                    })
+                });
+            }
 
             if (response.ok) {
-                alert('Cảm ơn bạn đã đánh giá sản phẩm!');
+                alert(currentEditingReviewId ? 'Cập nhật đánh giá thành công!' : 'Cảm ơn bạn đã đánh giá sản phẩm!');
+                resetReviewForm();
                 document.getElementById('review-form-container').classList.add('hidden');
                 // Refresh reviews
                 currentReviewPage = 0;
                 await fetchReviewStats();
+                await fetchRatingDistribution();
                 await fetchReviews(0);
             } else {
                 const errorText = await response.text();
-                alert(errorText || 'Gửi đánh giá thất bại.');
+                alert(errorText || (currentEditingReviewId ? 'Cập nhật thất bại' : 'Gửi đánh giá thất bại.'));
             }
         } catch (error) {
             alert(error.message || 'Đã có lỗi xảy ra.');
         }
     });
 
+    // Add cancel button handler if it exists
+    const cancelBtn = document.querySelector('#review-form-container button[type="reset"], .cancel-review-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            resetReviewForm();
+            document.getElementById('review-form-container').classList.add('hidden');
+        });
+    }
+
     document.getElementById('load-more-reviews-btn').addEventListener('click', () => {
         currentReviewPage++;
         fetchReviews(currentReviewPage, true);
     });
 
+    // Handle rating filter buttons
+    const ratingFilterBtns = document.querySelectorAll('#rating-filters button');
+    ratingFilterBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const filter = btn.dataset.filter;
+            const container = document.getElementById('reviews-list-container');
+            
+            if (filter === 'all') {
+                currentReviewPage = 0;
+                await fetchReviews(0);
+            } else {
+                const rating = parseInt(filter);
+                try {
+                    const response = await fetch(`/api/reviews/book/${bookId}/by-rating/${rating}?page=0&size=${reviewSize}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        container.innerHTML = '';
+                        const currentUserId = getCurrentUserId();
+                        
+                        if (data.content.length === 0) {
+                            container.innerHTML = `<div class="py-10 text-center text-gray-400 italic">Không có đánh giá ${rating} sao cho sản phẩm này.</div>`;
+                            return;
+                        }
+                        
+                        data.content.forEach(review => {
+                            // Reuse the review rendering logic from fetchReviews
+                            const reviewEl = document.createElement('div');
+                            reviewEl.className = 'py-6 border-b border-brand-border flex gap-4';
+                            
+                            const initials = review.user.username.substring(0, 1).toUpperCase();
+                            const dateStr = new Date(review.createdAt).toLocaleString('vi-VN');
+                            
+                            reviewEl.innerHTML = `
+                                <div class="w-12 h-12 rounded-full bg-brand-hero border border-brand-border flex-shrink-0 flex items-center justify-center font-bold text-brand-brown">${initials}</div>
+                                <div class="flex-grow">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-bold text-brand-dark text-sm">${review.user.username}</span>
+                                        <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Đã mua hàng
+                                        </span>
+                                    </div>
+                                    <div class="flex text-yellow-400 text-xs mb-2">${'★'.repeat(review.rating)}${'<span class="text-gray-300">★</span>'.repeat(5 - review.rating)}</div>
+                                    <div class="text-xs text-gray-400 mb-3">${dateStr}</div>
+                                    <p class="text-sm text-brand-dark leading-relaxed">${review.comment || 'Người dùng không để lại bình luận.'}</p>
+                                </div>
+                            `;
+                            container.appendChild(reviewEl);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error filtering reviews:', error);
+                }
+            }
+        });
+    });
+
     // Initialize Review Section
     fetchReviewStats();
+    fetchRatingDistribution();
     fetchReviews(0);
     checkReviewEligibility();
 });

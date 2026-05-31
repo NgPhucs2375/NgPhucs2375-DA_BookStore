@@ -12,18 +12,29 @@
 --   - Keeps the migration idempotent where practical for drifted environments.
 -- ============================================================================
 
-IF COL_LENGTH('dbo.distributed_lock', 'instance_id') IS NULL
+-- [1] TẠO CỘT lock_holder_id TRƯỚC ĐỂ FIX LỖI "INVALID COLUMN NAME"
+IF COL_LENGTH('dbo.distributed_lock', 'lock_holder_id') IS NULL
 BEGIN
-    ALTER TABLE distributed_lock
-        ADD instance_id NVARCHAR(255) NULL;
+ALTER TABLE distributed_lock
+    ADD lock_holder_id NVARCHAR(255) NULL;
 END
 GO
 
+-- [2] TẠO CỘT instance_id (Giữ nguyên code của bro)
+IF COL_LENGTH('dbo.distributed_lock', 'instance_id') IS NULL
+BEGIN
+ALTER TABLE distributed_lock
+    ADD instance_id NVARCHAR(255) NULL;
+END
+GO
+
+-- [3] UPDATE DATA (Lúc này cả 2 cột đều đã chắc chắn tồn tại)
 UPDATE distributed_lock
 SET instance_id = COALESCE(NULLIF(LTRIM(RTRIM(lock_holder_id)), ''), 'UNOWNED')
 WHERE instance_id IS NULL OR LTRIM(RTRIM(instance_id)) = '';
 GO
 
+-- [4] ĐỔI THÀNH NOT NULL (Giữ nguyên code của bro)
 IF EXISTS (
     SELECT 1
     FROM sys.columns
@@ -32,11 +43,12 @@ IF EXISTS (
       AND is_nullable = 1
 )
 BEGIN
-    ALTER TABLE distributed_lock
-        ALTER COLUMN instance_id NVARCHAR(255) NOT NULL;
+ALTER TABLE distributed_lock
+ALTER COLUMN instance_id NVARCHAR(255) NOT NULL;
 END
 GO
 
+-- [5] ĐÁNH INDEX (Giữ nguyên code của bro)
 IF NOT EXISTS (
     SELECT 1
     FROM sys.indexes
@@ -44,8 +56,8 @@ IF NOT EXISTS (
       AND object_id = OBJECT_ID(N'dbo.distributed_lock')
 )
 BEGIN
-    CREATE INDEX IX_distributed_lock_instance_id
-        ON distributed_lock(instance_id);
+CREATE INDEX IX_distributed_lock_instance_id
+    ON distributed_lock(instance_id);
 END
 GO
 

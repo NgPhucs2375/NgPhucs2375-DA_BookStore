@@ -430,13 +430,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.q,
                 state.categoryId,
                 state.page,
-                state.size
+                state.size,
+                {
+                    author: state.author || null,
+                    minPrice: state.minPrice != null ? state.minPrice : null,
+                    maxPrice: state.maxPrice != null ? state.maxPrice : null,
+                    publishYearFrom: state.publishYearFrom || null,
+                    publishYearTo: state.publishYearTo || null,
+                    sort: state.sort || null
+                }
             );
 
             const serverBooks = Array.isArray(response?.content) ? response.content : [];
             let books = serverBooks.slice();
-            // client-side advanced filters
-            books = applyPriceFilter(books);
+            // client-side advanced filters (rating & publisher still applied locally to support UI selections)
             books = applyPublisherFilter(books);
             books = applyRatingFilter(books);
             books = applySort(books);

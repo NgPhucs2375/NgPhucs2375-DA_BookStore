@@ -48,6 +48,7 @@ class OrderControllerTest {
             .buyerId(1L)
             .shippingAddress("Q1, HCM")
             .totalAmount(320000.0)
+            .shippingFee(30000.0)
             .subOrderCount(2)
             .build();
 

@@ -17,8 +17,14 @@ public class DistributedLock {
     @Column(name = "lock_holder_id", length = 255, nullable = false)
     private String lockHolderId = "UNOWNED";
 
+    @Column(name = "acquired_at", nullable = false)
+    private LocalDateTime acquiredAt = LocalDateTime.now();
+
     @Column(name = "lock_expires_at", nullable = false)
     private LocalDateTime lockExpiresAt = LocalDateTime.now();
+
+    @Column(name = "last_heartbeat_at", nullable = false)
+    private LocalDateTime lastHeartbeatAt = LocalDateTime.now();
 
     // Constructors
     public DistributedLock() {}
@@ -35,6 +41,10 @@ public class DistributedLock {
     public void setInstanceId(String instanceId) { this.instanceId = instanceId; }
     public String getLockHolderId() { return lockHolderId; }
     public void setLockHolderId(String lockHolderId) { this.lockHolderId = lockHolderId; }
+    public LocalDateTime getAcquiredAt() { return acquiredAt; }
+    public void setAcquiredAt(LocalDateTime acquiredAt) { this.acquiredAt = acquiredAt; }
     public LocalDateTime getLockExpiresAt() { return lockExpiresAt; }
     public void setLockExpiresAt(LocalDateTime lockExpiresAt) { this.lockExpiresAt = lockExpiresAt; }
+    public LocalDateTime getLastHeartbeatAt() { return lastHeartbeatAt; }
+    public void setLastHeartbeatAt(LocalDateTime lastHeartbeatAt) { this.lastHeartbeatAt = lastHeartbeatAt; }
 }

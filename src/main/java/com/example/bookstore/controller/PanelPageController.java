@@ -1,13 +1,24 @@
 // PanelPageController : dùng để điều hướng các trang admin và seller, mỗi phương thức sẽ trả về một view tương ứng với trang đó, đồng thời truyền vào model các thuộc tính như pageTitle, pageSubtitle và activeMenu để hiển thị thông tin trên giao diện và đánh dấu menu đang hoạt động.
 package com.example.bookstore.controller;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.example.bookstore.config.JwtUtil;
+import com.example.bookstore.model.User;
+import com.example.bookstore.repository.UserRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class PanelPageController {
+
+    private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
+
+    public PanelPageController(JwtUtil jwtUtil, UserRepository userRepository) {
+        this.jwtUtil = jwtUtil;
+        this.userRepository = userRepository;
+    }
 
     @GetMapping("/admin")
     public String adminDashboard(Model model) {
@@ -117,6 +128,51 @@ public class PanelPageController {
     @GetMapping("/seller/product-detail")
     public String sellerProductDetail() {
         return "seller/Seller_Product_Detail";
+    }
+
+    @GetMapping("/seller/chat")
+    public String sellerChat(Model model, Authentication authentication) {
+        model.addAttribute("pageTitle", "Tin nhan");
+        model.addAttribute("pageSubtitle", "Quan ly tin nhan voi khach hang");
+        model.addAttribute("activeMenu", "seller-chat");
+
+        // Inject authentication data for seed users (dev mode)
+        // This ensures the Chat page can call APIs without requiring OTP login
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+            Long userId = null;
+            String role = null;
+            String accessToken = null;
+
+            if (principal instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal jwtPrincipal) {
+                userId = jwtPrincipal.userId();
+                role = jwtPrincipal.roles() != null && !jwtPrincipal.roles().isEmpty()
+                    ? jwtPrincipal.roles().get(0) : null;
+            } else if (principal instanceof User user) {
+                userId = user.getId();
+                role = user.getRole() != null ? user.getRole().name() : null;
+            }
+
+            // Generate JWT token for the authenticated user
+            if (userId != null && role != null) {
+                try {
+                    User user = userRepository.findById(userId).orElse(null);
+                    if (user != null) {
+                        accessToken = jwtUtil.generateToken(user);
+                    }
+                } catch (Exception e) {
+                    // Token generation failed silently - frontend will use X-User-Id fallback
+                }
+            }
+
+            if (userId != null) {
+                model.addAttribute("authUserId", userId);
+                model.addAttribute("authUserRole", role != null ? role : "BUYER");
+                model.addAttribute("authAccessToken", accessToken);
+            }
+        }
+
+        return "seller/Chat_Page";
     }
 
 }

@@ -50,6 +50,9 @@ public class SellerShop {
     private String city;
     private String province;
 
+    @Column(name = "rejection_reason", columnDefinition = "NVARCHAR(MAX)")
+    private String rejectionReason;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(length = 50, columnDefinition = "NVARCHAR(50)")

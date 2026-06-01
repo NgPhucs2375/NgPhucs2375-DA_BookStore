@@ -310,6 +310,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const setStarsVisual = (value) => {
+        const stars = document.querySelectorAll('#star-rating-input .star');
+        const ratingInput = document.getElementById('selected-rating');
+        ratingInput.value = String(value || 5);
+        stars.forEach((s, i) => {
+            if (i < value) {
+                s.classList.add('text-yellow-400', 'is-selected');
+            } else {
+                s.classList.remove('text-yellow-400', 'is-selected');
+            }
+        });
+    };
+
     const deleteReview = async (reviewId) => {
         try {
             const response = await ApiService.fetchWithAuth(`/api/reviews/${reviewId}`, {
@@ -360,22 +373,63 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const checkReviewEligibility = async () => {
+        const formContainer = document.getElementById('review-form-container');
         const { userId, role } = ApiService.getAuth();
-        if (userId && role === 'BUYER') {
-            // Check if user has already reviewed this book
-            try {
-                const response = await ApiService.fetchWithAuth(`/api/reviews/book/${bookId}/user-review`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.hasReviewed && data.review) {
-                        // User has already reviewed, show the review
-                        console.log('User already has a review for this book');
-                    }
+
+        // Only buyers may see and submit the review form
+        if (!userId || role !== 'BUYER') {
+            // Show a lightweight CTA prompting login (instead of the form)
+            formContainer.classList.remove('hidden');
+            formContainer.innerHTML = `
+                <div class="p-6 text-center">
+                    <div class="font-bold mb-2">Đăng nhập để đánh giá sản phẩm</div>
+                    <div class="text-sm text-gray-600 mb-4">Chỉ tài khoản Buyer mới được phép đánh giá sau khi mua hàng.</div>
+                    <a href="/main/auth" class="inline-block bg-brand-orange text-white font-bold px-6 py-2 rounded-lg">Đăng nhập / Đăng ký</a>
+                </div>
+            `;
+            return;
+        }
+
+        // If buyer, check server whether user has already reviewed this book
+        try {
+            const response = await ApiService.fetchWithAuth(`/api/reviews/book/${bookId}/user-review`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.hasReviewed && data.review) {
+                    // Prefill form for edit
+                    const review = data.review;
+                    currentEditingReviewId = review.id;
+                    document.getElementById('selected-rating').value = review.rating || '5';
+                    document.getElementById('review-comment').value = review.comment || '';
+                    setStarsVisual(review.rating || 5);
+
+                    // Update form title and submit button
+                    const titleEl = document.querySelector('#review-form-container h3');
+                    if (titleEl) titleEl.textContent = 'Chỉnh sửa đánh giá của bạn';
+                    const submitBtn = document.querySelector('#review-form button[type="submit"]');
+                    if (submitBtn) submitBtn.innerHTML = '<span>Cập nhật đánh giá</span>';
+                } else {
+                    // New review: ensure defaults
+                    currentEditingReviewId = null;
+                    document.getElementById('selected-rating').value = '5';
+                    document.getElementById('review-comment').value = '';
+                    setStarsVisual(5);
+
+                    const titleEl = document.querySelector('#review-form-container h3');
+                    if (titleEl) titleEl.textContent = 'Viết đánh giá của bạn';
+                    const submitBtn = document.querySelector('#review-form button[type="submit"]');
+                    if (submitBtn) submitBtn.innerHTML = '<span>Gửi đánh giá</span>';
                 }
-            } catch (error) {
-                console.log('Could not check review status:', error);
+
+                // Show form for buyers
+                formContainer.classList.remove('hidden');
+            } else {
+                console.log('Could not fetch user-review status');
             }
-            document.getElementById('review-form-container').classList.remove('hidden');
+        } catch (error) {
+            console.log('Could not check review status:', error);
+            // Show form as fallback for buyers
+            formContainer.classList.remove('hidden');
         }
     };
 

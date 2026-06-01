@@ -319,21 +319,11 @@ public class AuthController {
         try {
             String shopName = body.getOrDefault("shopName", null);
             String shopAddress = body.getOrDefault("shopAddress", null);
-            com.example.bookstore.model.User updated = authService.upgradeToSeller(userId, shopName, shopAddress);
+            // Submit a seller application instead of immediately upgrading role.
+            authService.submitSellerApplication(userId, shopName, shopAddress);
 
-            java.util.List<String> roles = java.util.List.of(updated.getRole().name());
-            Long sellerId = updated.getId();
-            String token = jwtTokenProvider.createToken(updated.getId(), roles, sellerId);
-
-            java.util.Map<String, Object> resp = new java.util.LinkedHashMap<>();
-            resp.put("tokenType", "Bearer");
-            resp.put("accessToken", token);
-            resp.put("userId", updated.getId());
-            resp.put("role", updated.getRole().name());
-            resp.put("roles", roles);
-            resp.put("sellerId", sellerId);
-
-            return ResponseEntity.ok(resp);
+            // Return 202 Accepted to indicate the request was received and is pending admin approval
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body("Yêu cầu trở thành người bán đã được gửi. Vui lòng chờ admin duyệt.");
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {

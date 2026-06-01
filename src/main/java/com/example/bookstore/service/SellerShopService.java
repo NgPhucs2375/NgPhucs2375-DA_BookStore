@@ -151,8 +151,10 @@ public class SellerShopService {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người bán."));
         
+        // If user is not yet marked as SELLER, promote them when admin approves
         if (seller.getRole() != UserRole.SELLER) {
-            throw new RuntimeException("Người dùng này không có role SELLER.");
+            seller.setRole(UserRole.SELLER);
+            userRepository.save(seller);
         }
 
         // 2. Get or create SellerShop

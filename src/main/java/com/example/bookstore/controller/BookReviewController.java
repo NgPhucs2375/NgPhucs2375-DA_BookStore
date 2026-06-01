@@ -12,12 +12,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
+@Validated
 @RequestMapping("/api/reviews")
 @CrossOrigin("*")
 public class BookReviewController {
@@ -141,7 +144,7 @@ public class BookReviewController {
     @PreAuthorize("hasRole('BUYER')")
     public ResponseEntity<?> addReview(
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
-            @RequestBody ReviewRequest request
+            @Valid @RequestBody ReviewRequest request
     ) {
         try {
             if (principal == null) {
@@ -177,7 +180,7 @@ public class BookReviewController {
     public ResponseEntity<?> updateReview(
             @PathVariable Long reviewId,
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
-            @RequestBody ReviewRequest request
+            @Valid @RequestBody ReviewRequest request
     ) {
         try {
             if (principal == null) {

@@ -70,6 +70,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/panel/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/notifications/admin").hasRole("ADMIN")
                         .requestMatchers("/api/notifications/admin/**").hasRole("ADMIN")
 
                         // Yêu cầu đăng nhập cho Carts, Orders và Notifications

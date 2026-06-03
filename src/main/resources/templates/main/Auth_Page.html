@@ -414,8 +414,8 @@
 
                     <div class="flex items-center justify-between mb-6 stagger-4">
                         <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" class="custom-checkbox" checked>
-                            <span class="text-sm font-bold text-gray-500 group-hover:text-brand-dark transition-colors">Ghi nhớ đăng nhập</span>
+                            <input type="checkbox" id="log_remember" class="custom-checkbox" checked>
+                            <span class="text-sm font-bold text-gray-500 group-hover:text-brand-dark transition-colors">Remember Me</span>
                         </label>
                         <label for="route-forgot-1" class="text-sm font-bold text-brand-orange hover:text-orange-700 hover:underline transition cursor-pointer">
                             Quên mật khẩu?
@@ -861,6 +861,7 @@
                     e.preventDefault();
                     const username = document.getElementById('log_email')?.value;
                     const password = document.getElementById('log_pass')?.value;
+                    const rememberMe = document.getElementById('log_remember')?.checked;
 
                     if (!username || !password) {
                         Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Vui lòng điền đầy đủ thông tin!'});
@@ -869,9 +870,13 @@
 
                     try {
                         const data = await ApiService.Auth.loginJwt(username, password);
-                        if (data?.accessToken) localStorage.setItem('accessToken', data.accessToken);
-                        if (data?.userId) localStorage.setItem('userId', String(data.userId));
-                        if (data?.role) localStorage.setItem('userRole', data.role);
+                        const storage = rememberMe ? localStorage : sessionStorage;
+
+                        if (data?.accessToken) storage.setItem('accessToken', data.accessToken);
+                        if (data?.refreshToken) storage.setItem('refreshToken', data.refreshToken);
+                        if (data?.userId) storage.setItem('userId', String(data.userId));
+                        if (data?.role) storage.setItem('userRole', data.role);
+                        if (data?.sellerId) storage.setItem('sellerId', data.sellerId);
 
                         Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đăng nhập thành công!', timer: 1200, showConfirmButton: false })
                             .then(() => {
@@ -889,6 +894,7 @@
             const googleLoginBtn = document.getElementById('googleLoginBtn');
             if (googleLoginBtn) {
                 googleLoginBtn.addEventListener('click', async function() {
+                    const rememberMe = document.getElementById('log_remember')?.checked;
                     try {
                         const module = await import('/js/firebase-auth.js');
                         const idToken = await module.loginWithGoogle();
@@ -902,10 +908,12 @@
                         const data = await response.json();
                         if (!response.ok) throw new Error(data.error || 'Đăng nhập thất bại');
 
-                        localStorage.setItem('accessToken', data.accessToken);
-                        localStorage.setItem('userId', String(data.userId));
-                        localStorage.setItem('userRole', data.role);
-                        localStorage.setItem('sellerId', data.sellerId || '');
+                        const storage = rememberMe ? localStorage : sessionStorage;
+                        storage.setItem('accessToken', data.accessToken);
+                        storage.setItem('refreshToken', data.refreshToken);
+                        storage.setItem('userId', String(data.userId));
+                        storage.setItem('userRole', data.role);
+                        storage.setItem('sellerId', data.sellerId || '');
 
                         Swal.fire({ icon: 'success', title: 'Đăng nhập Google thành công!', timer: 1200, showConfirmButton: false })
                             .then(() => {

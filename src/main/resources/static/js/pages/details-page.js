@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (editBtn) {
                         editBtn.addEventListener('click', () => {
-                            loadReviewForEditing(review.id);
+                            populateFormForEdit(review);
                         });
                     }
                     
@@ -267,47 +267,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const loadReviewForEditing = async (reviewId) => {
-        try {
-            // Fetch the specific review using the user's review endpoint
-            const response = await ApiService.fetchWithAuth('/api/reviews/my-reviews?page=0&size=100');
-            if (response.ok) {
-                const data = await response.json();
-                const review = data.content.find(r => r.id === reviewId);
-                
-                if (review) {
-                    // Pre-fill the form with the review data
-                    document.getElementById('selected-rating').value = review.rating;
-                    document.getElementById('review-comment').value = review.comment || '';
-                    
-                    // Update star display
-                    const stars = document.querySelectorAll('#star-rating-input .star');
-                    stars.forEach((s, i) => {
-                        if (i < review.rating) {
-                            s.classList.add('text-yellow-400', 'is-selected');
-                        } else {
-                            s.classList.remove('text-yellow-400', 'is-selected');
-                        }
-                    });
-                    
-                    currentEditingReviewId = reviewId;
-                    
-                    // Change form title and button
-                    document.querySelector('#review-form-container h3').textContent = 'Chỉnh sửa đánh giá của bạn';
-                    const submitBtn = document.querySelector('#review-form button[type="submit"]');
-                    if (submitBtn) {
-                        submitBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg><span>Cập nhật đánh giá</span>';
-                    }
-                    
-                    // Scroll to form
-                    document.getElementById('review-form-container').scrollIntoView({ behavior: 'smooth' });
-                } else {
-                    alert('Không tìm thấy đánh giá để chỉnh sửa');
-                }
-            }
-        } catch (error) {
-            alert('Lỗi khi tải đánh giá: ' + error.message);
+    const populateFormForEdit = (review) => {
+        if (!review) {
+            alert('Không tìm thấy đánh giá để chỉnh sửa');
+            return;
         }
+        // Pre-fill the form with the review data
+        document.getElementById('selected-rating').value = review.rating;
+        document.getElementById('review-comment').value = review.comment || '';
+        
+        // Update star display
+        setStarsVisual(review.rating);
+        
+        currentEditingReviewId = review.id;
+        
+        // Change form title and button
+        document.querySelector('#review-form-container h3').textContent = 'Chỉnh sửa đánh giá của bạn';
+        const submitBtn = document.querySelector('#review-form button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg><span>Cập nhật đánh giá</span>';
+        }
+        
+        // Show and scroll to form
+        document.getElementById('review-form-container').classList.remove('hidden');
+        document.getElementById('review-form-container').scrollIntoView({ behavior: 'smooth' });
     };
 
     const setStarsVisual = (value) => {
@@ -395,19 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await ApiService.fetchWithAuth(`/api/reviews/book/${bookId}/user-review`);
             if (response.ok) {
                 const data = await response.json();
-                if (data.hasReviewed && data.review) {
-                    // Prefill form for edit
-                    const review = data.review;
-                    currentEditingReviewId = review.id;
-                    document.getElementById('selected-rating').value = review.rating || '5';
-                    document.getElementById('review-comment').value = review.comment || '';
-                    setStarsVisual(review.rating || 5);
-
-                    // Update form title and submit button
-                    const titleEl = document.querySelector('#review-form-container h3');
-                    if (titleEl) titleEl.textContent = 'Chỉnh sửa đánh giá của bạn';
-                    const submitBtn = document.querySelector('#review-form button[type="submit"]');
-                    if (submitBtn) submitBtn.innerHTML = '<span>Cập nhật đánh giá</span>';
+                if (data.hasReviewed) {
+                    populateFormForEdit(data.review);
                 } else {
                     // New review: ensure defaults
                     currentEditingReviewId = null;
@@ -586,6 +558,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+
+
+
+    // ==================== BUY NOW BUTTON ====================
+const buyNowButton = document.getElementById('detail-buy-now-btn');
+
+buyNowButton?.addEventListener('click', async () => {
+    const userId = ensureBuyer('Vui lòng đăng nhập tài khoản BUYER để mua ngay.');
+    if (!userId) return;
+
+    const bookId = Number(buyNowButton.getAttribute('data-book-id'));
+    const quantity = Math.max(1, Number(qtyInput.value || 1));
+
+    try {
+        // Step 1: Thêm vào giỏ hàng
+        await ApiService.Cart.addItem(userId, {
+            bookId,
+            quantity
+        });
+        
+        // Step 2: Chuyển đến trang checkout
+        window.location.href = '/main/checkout';
+    } catch (error) {
+        alert(error?.message || 'Thêm vào giỏ hàng thất bại.');
+    }
+});
 
     // Initialize Review Section
     fetchReviewStats();

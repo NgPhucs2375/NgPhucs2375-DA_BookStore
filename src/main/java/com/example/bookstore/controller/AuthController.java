@@ -5,13 +5,17 @@ import com.example.bookstore.dto.AuthRegisterRequest;
 import com.example.bookstore.dto.EmailOtpRequest;
 import com.example.bookstore.dto.EmailOtpVerifyRequest;
 import com.example.bookstore.dto.FirebaseLoginRequest;
+import com.example.bookstore.dto.RefreshTokenRequest;
+import com.example.bookstore.dto.TokenRefreshResponse;
 import com.example.bookstore.dto.UserProfileResponse;
 import com.example.bookstore.dto.UserProfileUpdateRequest;
+import com.example.bookstore.model.RefreshToken;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.security.JwtTokenProvider;
 import com.example.bookstore.service.AuthOtpService;
 import com.example.bookstore.service.AuthService;
+import com.example.bookstore.service.RefreshTokenService;
 import com.example.bookstore.service.FirebaseAuthService;
 import jakarta.validation.Valid;
 
@@ -38,6 +42,9 @@ public class AuthController {
 
     @Autowired
     AuthOtpService authOtpService;
+
+    @Autowired
+    RefreshTokenService refreshTokenService;
 
     @Autowired
     FirebaseAuthService firebaseAuthService;
@@ -153,16 +160,38 @@ public class AuthController {
             ? authenticated.getId()
             : null;
         java.util.List<String> roles = java.util.List.of(authenticated.getRole().name());
-        String token = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+        String accessToken = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(authenticated.getId());
 
         java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
         response.put("tokenType", "Bearer");
-        response.put("accessToken", token);
+        response.put("accessToken", accessToken);
+        response.put("refreshToken", refreshToken.getToken());
         response.put("userId", authenticated.getId());
         response.put("role", authenticated.getRole().name());
         response.put("roles", roles);
         response.put("sellerId", sellerId);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    Long sellerId = user.getRole() == UserRole.SELLER ? user.getId() : null;
+                    java.util.List<String> roles = java.util.List.of(user.getRole().name());
+                    String newAccessToken = jwtTokenProvider.createToken(user.getId(), roles, sellerId);
+
+                    return ResponseEntity.ok(new TokenRefreshResponse(newAccessToken, requestRefreshToken));
+                })
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Refresh token is not in database!"
+                ));
     }
 
     @PostMapping("/logout")
@@ -210,11 +239,13 @@ public class AuthController {
             ? authenticated.getId()
             : null;
         java.util.List<String> roles = java.util.List.of(authenticated.getRole().name());
-        String token = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+        String accessToken = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(authenticated.getId());
 
         java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
         response.put("tokenType", "Bearer");
-        response.put("accessToken", token);
+        response.put("accessToken", accessToken);
+        response.put("refreshToken", refreshToken.getToken());
         response.put("userId", authenticated.getId());
         response.put("role", authenticated.getRole().name());
         response.put("roles", roles);
@@ -256,12 +287,14 @@ public class AuthController {
                 ? user.getId()
                 : null;
             java.util.List<String> roles = java.util.List.of(user.getRole().name());
-            String token = jwtTokenProvider.createToken(user.getId(), roles, sellerId);
+            String accessToken = jwtTokenProvider.createToken(user.getId(), roles, sellerId);
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
             // 3. Trả về response
             java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
             response.put("tokenType", "Bearer");
-            response.put("accessToken", token);
+            response.put("accessToken", accessToken);
+            response.put("refreshToken", refreshToken.getToken());
             response.put("userId", user.getId());
             response.put("role", user.getRole().name());
             response.put("roles", roles);

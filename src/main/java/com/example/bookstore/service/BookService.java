@@ -9,6 +9,8 @@ import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -145,6 +147,40 @@ public class BookService {
         book.setApprovalStatus(newStatus);
         
         return bookRepository.save(book);
+    }
+
+    /**
+     * Tìm kiếm sách đã được duyệt với nhiều tiêu chí lọc.
+     * Đây là cầu nối logic giữa Controller và Repository.
+     */
+    public Page<Book> searchApprovedBooks(
+            String q,
+            List<Long> categoryIds,
+            List<Long> sellerIds,
+            String author,
+            Double minPrice,
+            Double maxPrice,
+            Double minRating,
+            Boolean inStock,
+            Integer publishYearFrom,
+            Integer publishYearTo,
+            ApprovalStatus status,
+            Pageable pageable
+    ) {
+        return bookRepository.searchApprovedBooks(
+                q,
+                categoryIds,
+                sellerIds,
+                author,
+                minPrice,
+                maxPrice,
+                minRating,
+                inStock,
+                publishYearFrom,
+                publishYearTo,
+                status,
+                pageable
+        );
     }
 
     // --- BỔ SUNG CÁC HÀM BẢO MẬT DÀNH RIÊNG CHO SELLER (S03) ---

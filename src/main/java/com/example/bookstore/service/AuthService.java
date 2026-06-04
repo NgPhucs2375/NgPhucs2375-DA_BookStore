@@ -58,7 +58,7 @@ public class AuthService {
                 .slug(slug)
                 .shopName(shopName != null && !shopName.isBlank() ? shopName.trim() : user.getUsername())
                 .address(shopAddress != null && !shopAddress.isBlank() ? shopAddress.trim() : "Chưa cập nhật")
-                .approvalStatus(com.example.bookstore.model.enums.ApprovalStatus.PENDING)
+                .approvalStatus(ApprovalStatus.PENDING)
                 .build();
 
         com.example.bookstore.model.SellerShop saved = sellerShopRepository.save(newShop);

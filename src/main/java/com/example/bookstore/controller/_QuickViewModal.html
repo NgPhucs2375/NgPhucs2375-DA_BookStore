@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Quick View Modal Fragment
+  - Được điều khiển bởi Alpine.js.
+  - Dữ liệu được đổ vào bằng JavaScript thông qua các ID.
+  - Để sử dụng, dispatch event 'open-quick-view' với detail là ID sách.
+    window.dispatchEvent(new CustomEvent('open-quick-view', { detail: { bookId: 123 } }));
+-->
+<div
+    th:fragment="quickViewModal"
+    x-data="quickViewModal"
+    @open-quick-view.window="open($event.detail.bookId)"
+    @keydown.escape.window="close()"
+    x-cloak
+    class="relative z-50"
+>
+    <!-- Nền đen mờ -->
+    <div
+        x-show="isOpen"
+        x-transition:enter="transition-opacity ease-in-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition-opacity ease-in-out duration-300"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 bg-black bg-opacity-60"
+        @click="close()"
+    ></div>
+
+    <!-- Hộp thông tin chính -->
+    <div
+        x-show="isOpen"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-90"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-90"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+        <div class="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col" @click.stop>
+            <!-- Nút Đóng (X) -->
+            <button @click="close()" class="absolute -top-3 -right-3 z-10 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-600 hover:text-red-500 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <!-- Nội dung Modal -->
+            <div class="overflow-y-auto p-8">
+                <div x-show="isLoading" class="flex justify-center items-center min-h-[400px]">
+                    <div class="loader">Đang tải...</div>
+                </div>
+                <div x-show="!isLoading" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Cột ảnh sản phẩm -->
+                    <div class="w-full">
+                        <div class="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden group">
+                            <img id="quick-view-image" src="" alt="Book Cover" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300 ease-in-out">
+                        </div>
+                        <!-- Thumbnails (nếu có) -->
+                        <div id="quick-view-thumbnails" class="flex gap-2 mt-4">
+                            <!-- JS sẽ đổ thumbnail vào đây -->
+                        </div>
+                    </div>
+
+                    <!-- Cột thông tin chi tiết -->
+                    <div class="flex flex-col">
+                        <h2 id="quick-view-title" class="text-3xl font-bold text-brand-dark mb-2 leading-tight">Tên sách</h2>
+                        <p class="text-sm text-gray-500 mb-3">Tác giả: <span id="quick-view-author" class="font-medium text-gray-700">...</span></p>
+
+                        <!-- Đánh giá và người bán -->
+                        <div class="flex items-center gap-4 text-sm mb-4 border-b pb-4">
+                            <div id="quick-view-rating" class="flex items-center gap-1">
+                                <span class="font-bold text-brand-orange">5.0</span>
+                                <div class="flex text-yellow-400">
+                                    <!-- JS sẽ đổ sao vào đây -->
+                                </div>
+                            </div>
+                            <span class="text-gray-300">|</span>
+                            <div>Đã bán <span id="quick-view-sold-count">0</span></div>
+                            <span class="text-gray-300">|</span>
+                            <a id="quick-view-seller-link" href="#" class="text-brand-purple hover:underline">
+                                <span id="quick-view-seller-name">Tên người bán</span>
+                            </a>
+                        </div>
+
+                        <!-- Giá -->
+                        <div class="my-4">
+                            <span id="quick-view-price" class="text-4xl font-extrabold text-brand-orange">0đ</span>
+                            <span id="quick-view-original-price" class="text-lg text-gray-400 line-through ml-2">0đ</span>
+                        </div>
+
+                        <!-- Mô tả ngắn -->
+                        <p id="quick-view-description" class="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-3">Mô tả ngắn về sản phẩm...</p>
+
+                        <div class="mt-auto">
+                            <!-- Chọn số lượng -->
+                            <div class="flex items-center gap-4 mb-4">
+                                <span class="font-bold text-gray-700">Số lượng:</span>
+                                <div class="flex items-center border border-gray-300 rounded-lg">
+                                    <button @click="quantity = Math.max(1, quantity - 1)" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-l-lg transition">-</button>
+                                    <input type="text" x-model.number="quantity" class="w-12 text-center font-bold border-l border-r focus:outline-none">
+                                    <button @click="quantity++" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-r-lg transition">+</button>
+                                </div>
+                            </div>
+
+                            <!-- Trạng thái kho -->
+                            <div id="quick-view-stock-status" class="text-sm font-medium text-green-600 mb-3">Còn 100 sản phẩm</div>
+
+                            <!-- Các nút hành động -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <button id="quick-view-add-to-cart-btn" class="w-full bg-brand-orange text-white font-bold py-3 rounded-lg hover:bg-brand-brown transition flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l.892-.893a.997.997 0 00.042-.01l.04-.028.016-.012.004-.004.017-.014.004-.004.012-.01.004-.004.028-.022l.04-.032.016-.012.004-.004.017-.014.004-.004.012-.01.004-.004.028-.022l7.84-4.233A.997.997 0 0017 5H5.21l-.94-3.762A1 1 0 003 1z"></path><path d="M15 16a1 1 0 100 2 1 1 0 000-2zM6 16a1 1 0 100 2 1 1 0 000-2z"></path></svg>
+                                    Thêm vào giỏ
+                                </button>
+                                <button id="quick-view-wishlist-btn" class="w-full bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z"></path></svg>
+                                    Yêu thích
+                                </button>
+                            </div>
+                            <a id="quick-view-details-link" href="#" class="block text-center mt-4 text-sm text-brand-purple font-medium hover:underline">Xem chi tiết sản phẩm →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function quickViewModal() {
+    return {
+        isOpen: false,
+        isLoading: true,
+        bookId: null,
+        quantity: 1,
+        bookData: null,
+
+        formatVND(price) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
+        },
+
+        renderStars(rating) {
+            let starsHtml = '';
+            const fullStars = Math.floor(rating);
+            for (let i = 0; i < 5; i++) {
+                if (i < fullStars) {
+                    starsHtml += '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>';
+                } else {
+                    starsHtml += '<svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>';
+                }
+            }
+            return starsHtml;
+        },
+
+        async open(bookId) {
+            this.isOpen = true;
+            this.isLoading = true;
+            this.bookId = bookId;
+            this.quantity = 1;
+            this.bookData = null;
+
+            try {
+                const book = await ApiService.Book.getById(bookId);
+                this.bookData = book;
+
+                document.getElementById('quick-view-image').src = book.imageUrl || 'https://via.placeholder.com/400x560?text=No+Image';
+                document.getElementById('quick-view-title').textContent = book.title || 'Tên sách đang cập nhật';
+                document.getElementById('quick-view-author').textContent = book.author || 'Tác giả đang cập nhật';
+                document.getElementById('quick-view-price').textContent = this.formatVND(book.price);
+                document.getElementById('quick-view-original-price').textContent = ''; // Giả sử không có giá gốc
+                document.getElementById('quick-view-description').textContent = book.description || 'Mô tả đang được cập nhật.';
+
+                const ratingContainer = document.getElementById('quick-view-rating');
+                ratingContainer.innerHTML = `
+                    <span class="font-bold text-brand-orange">${(book.averageRating || 0).toFixed(1)}</span>
+                    <div class="flex text-yellow-400">${this.renderStars(book.averageRating || 0)}</div>
+                `;
+
+                document.getElementById('quick-view-sold-count').textContent = book.soldQuantity || 0;
+                document.getElementById('quick-view-seller-name').textContent = book.seller?.shopName || 'Nhà sách Bookom';
+                document.getElementById('quick-view-seller-link').href = book.seller ? `/seller/shop/${book.seller.id}` : '#';
+                document.getElementById('quick-view-details-link').href = `/book/${book.id}`;
+
+                const stockStatusEl = document.getElementById('quick-view-stock-status');
+                const addToCartBtn = document.getElementById('quick-view-add-to-cart-btn');
+                const stock = book.stockQuantity || 0;
+
+                if (stock > 10) {
+                    stockStatusEl.textContent = `Còn hàng (${stock} sản phẩm)`;
+                    stockStatusEl.className = 'text-sm font-medium text-green-600 mb-3';
+                    addToCartBtn.classList.remove('hidden');
+                } else if (stock > 0) {
+                    stockStatusEl.textContent = `Chỉ còn lại ${stock} sản phẩm!`;
+                    stockStatusEl.className = 'text-sm font-medium text-red-600 mb-3 animate-pulse';
+                    addToCartBtn.classList.remove('hidden');
+                } else {
+                    stockStatusEl.textContent = 'Hết hàng';
+                    stockStatusEl.className = 'text-sm font-medium text-gray-500 mb-3';
+                    addToCartBtn.classList.add('hidden');
+                }
+
+                const newAddToCartBtn = addToCartBtn.cloneNode(true);
+                addToCartBtn.parentNode.replaceChild(newAddToCartBtn, addToCartBtn);
+                newAddToCartBtn.addEventListener('click', () => this.addToCart());
+
+                this.isLoading = false;
+            } catch (error) {
+                console.error('Lỗi khi tải chi tiết sách cho Quick View:', error);
+                alert('Không thể tải thông tin sản phẩm. Vui lòng thử lại.');
+                this.close();
+            }
+        },
+
+        async addToCart() {
+            const { userId, role } = ApiService.getAuth();
+            if (!userId || role !== 'BUYER') {
+                alert('Vui lòng đăng nhập với tài khoản người mua để thêm vào giỏ hàng.');
+                window.location.href = '/main/auth';
+                return;
+            }
+
+            if (!this.bookId || this.quantity <= 0) {
+                alert('Thông tin sản phẩm không hợp lệ.');
+                return;
+            }
+
+            try {
+                await ApiService.Cart.addItem(userId, {
+                    bookId: this.bookId,
+                    quantity: this.quantity
+                });
+                alert(`Đã thêm ${this.quantity} sản phẩm "${this.bookData.title}" vào giỏ hàng.`);
+            } catch (error) {
+                const message = error?.message || 'Thêm vào giỏ hàng thất bại.';
+                alert(message);
+            }
+        },
+
+        close() {
+            this.isOpen = false;
+            this.bookId = null;
+            this.bookData = null;
+        }
+    }
+}
+</script>
+
+</body>
+</html>

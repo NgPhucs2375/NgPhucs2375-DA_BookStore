@@ -4,9 +4,12 @@ import com.example.bookstore.dto.UserProfileResponse;
 import com.example.bookstore.dto.UserProfileUpdateRequest;
 import com.example.bookstore.model.Category;
 import com.example.bookstore.model.User;
+import com.example.bookstore.model.SellerShop;
 import com.example.bookstore.model.enums.UserRole;
+import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.UserRepository;
+import com.example.bookstore.repository.SellerShopRepository;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,6 +32,38 @@ public class AuthService {
 
     @Autowired
     private AuthOtpService authOtpService;
+
+    @Autowired
+    private SellerShopRepository sellerShopRepository;
+
+    @Autowired
+    private SellerShopService sellerShopService;
+
+    /**
+     * Submit a seller application: create a SellerShop record with PENDING approval.
+     * Does NOT change the user's role — admin must approve to set role to SELLER.
+     */
+    public SellerShop submitSellerApplication(Long userId, String shopName, String shopAddress) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        // Prevent duplicate applications / existing shop
+        if (sellerShopRepository.findBySellerId(userId).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bạn đã gửi yêu cầu hoặc đã có cửa hàng.");
+        }
+
+        String slug = sellerShopService.generateUniqueSlug(user.getUsername());
+        com.example.bookstore.model.SellerShop newShop = com.example.bookstore.model.SellerShop.builder()
+                .seller(user)
+                .slug(slug)
+                .shopName(shopName != null && !shopName.isBlank() ? shopName.trim() : user.getUsername())
+                .address(shopAddress != null && !shopAddress.isBlank() ? shopAddress.trim() : "Chưa cập nhật")
+                .approvalStatus(com.example.bookstore.model.enums.ApprovalStatus.PENDING)
+                .build();
+
+        com.example.bookstore.model.SellerShop saved = sellerShopRepository.save(newShop);
+        return saved;
+    }
 
     //    Register
     public boolean register(String username, String rawPassword, String avatarUrl, List<Long> favoriteCategoryIds){
@@ -65,7 +100,20 @@ public class AuthService {
             .avatarUrl(normalizeAvatar(avatarUrl))
             .favoriteCategories(resolveFavoriteCategories(favoriteCategoryIds))
             .build();
-        userRepository.save(newUser);
+        User savedUser = userRepository.save(newUser);
+
+        // Create SellerShop automatically for new SELLER registrations
+        if (normalizedRole == UserRole.SELLER) {
+            String slug = sellerShopService.generateUniqueSlug(username);
+            SellerShop newSellerShop = SellerShop.builder()
+                    .seller(savedUser)
+                    .slug(slug)
+                    .shopName(username)
+                    .address("Chưa cập nhật")
+                    .approvalStatus(ApprovalStatus.PENDING)
+                    .build();
+            sellerShopRepository.save(newSellerShop);
+        }
 
         System.out.println("Đăng ký thành công");
         return true;
@@ -133,6 +181,29 @@ public class AuthService {
 
         userRepository.save(user);
         return toUserProfileResponse(user);
+    }
+
+    /**
+     * Upgrade a BUYER user to SELLER with optional shop info.
+     */
+    public User upgradeToSeller(Long userId, String shopName, String shopAddress) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getRole() == UserRole.SELLER) {
+            return user; // already a seller
+        }
+
+        if (user.getRole() != UserRole.BUYER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only buyers can be upgraded to seller");
+        }
+
+        user.setRole(UserRole.SELLER);
+        if (shopName != null && !shopName.isBlank()) user.setShopName(shopName.trim());
+        if (shopAddress != null && !shopAddress.isBlank()) user.setShopAddress(shopAddress.trim());
+
+        userRepository.save(user);
+        return user;
     }
 
     private UserProfileResponse toUserProfileResponse(User user) {

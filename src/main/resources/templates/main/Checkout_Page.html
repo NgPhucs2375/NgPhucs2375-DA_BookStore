@@ -419,6 +419,12 @@
 
                     <hr class="border-brand-accent my-2">
 
+                    <!-- Dòng hiển thị giá gốc trước giảm (chỉ hiện khi có coupon) -->
+                    <div id="checkout-original-before-discount" class="hidden flex justify-between items-center text-sm text-gray-400">
+                        <span class="text-gray-400">Giá trước giảm</span>
+                        <span class="original-amount line-through text-gray-400"></span>
+                    </div>
+
                     <div class="flex flex-col gap-1">
                         <div class="flex justify-between items-end">
                             <span class="text-base font-bold uppercase">Tổng thanh toán</span>
@@ -426,6 +432,7 @@
                         </div>
                         <div class="text-right text-[10px] text-gray-400 font-bold">(Đã bao gồm VAT nếu có)</div>
                     </div>
+
 
                     <button id="checkout-place-order-btn" type="button" class="block w-full bg-brand-orange text-white text-xl font-black py-4 lg:py-5 rounded-xl shadow-[0_10px_20px_rgba(234,88,12,0.3)] hover:bg-orange-700 transition-all transform hover:-translate-y-1 mt-4 uppercase tracking-widest text-center flex items-center justify-center gap-3 group">
                         Đặt Hàng Ngay

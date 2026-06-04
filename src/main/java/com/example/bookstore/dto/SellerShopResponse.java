@@ -28,5 +28,6 @@ public class SellerShopResponse {
     private ApprovalStatus approvalStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String rejectionReason;
 
 }

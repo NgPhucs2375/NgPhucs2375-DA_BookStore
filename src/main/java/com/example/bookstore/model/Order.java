@@ -34,8 +34,19 @@ public class Order {
     @Column(nullable = false)
     private Double totalAmount;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Double shippingFee = 0.0;
+
     @Column(nullable = false, length = 500)
     private String shippingAddress;
+
+    @Column(length = 50)
+    private String couponCode;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Double discountAmount = 0.0;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

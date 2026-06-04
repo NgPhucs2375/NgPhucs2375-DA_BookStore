@@ -17,9 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const authorInput = document.getElementById('search-author-input');
     const minPriceInput = document.getElementById('search-min-price-input');
     const maxPriceInput = document.getElementById('search-max-price-input');
+    const ratingSlider = document.getElementById('search-rating-slider');
+    const ratingValue = document.getElementById('search-rating-value');
+    const inStockToggle = document.getElementById('search-instock-toggle');
     const yearFromInput = document.getElementById('search-year-from-input');
     const yearToInput = document.getElementById('search-year-to-input');
     const categoryList = document.getElementById('search-category-list');
+    const sellerList = document.getElementById('search-seller-list');
     const applyFiltersBtn = document.getElementById('search-apply-filters-btn');
     const resetFiltersBtn = document.getElementById('search-reset-filters-btn');
     const bestSellersContainer = document.getElementById('search-best-sellers');
@@ -34,10 +38,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const state = {
         q: url.searchParams.get('q') || '',
-        categoryId: url.searchParams.get('categoryId') || null,
+        categoryIds: (() => {
+            // Handle both single categoryId from discovery page and multiple from filters
+            const ids = new Set(url.searchParams.getAll('categoryIds[]'));
+            const singleId = url.searchParams.get('categoryId');
+            if (singleId) {
+                ids.add(singleId);
+            }
+            return Array.from(ids);
+        })(),
+        sellerIds: url.searchParams.getAll('sellerIds[]') || [],
         author: url.searchParams.get('author') || '',
         minPrice: url.searchParams.get('minPrice') || '',
         maxPrice: url.searchParams.get('maxPrice') || '',
+        minRating: url.searchParams.get('minRating') || 0,
+        inStock: url.searchParams.get('inStock') === 'true',
         publishYearFrom: url.searchParams.get('publishYearFrom') || '',
         publishYearTo: url.searchParams.get('publishYearTo') || '',
         sort: url.searchParams.get('sort') || 'latest',
@@ -46,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const categoryLabels = new Map();
+    const sellerLabels = new Map();
 
     const formatVND = (price) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
@@ -81,14 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
         imageUrl: button.getAttribute('data-book-image') || '',
         categoryName: button.getAttribute('data-book-category') || 'Sach'
     });
-
-    const getSelectedCategoryLabel = () => {
-        if (!state.categoryId) {
-            return '';
-        }
-
-        return categoryLabels.get(String(state.categoryId)) || 'Danh mục đã chọn';
-    };
 
     const ensureBuyer = (message) => {
         const { userId, role } = ApiService.getAuth();
@@ -144,58 +152,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
     };
 
-    const setCategoryFilter = (categoryId) => {
-        state.categoryId = categoryId ? String(categoryId) : null;
-        state.page = 0;
-        syncUrl();
-        updateCategoryFilterButtons();
-        loadBooks();
-    };
-
-    const updateCategoryFilterButtons = () => {
-        document.querySelectorAll('[data-search-category-id]').forEach((button) => {
-            const isActive = String(button.getAttribute('data-search-category-id') || '') === String(state.categoryId || '');
-            button.classList.toggle('bg-brand-brown', isActive);
-            button.classList.toggle('text-white', isActive);
-            button.classList.toggle('border-brand-brown', isActive);
-            button.classList.toggle('bg-brand-cream', !isActive);
-            button.classList.toggle('text-brand-dark', !isActive);
-        });
-    };
-
-    const renderCategoryFilters = (categories) => {
-        if (!categoryList) {
+    const renderCheckboxList = (container, items, stateIds, type, nameMap) => {
+        if (!container) return;
+        if (!Array.isArray(items) || items.length === 0) {
+            container.innerHTML = `<div class="px-3 py-2 text-xs text-gray-500">Không có lựa chọn.</div>`;
             return;
         }
 
-        if (!Array.isArray(categories) || categories.length === 0) {
-            categoryList.innerHTML = `<div class="rounded-lg border border-dashed border-brand-border bg-brand-cream/30 px-3 py-2 text-xs text-gray-500">Chưa có danh mục khả dụng.</div>`;
-            return;
+        container.innerHTML = items.map(item => {
+            const id = String(item.id);
+            const name = escapeHtml(item.name || item.shopName || 'N/A');
+            nameMap.set(id, name);
+            return `
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" value="${id}" data-filter-type="${type}" class="h-4 w-4 rounded border-gray-300 text-brand-brown focus:ring-brand-brown" ${stateIds.includes(id) ? 'checked' : ''}>
+                    <span class="text-sm font-medium text-gray-700">${name}</span>
+                </label>
+            `;
+        }).join('');
+    };
+
+    const loadSellers = async () => {
+        if (!sellerList) return;
+        sellerList.innerHTML = `<div class="px-3 py-2 text-xs text-gray-500">Đang tải...</div>`;
+        try {
+            // Assuming an API endpoint to get all sellers/shops exists
+            const sellers = await ApiService.Shop.getAll();
+            renderCheckboxList(sellerList, sellers, state.sellerIds, 'seller', sellerLabels);
+        } catch (error) {
+            console.error('Load sellers failed:', error);
+            sellerList.innerHTML = `<div class="px-3 py-2 text-xs text-red-500">Lỗi tải nhà bán.</div>`;
         }
-
-        categoryList.innerHTML = [
-            `<button type="button" data-search-category-id="" class="w-full text-left px-3 py-2 rounded-lg border text-sm font-bold transition bg-brand-brown text-white border-brand-brown">Tất cả danh mục</button>`,
-            ...categories.map((category) => {
-                const categoryId = String(category.id ?? '');
-                const categoryName = escapeHtml(category.name || 'Danh mục');
-                categoryLabels.set(categoryId, category.name || 'Danh mục');
-                return `<button type="button" data-search-category-id="${categoryId}" class="w-full text-left px-3 py-2 rounded-lg border text-sm font-bold transition bg-brand-cream text-brand-dark border-brand-accent hover:border-brand-brown hover:text-brand-brown">${categoryName}</button>`;
-            })
-        ].join('');
-
-        updateCategoryFilterButtons();
     };
 
     const loadCategories = async () => {
         if (!categoryList) {
             return;
         }
-
         categoryList.innerHTML = `<div class="rounded-lg border border-dashed border-brand-border bg-brand-cream/30 px-3 py-2 text-xs text-gray-500">Đang tải danh mục...</div>`;
 
         try {
             const categories = await ApiService.Category.getAll();
-            renderCategoryFilters(Array.isArray(categories) ? categories : []);
+            renderCheckboxList(categoryList, categories, state.categoryIds, 'category', categoryLabels);
         } catch (error) {
             console.error('Load categories failed:', error);
             categoryList.innerHTML = `<div class="rounded-lg border border-dashed border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">Không tải được danh mục.</div>`;
@@ -219,10 +217,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const buildCard = (book) => {
         const coverUrl = book.imageUrl ? book.imageUrl : 'https://via.placeholder.com/400x560?text=No+Cover';
         return `
-            <article class="bg-white rounded-[1.75rem] p-4 border border-brand-accent shadow-sm hover:shadow-lg transition-all group h-full flex flex-col">
+            <article class="bg-white rounded-[1.75rem] p-4 border border-brand-accent shadow-sm hover:shadow-lg transition-all group h-full flex flex-col" data-detail-url="/book/${book.id}">
                 <a href="/book/${book.id}" class="block relative overflow-hidden rounded-[1.25rem] border border-brand-accent bg-brand-cream mb-4">
                     <div class="aspect-3/4 overflow-hidden">
                         <img src="${coverUrl}" alt="${escapeHtml(book.title || '')}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://via.placeholder.com/400x560?text=Error'" />
+                    </div>
+                    <!-- Quick View Button -->
+                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <button onclick="event.preventDefault(); event.stopPropagation(); openQuickView(${book.id})" class="bg-white text-brand-dark p-3 rounded-full shadow-lg transform hover:scale-110 transition-transform" title="Xem nhanh">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        </button>
                     </div>
                 </a>
                 <div class="flex flex-col flex-1">
@@ -334,14 +338,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        nextUrl.searchParams.delete('categoryIds[]');
+        state.categoryIds.forEach(id => nextUrl.searchParams.append('categoryIds[]', id));
+
+        nextUrl.searchParams.delete('sellerIds[]');
+        state.sellerIds.forEach(id => nextUrl.searchParams.append('sellerIds[]', id));
+
         setOrRemove('q', state.q);
         setOrRemove('author', state.author);
         setOrRemove('minPrice', state.minPrice);
         setOrRemove('maxPrice', state.maxPrice);
+        setOrRemove('minRating', state.minRating > 0 ? state.minRating : '');
+        setOrRemove('inStock', state.inStock ? 'true' : '');
         setOrRemove('publishYearFrom', state.publishYearFrom);
         setOrRemove('publishYearTo', state.publishYearTo);
         setOrRemove('sort', state.sort);
-        setOrRemove('categoryId', state.categoryId);
         nextUrl.searchParams.set('page', state.page);
         nextUrl.searchParams.set('size', state.size);
         window.history.replaceState({}, '', nextUrl);
@@ -354,17 +365,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (resultTotal) resultTotal.textContent = String(totalElements);
         if (resultQuery) resultQuery.textContent = `"${state.q || 'Tat ca san pham'}"`;
         if (resultSummary) {
-            const filterBits = [];
-            const categoryLabel = getSelectedCategoryLabel();
-            if (categoryLabel) filterBits.push(`danh mục ${categoryLabel}`);
-            if (state.author) filterBits.push(`tac gia ${state.author}`);
-            if (state.minPrice || state.maxPrice) filterBits.push('khoang gia');
-            if (state.publishYearFrom || state.publishYearTo) filterBits.push('nam xuat ban');
-            resultSummary.textContent = filterBits.length
-                ? `Da ap dung: ${filterBits.join(', ')}.`
-                : 'Lọc theo giá, tác giả và năm xuất bản để thu hẹp kết quả nhanh hơn.';
+            const activeFilters = document.querySelectorAll('#search-filter-chips > button').length;
+            resultSummary.textContent = activeFilters > 0
+                ? `Đang áp dụng ${activeFilters} bộ lọc.`
+                : 'Lọc theo giá, tác giả và các tiêu chí khác để thu hẹp kết quả nhanh hơn.';
         }
         if (resultRange) resultRange.textContent = `Hiển thị ${from} - ${to} của ${totalElements} kết quả`;
+        renderFilterChips(); // Render chips on every update
     };
 
     const renderSearchSuggestions = (books) => {
@@ -416,13 +423,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await ApiService.Book.search(
                 state.q,
-                state.categoryId,
+                state.categoryIds,
                 state.page,
                 state.size,
                 {
+                    sellerIds: state.sellerIds,
                     author: state.author,
                     minPrice: state.minPrice,
                     maxPrice: state.maxPrice,
+                    minRating: state.minRating,
+                    inStock: state.inStock,
                     publishYearFrom: state.publishYearFrom,
                     publishYearTo: state.publishYearTo,
                     sort: state.sort
@@ -440,7 +450,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             resultsGrid.innerHTML = books.map(buildCard).join('');
             renderPagination(response?.number ?? state.page, response?.totalPages ?? 0);
-            renderSearchSuggestions(books);
         } catch (error) {
             console.error('Load search results failed:', error);
             renderError();
@@ -448,12 +457,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const applyFiltersFromInputs = () => {
+        state.q = (searchInput?.value || '').trim();
         state.author = (authorInput?.value || '').trim();
         state.minPrice = (minPriceInput?.value || '').trim();
         state.maxPrice = (maxPriceInput?.value || '').trim();
         state.publishYearFrom = (yearFromInput?.value || '').trim();
         state.publishYearTo = (yearToInput?.value || '').trim();
         state.sort = sortSelect?.value || 'latest';
+        state.minRating = ratingSlider ? Number(ratingSlider.value) : 0;
+        state.inStock = inStockToggle ? inStockToggle.checked : false;
+
+        state.categoryIds = Array.from(document.querySelectorAll('input[data-filter-type="category"]:checked'))
+            .map(el => el.value);
+
+        state.sellerIds = Array.from(document.querySelectorAll('input[data-filter-type="seller"]:checked'))
+            .map(el => el.value);
+
         state.page = 0;
         syncUrl();
         loadBooks();
@@ -463,6 +482,10 @@ document.addEventListener('DOMContentLoaded', () => {
         state.author = '';
         state.minPrice = '';
         state.maxPrice = '';
+        state.minRating = 0;
+        state.inStock = false;
+        state.categoryIds = [];
+        state.sellerIds = [];
         state.publishYearFrom = '';
         state.publishYearTo = '';
         state.sort = 'latest';
@@ -471,9 +494,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (authorInput) authorInput.value = '';
         if (minPriceInput) minPriceInput.value = '';
         if (maxPriceInput) maxPriceInput.value = '';
+        if (ratingSlider) ratingSlider.value = 0;
+        if (ratingValue) ratingValue.textContent = '0 sao';
+        if (inStockToggle) inStockToggle.checked = false;
         if (yearFromInput) yearFromInput.value = '';
         if (yearToInput) yearToInput.value = '';
         if (sortSelect) sortSelect.value = 'latest';
+        document.querySelectorAll('input[data-filter-type]:checked').forEach(el => el.checked = false);
         syncUrl();
         loadBooks();
     };
@@ -535,16 +562,75 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    categoryList?.addEventListener('click', (event) => {
-        const button = event.target.closest('button[data-search-category-id]');
-        if (!button) {
+    const renderFilterChips = () => {
+        const container = document.getElementById('search-filter-chips');
+        if (!container) return;
+
+        let chipsHtml = '';
+
+        state.categoryIds.forEach(id => {
+            const label = categoryLabels.get(id) || `Category ${id}`;
+            chipsHtml += `<button data-chip-type="category" data-chip-value="${id}" class="chip">${label} &times;</button>`;
+        });
+        state.sellerIds.forEach(id => {
+            const label = sellerLabels.get(id) || `Seller ${id}`;
+            chipsHtml += `<button data-chip-type="seller" data-chip-value="${id}" class="chip">${label} &times;</button>`;
+        });
+        if (state.minRating > 0) {
+            chipsHtml += `<button data-chip-type="minRating" class="chip">Từ ${state.minRating} sao &times;</button>`;
+        }
+        if (state.inStock) {
+            chipsHtml += `<button data-chip-type="inStock" class="chip">Còn hàng &times;</button>`;
+        }
+
+        container.innerHTML = chipsHtml.length > 0
+            ? `<style>.chip { background-color: #f3eade; color: #4a3b32; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: bold; transition: all 0.2s; } .chip:hover { background-color: #cda27a; color: white; }</style>` + chipsHtml
+            : '';
+    };
+
+    document.getElementById('search-filter-chips')?.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'BUTTON') return;
+        const type = e.target.dataset.chipType;
+        const value = e.target.dataset.chipValue;
+
+        switch (type) {
+            case 'category':
+                state.categoryIds = state.categoryIds.filter(id => id !== value);
+                break;
+            case 'seller':
+                state.sellerIds = state.sellerIds.filter(id => id !== value);
+                break;
+            case 'minRating':
+                state.minRating = 0;
+                break;
+            case 'inStock':
+                state.inStock = false;
+                break;
+        }
+        state.page = 0;
+        syncUrl();
+        updateFilterControlsFromState();
+        loadBooks();
+    });
+
+    const initAccordion = () => {
+        document.querySelectorAll('.filter-toggle').forEach(button => {
+            button.addEventListener('click', () => {
+                const content = button.nextElementSibling;
+                const icon = button.querySelector('svg');
+                content.classList.toggle('hidden');
+                icon.classList.toggle('rotate-180');
+            });
+        });
+    };
+
+    resultsGrid.addEventListener('click', (event) => {
+        const card = event.target.closest('.product-card[data-detail-url], article[data-detail-url]');
+        if (card && !event.target.closest('button, a, input, label, select, textarea')) {
+            window.location.href = card.getAttribute('data-detail-url');
             return;
         }
 
-        setCategoryFilter(button.getAttribute('data-search-category-id'));
-    });
-
-    resultsGrid.addEventListener('click', (event) => {
         const wishlistButton = event.target.closest('button[data-toggle-wishlist="true"]');
         if (wishlistButton) {
             event.preventDefault();
@@ -581,34 +667,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    sortSelect?.addEventListener('change', applyFiltersFromInputs);
     applyFiltersBtn?.addEventListener('click', applyFiltersFromInputs);
     resetFiltersBtn?.addEventListener('click', resetFilters);
-
-    document.querySelectorAll('[data-search-chip]').forEach((chip) => {
-        chip.addEventListener('click', () => {
-            const query = chip.getAttribute('data-search-chip') || '';
-            if (searchInput) {
-                searchInput.value = query;
-            }
-            state.q = query;
-            state.page = 0;
-            syncUrl();
-            loadBooks();
-        });
+    sortSelect?.addEventListener('change', () => {
+        state.sort = sortSelect.value;
+        state.page = 0;
+        syncUrl();
+        loadBooks();
     });
 
-    if (sortSelect) sortSelect.value = state.sort;
-    if (authorInput) authorInput.value = state.author;
-    if (minPriceInput) minPriceInput.value = state.minPrice;
-    if (maxPriceInput) maxPriceInput.value = state.maxPrice;
-    if (yearFromInput) yearFromInput.value = state.publishYearFrom;
-    if (yearToInput) yearToInput.value = state.publishYearTo;
-    if (searchInput) searchInput.value = state.q;
+    if (ratingSlider && ratingValue) {
+        ratingSlider.addEventListener('input', () => {
+            ratingValue.textContent = `${ratingSlider.value} sao`;
+        });
+    }
+
+    const updateFilterControlsFromState = () => {
+        if (sortSelect) sortSelect.value = state.sort;
+        if (authorInput) authorInput.value = state.author;
+        if (minPriceInput) minPriceInput.value = state.minPrice;
+        if (maxPriceInput) maxPriceInput.value = state.maxPrice;
+        if (yearFromInput) yearFromInput.value = state.publishYearFrom;
+        if (yearToInput) yearToInput.value = state.publishYearTo;
+        if (searchInput) searchInput.value = state.q;
+        if (ratingSlider) ratingSlider.value = state.minRating;
+        if (ratingValue) ratingValue.textContent = `${state.minRating} sao`;
+        if (inStockToggle) inStockToggle.checked = state.inStock;
+
+        document.querySelectorAll('input[data-filter-type="category"]').forEach(el => el.checked = state.categoryIds.includes(el.value));
+        document.querySelectorAll('input[data-filter-type="seller"]').forEach(el => el.checked = state.sellerIds.includes(el.value));
+    };
 
     (async () => {
         await ApiService.Wishlist.bootstrap().catch(() => {});
+        initAccordion();
+        updateFilterControlsFromState();
         await loadCategories();
+        await loadSellers();
         bindSearchSuggestions();
         await loadDiscoverySidebar();
         await loadBooks();

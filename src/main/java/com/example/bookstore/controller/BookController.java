@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.example.bookstore.repository.BookRepository;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.security.SecurityUtils;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,17 +41,20 @@ public class BookController {
             @RequestParam(defaultValue = "0") int page, // Trang số mấy - Mặc định trang 0
             @RequestParam(defaultValue = "20") int size // Lấy bao nhiêu cuốn - Mặc định 20
     ) {
-        Pageable pageable = PageRequest.of(page, size);
-        return bookRepository.findAll(pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return bookRepository.findByApprovalStatus(ApprovalStatus.APPROVED, pageable);
     }
 
     @GetMapping("/search")
     public Page<Book> searchApprovedBooks(
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) List<Long> categoryIds,
+            @RequestParam(required = false) List<Long> sellerIds,
             @RequestParam(required = false) String author,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) String publishYearFrom,
             @RequestParam(required = false) String publishYearTo,
             @RequestParam(defaultValue = "latest") String sort,
@@ -58,19 +63,32 @@ public class BookController {
         Pageable pageable = PageRequest.of(page, size, resolveSort(sort));
         String keyword = (q == null || q.isBlank()) ? null : q.trim();
         String authorKeyword = (author == null || author.isBlank()) ? null : author.trim();
-        String yearFrom = (publishYearFrom == null || publishYearFrom.isBlank()) ? null : publishYearFrom.trim();
-        String yearTo = (publishYearTo == null || publishYearTo.isBlank()) ? null : publishYearTo.trim();
-        return bookRepository.searchApprovedBooks(
+        Integer yearFrom = parseYearBound(publishYearFrom);
+        Integer yearTo = parseYearBound(publishYearTo);
+        List<Long> effectiveCategoryIds = (categoryIds != null && !categoryIds.isEmpty()) ? categoryIds : null;
+        List<Long> effectiveSellerIds = (sellerIds != null && !sellerIds.isEmpty()) ? sellerIds : null;
+
+        return bookService.searchApprovedBooks(
                 keyword,
-                categoryId,
+                effectiveCategoryIds,
+                effectiveSellerIds,
                 authorKeyword,
                 minPrice,
                 maxPrice,
+                minRating,
+                inStock,
                 yearFrom,
                 yearTo,
                 ApprovalStatus.APPROVED,
                 pageable
         );
+    }
+
+    private Integer parseYearBound(String rawYear) {
+        if (rawYear == null || rawYear.isBlank()) {
+            return null;
+        }
+        return Integer.valueOf(rawYear.trim());
     }
 
     @GetMapping("/suggestions")
@@ -105,16 +123,14 @@ public class BookController {
      * Dùng cho trang quản lý kho - S03
      */
     @GetMapping("/seller/me")
+    @PreAuthorize("hasRole('SELLER')")
     public Page<Book> getSellerBooks(
-            HttpServletRequest request,
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-
-        // Lấy ID từ Attribute cho giống mấy hàm Add Update - Đồng bộ với logic mới
-        Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
-
+        Long sellerId = currentSellerId(principal);
         if (sellerId == null) return Page.empty();
 
         String keyword = (q == null || q.trim().isEmpty()) ? null : q.trim();
@@ -123,21 +139,67 @@ public class BookController {
         return bookRepository.findBySellerIdAndKeywordAndCategory(sellerId, keyword, categoryId, pageable);
     }
 
-    // API take one book by id
+    // API take one book by id (Public API - không security check)
     // Dau ngoac nhon id nghia la gia tri nay se thay doi theo tren Url vd: /api/books/1
     @GetMapping("/{id}")
-    public Book getBookById(@PathVariable Long id) {
-        return bookService.getBookbyId(id);
+    public ResponseEntity<Book> getBookById(@PathVariable Long id) {
+        Book book = bookService.getBookbyId(id);
+        // Chỉ trả về sách nếu nó tồn tại VÀ đã được duyệt
+        if (book != null && book.getApprovalStatus() == ApprovalStatus.APPROVED) {
+            return ResponseEntity.ok(book);
+        }
+        // Vì lý do bảo mật, trả về 404 cho cả trường hợp không tìm thấy và chưa được duyệt
+        return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * API lấy chi tiết sách của chính seller hiện tại (Bảo mật)
+     * Endpoint: GET /api/books/seller/book/{id}
+     * Chỉ cho phép seller xem sách của họ
+     * Trả về đủ thông tin: book details + seller info
+     */
+    @GetMapping("/seller/book/{id}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> getSellerOwnBook(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
+    ) {
+        Long sellerId = currentSellerId(principal);
+        if (sellerId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bạn cần đăng nhập");
+        }
+
+        try {
+            Book book = bookService.getBookbyId(id);
+            
+            if (book == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(java.util.Map.of("error", "Sách không tồn tại"));
+            }
+
+            // Kiểm tra xem seller có sở hữu sách này không (IDOR Protection)
+            if (book.getSeller() == null || !book.getSeller().getId().equals(sellerId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("error", "Không có quyền xem sách này"));
+            }
+
+            return ResponseEntity.ok(book);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     // --- API add new book cho Seller - S03 ---
     // @RequestBody : khi gui 1 cuc dl Json chua thong tin sach SB auto nan JSON do thanh 1 Doi tuong Object Book in Java tinh nang nay same FromBody trong .Net API
     @PostMapping({"", "/seller"})
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<?> createBookForSeller(
             @RequestBody Book book,
-            HttpServletRequest request
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
     ) {
-        Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
+        Long sellerId = currentSellerId(principal);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bạn cần đăng nhập để thực hiện hành động này");
         }
@@ -161,11 +223,12 @@ public class BookController {
 
     // API Update book cho Seller - S03
     @PutMapping({"/{id}", "/seller/{id}"})
+    @PreAuthorize("hasRole('SELLER') and hasPermission(#id, 'Book', 'update')")
     public ResponseEntity<?> updateBookForSeller(
             @PathVariable Long id,
             @RequestBody Book bookDetails,
-            HttpServletRequest request) {
-        Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
+        Long sellerId = currentSellerId(principal);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -190,11 +253,12 @@ public class BookController {
 
     // API upload ảnh cho sách - S03
     @PostMapping({"/{id}/upload-cover", "/seller/{id}/upload-cover"})
+    @PreAuthorize("hasRole('SELLER') and hasPermission(#id, 'Book', 'update')")
     public ResponseEntity<?> upLoadBookCover(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file,
-            HttpServletRequest request) {
-        Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
+        Long sellerId = currentSellerId(principal);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -209,11 +273,12 @@ public class BookController {
 
     // Thêm API xóa sách cho Seller (S03)
     @DeleteMapping({"/{id}", "/seller/{id}"})
+    @PreAuthorize("hasRole('SELLER') and hasPermission(#id, 'Book', 'delete')")
     public ResponseEntity<?> deleteBookForSeller(
             @PathVariable Long id,
-            HttpServletRequest request
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
     ) {
-        Long sellerId = (Long) request.getAttribute("CURRENT_USER_ID");
+        Long sellerId = currentSellerId(principal);
         if (sellerId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -230,6 +295,13 @@ public class BookController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", e.getMessage()));
 
         }
+    }
+
+    private Long currentSellerId(JwtAuthenticatedPrincipal principal) {
+        if (principal != null) {
+            return principal.sellerId() != null ? principal.sellerId() : principal.userId();
+        }
+        return null;
     }
 
     private Sort resolveSort(String sort) {

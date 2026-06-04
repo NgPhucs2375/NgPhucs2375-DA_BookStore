@@ -18,4 +18,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
 
     List<User> findAllByRole(UserRole role);
+    
+    // 🆕 NEW: Lấy người dùng theo trạng thái active/lock
+    List<User> findByIsActive(boolean isActive);
+    
+    // 🆕 NEW: Lấy người dùng theo role và trạng thái active
+    List<User> findByRoleAndIsActive(UserRole role, boolean isActive);
+    
+    // 🆕 NEW: Tìm kiếm người dùng theo username (case-insensitive)
+    List<User> findByUsernameContainingIgnoreCase(String username);
+
+    // 🆕 Firebase: Tìm user theo email
+    java.util.Optional<User> findByEmail(String email);
 }

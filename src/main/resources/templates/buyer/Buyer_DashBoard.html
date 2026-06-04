@@ -213,7 +213,7 @@
                 <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-float border border-brand-accent opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden transform origin-top-right scale-95 group-hover:scale-100">
                     <a th:href="@{/buyer/dashboard}" class="block px-4 py-3 text-sm font-bold text-brand-dark hover:bg-brand-cream hover:text-brand-orange transition">Tài Khoản Của Tôi</a>
                     <a th:href="@{/main/order-details}" class="block px-4 py-3 text-sm font-bold text-brand-dark hover:bg-brand-cream hover:text-brand-orange transition">Đơn Mua</a>
-                    <a th:href="@{/main/auth}" class="block px-4 py-3 text-sm font-bold text-brand-dark hover:bg-brand-cream hover:text-brand-orange transition">Đăng Xuất</a>
+                    <a href="#" onclick="ApiService.logout(); return false;" class="block px-4 py-3 text-sm font-bold text-brand-dark hover:bg-brand-cream hover:text-brand-orange transition">Đăng Xuất</a>
                 </div>
             </div>
         </div>
@@ -315,7 +315,7 @@
                     </a>
                 </li>
                 <li>
-                    <a th:href="@{/main/auth}" class="flex items-center gap-3 px-6 py-4 text-gray-400 hover:text-brand-red transition mt-2">
+                    <a href="#" onclick="ApiService.logout(); return false;" class="flex items-center gap-3 px-6 py-4 text-gray-400 hover:text-brand-red transition mt-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                         Đăng Xuất
                     </a>

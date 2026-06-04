@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import com.example.bookstore.dto.SellerShopResponse;
 
 @Data
 @NoArgsConstructor
@@ -23,6 +24,7 @@ public class UserProfileDTO {
     private String gender;
     private String bio;
     private String avatarUrl;
+    private SellerShopResponse sellerShop;
 
     public static UserProfileDTO fromEntity(User user) {
         return UserProfileDTO.builder()

@@ -2,12 +2,14 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.WishlistActionResponse;
 import com.example.bookstore.dto.WishlistItemResponse;
+import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.service.WishlistService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.access.prepost.PreAuthorize;
+ 
 
 import java.util.List;
 
@@ -20,25 +22,25 @@ public class WishlistController {
     private WishlistService wishlistService;
 
     @GetMapping("/me")
-    public List<WishlistItemResponse> getMyWishlist(HttpServletRequest request) {
-        return wishlistService.getWishlist(getCurrentUserId(request));
+    @PreAuthorize("isAuthenticated()")
+    public List<WishlistItemResponse> getMyWishlist(@org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
+        return wishlistService.getWishlist(getCurrentUserId(principal));
     }
 
     @PostMapping("/me/{bookId}")
-    public WishlistActionResponse toggleWishlist(HttpServletRequest request, @PathVariable Long bookId) {
-        return wishlistService.toggleWishlist(getCurrentUserId(request), bookId);
+    @PreAuthorize("isAuthenticated()")
+    public WishlistActionResponse toggleWishlist(@org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal, @PathVariable Long bookId) {
+        return wishlistService.toggleWishlist(getCurrentUserId(principal), bookId);
     }
 
     @DeleteMapping("/me/{bookId}")
-    public WishlistActionResponse removeFromWishlist(HttpServletRequest request, @PathVariable Long bookId) {
-        return wishlistService.removeFromWishlist(getCurrentUserId(request), bookId);
+    @PreAuthorize("isAuthenticated()")
+    public WishlistActionResponse removeFromWishlist(@org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal, @PathVariable Long bookId) {
+        return wishlistService.removeFromWishlist(getCurrentUserId(principal), bookId);
     }
 
-    private Long getCurrentUserId(HttpServletRequest request) {
-        Object currentUserId = request.getAttribute("CURRENT_USER_ID");
-        if (!(currentUserId instanceof Long userId)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Vui long dang nhap");
-        }
-        return userId;
+    private Long getCurrentUserId(JwtAuthenticatedPrincipal principal) {
+        if (principal != null) return principal.userId();
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Vui long dang nhap");
     }
 }

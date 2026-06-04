@@ -332,9 +332,14 @@ document.addEventListener('DOMContentLoaded', () => {
             bookGrid.innerHTML = books.map((book) => {
                 const coverUrl = book.imageUrl ? book.imageUrl : 'https://via.placeholder.com/150x200?text=No+Cover';
                 return `
-                    <a href="/book/${book.id}" class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
+                    <a href="/book/${book.id}" data-detail-url="/book/${book.id}" class="product-card group relative h-full flex flex-col bg-white rounded-2xl p-4 shadow-sm border border-brand-accent cursor-pointer">
                         <div class="relative w-full aspect-3/4 bg-brand-cream rounded-xl mb-4 flex items-center justify-center overflow-hidden border border-brand-accent">
                             <img src="${coverUrl}" alt="${book.title}" class="book-cover w-full h-full object-cover shadow-md transition-transform duration-500" onerror="this.src='https://via.placeholder.com/150x200?text=Error'"/>
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <button onclick="event.preventDefault(); event.stopPropagation(); openQuickView(${book.id})" class="bg-white text-brand-dark p-3 rounded-full shadow-lg transform hover:scale-110 transition-transform" title="Xem nhanh">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </button>
+                            </div>
                             <div class="absolute bottom-3 left-3 right-3 flex justify-between gap-2">
                                 ${createWishlistButton(book)}
                                 <button type="button" data-add-to-cart="true" data-book-id="${book.id}" class="cart-btn-hover w-10 h-10 bg-brand-biscuit text-white rounded-full shadow-lg flex items-center justify-center hover:bg-brand-dark transition-colors">
@@ -362,6 +367,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     bookGrid.addEventListener('click', (event) => {
+        const card = event.target.closest('.product-card[data-detail-url]');
+        if (card && !event.target.closest('button, a, input, label, select, textarea')) {
+            window.location.href = card.getAttribute('data-detail-url');
+            return;
+        }
+
         const wishlistButton = event.target.closest('button[data-toggle-wishlist="true"]');
         if (wishlistButton) {
             event.preventDefault();

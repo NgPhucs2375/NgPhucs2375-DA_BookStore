@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -30,47 +31,76 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // 1. Lấy JWT từ Header Authorization
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        String token = null;
+        String xUserIdHeader = request.getHeader("X-User-Id");
+        
         Long userId = null;
+        List<String> roles = new ArrayList<>();
+        Long sellerId = null;
 
+        // 1. Try to extract from JWT Token
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
+            String token = authHeader.substring(7);
             try {
                 userId = jwtTokenProvider.extractUserId(token);
+                roles = jwtTokenProvider.extractRoles(token);
+                sellerId = jwtTokenProvider.extractSellerId(token);
+                
+                if (userId != null) {
+                    logger.debug("Authenticated via JWT: " + userId + " with roles " + roles);
+                }
             } catch (Exception e) {
-                // Token không hợp lệ hoặc hết hạn, ta không set Authentication
-                // Spring Security sẽ tự chặn ở EntryPoint nếu endpoint yêu cầu auth
-                logger.error("Could not set user authentication in security context", e);
+                logger.error("Invalid JWT token: " + e.getMessage());
             }
         }
 
-        // 2. Nếu có userId và chưa được xác thực trong Context hiện tại
-        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepository.findById(userId).orElse(null);
+        // 2. Fallback to X-User-Id (Dev/Fallback Mode) if token is missing or failed
+        if (userId == null && xUserIdHeader != null && !xUserIdHeader.isBlank()) {
+            try {
+                Long id = Long.parseLong(xUserIdHeader);
+                User user = userRepository.findById(id).orElse(null);
+                if (user != null && user.isActive()) {
+                    userId = user.getId();
+                    roles = List.of(user.getRole().name());
+                    sellerId = "SELLER".equalsIgnoreCase(user.getRole().name()) ? user.getId() : null;
+                    logger.info("Authenticated via X-User-Id fallback: " + userId + " (Role: " + roles.get(0) + ")");
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to authenticate via X-User-Id: " + xUserIdHeader);
+            }
+        }
 
-            if (user != null) {
-                // QUAN TRỌNG: Thêm tiền tố ROLE_ để khớp với .hasRole() trong SecurityConfig
-                String roleName = "ROLE_" + user.getRole().name();
+        // 3. Set Security Context
+        if (userId != null) {
+            JwtAuthenticatedPrincipal principal = new JwtAuthenticatedPrincipal(userId, roles, sellerId);
 
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                List<SimpleGrantedAuthority> authorities = mapAuthorities(principal.roles());
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        user, // Gửi nguyên object User hoặc userId tùy bạn
+                        principal,
                         null,
-                        List.of(new SimpleGrantedAuthority(roleName))
+                        authorities
                 );
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // 3. Thiết lập thông tin xác thực vào Security Context
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                // Lưu thêm ID vào Attribute để dễ dàng lấy ra ở Controller qua @RequestAttribute
-                request.setAttribute("CURRENT_USER_ID", user.getId());
             }
+        } else if (authHeader != null || xUserIdHeader != null) {
+            logger.warn("Request to " + request.getRequestURI() + " had auth headers but failed authentication");
         }
 
-        // 4. Luôn gọi doFilter để chuyển request cho Filter tiếp theo (hoặc Controller)
         filterChain.doFilter(request, response);
+    }
+
+    private List<SimpleGrantedAuthority> mapAuthorities(List<String> roles) {
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        if (roles == null) return authorities;
+        for (String role : roles) {
+            if (role != null && !role.isBlank()) {
+                String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+                authorities.add(new SimpleGrantedAuthority(authority));
+            }
+        }
+        return authorities;
     }
 }

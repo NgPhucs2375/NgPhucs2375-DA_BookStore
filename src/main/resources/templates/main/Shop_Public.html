@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKOM - Cửa hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-brand-bg font-sans text-brand-dark">
+<div id="shop-host" th:attr="data-slug=${shopSlug}" style="display:none"></div>
+<main class="max-w-[1100px] mx-auto p-6">
+    <div id="shop-root">
+        <h1 id="shop-name" class="text-2xl font-bold">Đang tải cửa hàng...</h1>
+        <p id="shop-desc" class="text-sm text-gray-600 mt-2"></p>
+        <div class="mt-4">
+            <button id="follow-btn" class="bg-brand-brown text-white px-4 py-2 rounded">Theo dõi</button>
+        </div>
+        <hr class="my-6"/>
+        <div id="shop-products">
+            <p class="text-gray-500">Sản phẩm sẽ được hiển thị ở đây.</p>
+        </div>
+    </div>
+</main>
+
+<script>
+    (async function(){
+        const host = document.getElementById('shop-host');
+        if (!host) return;
+        const slug = host.dataset.slug;
+        if (!slug) {
+            document.getElementById('shop-name').textContent = 'Cửa hàng không tồn tại';
+            return;
+        }
+        try {
+            const res = await fetch('/api/shops/' + encodeURIComponent(slug));
+            if (!res.ok) throw new Error('Không tải được shop');
+            const shop = await res.json();
+            document.getElementById('shop-name').textContent = shop.shopName || 'Cửa hàng';
+            document.getElementById('shop-desc').textContent = shop.description || '';
+            // TODO: render products if API returns them; keep minimal for now.
+        } catch (e) {
+            document.getElementById('shop-name').textContent = 'Lỗi khi tải cửa hàng';
+            console.error(e);
+        }
+    })();
+</script>
+</body>
+</html>

@@ -1,18 +1,20 @@
 package com.example.bookstore.service;
 
+import com.example.bookstore.dto.BookUpdateDto;
 import com.example.bookstore.model.Book;
+import com.example.bookstore.model.Category;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.UserRepository;
-import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
 @Service // Danh dau lai lop nay la Logic nghiep vu nhan yeu cau tu roi xu lys
 public class BookService {
@@ -21,6 +23,12 @@ public class BookService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private com.example.bookstore.repository.CategoryRepository categoryRepository;
+
+    @Value("${app.uploads.covers-dir:uploads/covers}")
+    private String coversDir;
 
     // Function lay all book
     public List<Book> getAllBook() {
@@ -41,9 +49,13 @@ public class BookService {
         return bookRepository.findById(id).orElse(null);
     }
 
-    // Function Delete 1 book by id
-    public void deleteBoook(Long id) {
-        bookRepository.deleteById(id);
+    /**
+     * Xóa sách (Admin)
+     */
+    public void deleteBook(Long bookId) {
+        bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+        bookRepository.deleteById(bookId);
     }
 
     // Function Update info 1 book
@@ -64,6 +76,62 @@ public class BookService {
         // return null if can't find id
         return null;
     }
+
+    /**
+     * Cập nhật thông tin sách (Admin)
+     */
+    public Book updateBookByAdmin(Long bookId, BookUpdateDto dto) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+
+        if (dto.getTitle() != null && !dto.getTitle().isEmpty()) {
+            book.setTitle(dto.getTitle());
+        }
+        if (dto.getAuthor() != null && !dto.getAuthor().isEmpty()) {
+            book.setAuthor(dto.getAuthor());
+        }
+        if (dto.getDescription() != null) {
+            book.setDescription(dto.getDescription());
+        }
+        if (dto.getPrice() != null) {
+            book.setPrice(dto.getPrice());
+        }
+        if (dto.getStockQuantity() != null) {
+            book.setStockQuantity(dto.getStockQuantity());
+        }
+        if (dto.getPublisher() != null) {
+            book.setPublisher(dto.getPublisher());
+        }
+        if (dto.getPublishYear() != null) {
+            try {
+                book.setPublishYear(Integer.parseInt(dto.getPublishYear()));
+            } catch (NumberFormatException e) {
+                // Ignore invalid year format
+            }
+        }
+
+        return bookRepository.save(book);
+    }
+
+    /**
+     * Khóa sách
+     */
+    public Book lockBook(Long bookId) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+        book.setActive(false);
+        return bookRepository.save(book);
+    }
+
+    /**
+     * Mở khóa sách
+     */
+    public Book unlockBook(Long bookId) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+        book.setActive(true);
+        return bookRepository.save(book);
+    }
     // API dành cho admin S02
     // 1. lấy danh sách chờ duyệt
     public org.springframework.data.domain.Page<Book> getPendingBooksForAdmin(int page, int size) {
@@ -81,6 +149,40 @@ public class BookService {
         return bookRepository.save(book);
     }
 
+    /**
+     * Tìm kiếm sách đã được duyệt với nhiều tiêu chí lọc.
+     * Đây là cầu nối logic giữa Controller và Repository.
+     */
+    public Page<Book> searchApprovedBooks(
+            String q,
+            List<Long> categoryIds,
+            List<Long> sellerIds,
+            String author,
+            Double minPrice,
+            Double maxPrice,
+            Double minRating,
+            Boolean inStock,
+            Integer publishYearFrom,
+            Integer publishYearTo,
+            ApprovalStatus status,
+            Pageable pageable
+    ) {
+        return bookRepository.searchApprovedBooks(
+                q,
+                categoryIds,
+                sellerIds,
+                author,
+                minPrice,
+                maxPrice,
+                minRating,
+                inStock,
+                publishYearFrom,
+                publishYearTo,
+                status,
+                pageable
+        );
+    }
+
     // --- BỔ SUNG CÁC HÀM BẢO MẬT DÀNH RIÊNG CHO SELLER (S03) ---
 
     public Book addBookForSeller(Book book, Long sellerId) {
@@ -91,6 +193,14 @@ public class BookService {
         // 2. TỰ ĐỘNG GÁN CHỦ SỞ HỮU (Dynamic)
         // Dòng này giúp Seller 81 thêm sẽ có ID 81, 82 có ID 82
         book.setSeller(seller);
+
+        // 2.5 CONVERT categoryId -> Category object (FIX NULL CATEGORY)
+        // Frontend gửi categoryId (Long), nhưng model cần Category object
+        if (book.getCategory() == null && book.getCategoryId() != null && book.getCategoryId() > 0) {
+            Category category = categoryRepository.findById(book.getCategoryId())
+                    .orElse(null);
+            book.setCategory(category);
+        }
 
         // 3. GIÁP CHỐNG LỖI SQL SERVER (Chặn đứng NULL cho các cột NOT NULL)
         // Tác giả
@@ -103,7 +213,7 @@ public class BookService {
         }
         // Năm xuất bản
         if (book.getPublishYear() == null) {
-            book.setPublishYear("2026");
+            book.setPublishYear(2026);
         }
         // Giá và số lượng (Tránh NULL gây lỗi tính toán)
         if (book.getPrice() == null) book.setPrice(0.0);
@@ -120,19 +230,26 @@ public class BookService {
         Book existingBook = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
 
-        // Pentester Shield: Chống IDOR
-        if (!existingBook.getSeller().getId().equals(sellerId)) {
-            throw new RuntimeException("IDOR Alert: Bạn không có quyền sửa sách của người khác!");
+        // Kiểm tra quyền sở hữu: chỉ seller chủ sở hữu mới được sửa
+        if (existingBook.getSeller() == null || !existingBook.getSeller().getId().equals(sellerId)) {
+            throw new RuntimeException("Không có quyền cập nhật sách này");
         }
 
         // Cập nhật thông tin an toàn
         if (bookDetails.getTitle() != null) existingBook.setTitle(bookDetails.getTitle());
         if (bookDetails.getDescription() != null) existingBook.setDescription(bookDetails.getDescription());
         if (bookDetails.getPrice() != null) existingBook.setPrice(bookDetails.getPrice());
-
-        // --- THÊM 2 DÒNG NÀY VÀO ĐỂ UPDATE TỒN KHO VÀ TÁC GIẢ ---
         if (bookDetails.getStockQuantity() != null) existingBook.setStockQuantity(bookDetails.getStockQuantity());
         if (bookDetails.getAuthor() != null) existingBook.setAuthor(bookDetails.getAuthor());
+
+        // UPDATE CATEGORY (FIX CATEGORY KHÔNG SAVE KHI EDIT)
+        if (bookDetails.getCategory() == null && bookDetails.getCategoryId() != null && bookDetails.getCategoryId() > 0) {
+            Category category = categoryRepository.findById(bookDetails.getCategoryId())
+                    .orElse(null);
+            existingBook.setCategory(category);
+        } else if (bookDetails.getCategory() != null) {
+            existingBook.setCategory(bookDetails.getCategory());
+        }
 
         existingBook.setApprovalStatus(ApprovalStatus.PENDING); // Sửa xong bắt duyệt lại
 
@@ -143,9 +260,9 @@ public class BookService {
         Book existingBook = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
 
-        // Chống IDOR
-        if (!existingBook.getSeller().getId().equals(sellerId)) {
-            throw new RuntimeException("Từ chối truy cập");
+        // Kiểm tra quyền sở hữu: chỉ seller chủ sở hữu mới được upload ảnh
+        if (existingBook.getSeller() == null || !existingBook.getSeller().getId().equals(sellerId)) {
+            throw new RuntimeException("Không có quyền upload ảnh cho sách này");
         }
 
         // Chống RCE bằng cách check File Signature
@@ -164,7 +281,7 @@ public class BookService {
         String safeFileName = java.util.UUID.randomUUID().toString() + extension;
 
         // --- ĐOẠN LƯU FILE THẬT VÀO Ổ CỨNG ---
-        java.nio.file.Path uploadPath = java.nio.file.Paths.get("src/main/resources/static/images/covers/");
+        java.nio.file.Path uploadPath = java.nio.file.Paths.get(coversDir);
         if (!java.nio.file.Files.exists(uploadPath)) {
             java.nio.file.Files.createDirectories(uploadPath);
         }
@@ -183,9 +300,9 @@ public class BookService {
         Book existingBook = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sách"));
 
-        // Pentester Shield: Chống IDOR
-        if (!existingBook.getSeller().getId().equals(sellerId)) {
-            throw new RuntimeException("IDOR Alert: Đừng hòng xóa sách của tiệm khác nha mậy!");
+        // Kiểm tra quyền sở hữu: chỉ seller chủ sở hữu mới được xóa
+        if (existingBook.getSeller() == null || !existingBook.getSeller().getId().equals(sellerId)) {
+            throw new RuntimeException("Không có quyền xóa sách này");
         }
 
         bookRepository.delete(existingBook);

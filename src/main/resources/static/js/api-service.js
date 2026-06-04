@@ -163,6 +163,36 @@ const ApiService = (() => {
                 body: JSON.stringify(data)
             });
             return response.json();
+        },
+        /**
+         * Upgrade current authenticated BUYER to SELLER
+         * @param {Object} payload { shopName, shopAddress }
+         * @returns {Object} response containing new accessToken and role info
+         */
+        becomeSeller: async (payload = {}) => {
+            const response = await fetch(`${API_BASE}/auth/become-seller`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(payload)
+            });
+
+            // Parse response body (could be JSON or text)
+            const parsed = await parseResponse(response);
+
+            // 202 Accepted: application submitted and pending admin approval
+            if (response.status === 202) {
+                return { status: 202, message: typeof parsed === 'string' ? parsed : (parsed?.message || parsed) };
+            }
+
+            // For other statuses use standard error handling
+            if (!response.ok) {
+                const message = (typeof parsed === 'string' && parsed.trim()) ? parsed : (parsed?.message || 'Request failed');
+                const error = new Error(message);
+                error.data = parsed;
+                throw error;
+            }
+
+            return parsed;
         }
     };
 
@@ -266,6 +296,17 @@ const ApiService = (() => {
         },
 
         /**
+         * Lấy chi tiết sách của seller hiện tại (Bảo mật - kiểm tra ownership)
+         * Chỉ trả về sách mà seller sở hữu
+         */
+        getOwnBook: async (bookId) => {
+            const response = await fetch(`${API_BASE}/books/seller/book/${bookId}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
          * Tạo sách mới (seller)
          */
         create: async (bookData) => {
@@ -324,6 +365,43 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/books/seller/${bookId}`, {
                 method: 'DELETE',
                 headers: getHeaders()
+            });
+            return handleResponse(response);
+        }
+    };
+
+    const Admin = {
+        listSellerApplications: async ({ q = '', page = 0, size = 10 } = {}) => {
+            const params = new URLSearchParams();
+            params.set('page', page);
+            params.set('size', size);
+            if (q && `${q}`.trim()) params.set('q', q.trim());
+
+            const response = await fetch(`${API_BASE}/admin/seller-applications?${params.toString()}`, { headers: getHeaders() });
+            return handleResponse(response);
+        },
+        approveSellerApplication: async (shopId) => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/approve`, {
+                method: 'PUT', headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+        rejectSellerApplication: async (shopId, reason) => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/reject`, {
+                method: 'PUT', headers: getHeaders(), body: JSON.stringify({ reason })
+            });
+            return handleResponse(response);
+        }
+        ,
+        resendEmail: async (shopId, type = 'rejected') => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/resend-email?type=${encodeURIComponent(type)}`, {
+                method: 'PUT', headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+        resendNotification: async (shopId, type = 'rejected') => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/resend-notification?type=${encodeURIComponent(type)}`, {
+                method: 'PUT', headers: getHeaders()
             });
             return handleResponse(response);
         }
@@ -555,11 +633,14 @@ const ApiService = (() => {
         /**
          * Checkout từ giỏ hàng
          */
-        checkout: async (shippingAddress) => {
+        checkout: async (shippingAddress, couponCode = null) => {
+            const body = { shippingAddress };
+            if (couponCode) body.couponCode = couponCode;
+            
             const response = await fetch(`${API_BASE}/orders/me/checkout`, {
                 method: 'POST',
                 headers: getHeaders(),
-                body: JSON.stringify({ shippingAddress })
+                body: JSON.stringify(body)
             });
             return handleResponse(response);
         },
@@ -610,7 +691,22 @@ const ApiService = (() => {
         },
 
         /**
-         * Cập nhật trạng thái sub-order
+         * Xác nhận sub-order - tự động chuyển trạng thái theo luồng:
+         * PROCESSING -> CONFIRMED -> SHIPPING -> COMPLETED
+         */
+        confirmSubOrder: async (subOrderId) => {
+            const response = await fetch(
+                `${API_BASE}/orders/sub-orders/${subOrderId}/confirm`,
+                {
+                    method: 'POST',
+                    headers: getHeaders()
+                }
+            );
+            return handleResponse(response);
+        },
+
+        /**
+         * Cập nhật trạng thái sub-order (dùng cho hủy đơn)
          */
         updateSubOrderStatus: async (subOrderId, status) => {
             const response = await fetch(
@@ -704,6 +800,18 @@ const ApiService = (() => {
     // ==========================================
     // PUBLIC API
     // ==========================================
+    /**
+     * Fetch wrapper that adds authentication headers (keeps caller able to inspect response)
+     * @param {string} path - absolute or relative path
+     * @param {object} options - fetch options
+     */
+    const fetchWithAuth = async (path, options = {}) => {
+        const merged = Object.assign({}, options);
+        const baseHeaders = getHeaders();
+        // If caller passed headers, merge; otherwise use baseHeaders
+        merged.headers = Object.assign({}, baseHeaders, options.headers || {});
+        return fetch(path, merged);
+    };
 
     return {
         // Utility

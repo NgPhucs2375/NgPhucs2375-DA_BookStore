@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const priceMinInput = document.getElementById('price-min-input');
     const priceMaxInput = document.getElementById('price-max-input');
     const applyPriceFilterBtn = document.getElementById('apply-price-filter-btn');
+    const publisherListEl = document.getElementById('publisher-filter-list');
+    const ratingFilterList = document.getElementById('rating-filter-list');
 
     if (!booksGrid) {
         return;
@@ -174,6 +176,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const renderPublisherList = (publishers = []) => {
+        if (!publisherListEl) return;
+        if (!Array.isArray(publishers) || publishers.length === 0) {
+            publisherListEl.innerHTML = '<li class="text-sm text-gray-500">Không có dữ liệu NXB.</li>';
+            return;
+        }
+
+        publisherListEl.innerHTML = publishers.map((p) => `
+            <li>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" class="publisher-filter-checkbox" data-publisher="${encodeURIComponent(p)}">
+                    <span class="group-hover:text-brand-brown transition-colors">${p}</span>
+                </label>
+            </li>
+        `).join('');
+    };
+
+    const loadPublishers = async () => {
+        try {
+            // Gather publisher list from server-side via book search (first page) to avoid adding new API
+            const resp = await ApiService.Book.search('', null, 0, 200);
+            const books = Array.isArray(resp?.content) ? resp.content : [];
+            const pubs = Array.from(new Set(books.map(b => b.publisher).filter(Boolean))).slice(0, 20);
+            renderPublisherList(pubs);
+        } catch (err) {
+            console.warn('Không tải được danh sách NXB', err);
+            renderPublisherList([]);
+        }
+    };
+
     const clearFilters = () => {
         state.q = '';
         state.categoryId = null;
@@ -211,8 +243,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const applyPublisherFilter = (books) => {
+        if (!state.publishers || state.publishers.length === 0) return books;
+        return books.filter((b) => state.publishers.includes(b.publisher));
+    };
+
+    const applyRatingFilter = (books) => {
+        // Backend stores reviews and ratings; frontend will filter by book.averageRating if present
+        if (!state.minRating) return books;
+        return books.filter((b) => (Number(b.averageRating || 0) >= Number(state.minRating)));
+    };
+
     const setCategory = (categoryId) => {
         state.categoryId = categoryId;
+        state.page = 0;
+        loadBooks();
+    };
+
+    const applyAdvancedFiltersFromUi = () => {
+        // Publishers
+        const checkedPublishers = Array.from(document.querySelectorAll('.publisher-filter-checkbox:checked')).map(cb => decodeURIComponent(cb.getAttribute('data-publisher')));
+        state.publishers = checkedPublishers.length > 0 ? checkedPublishers : null;
+
+        // Ratings
+        const checkedRatings = Array.from(document.querySelectorAll('.rating-filter-checkbox:checked')).map(cb => Number(cb.getAttribute('data-min-rating')));
+        state.minRating = checkedRatings.length > 0 ? Math.max(...checkedRatings) : null;
+
         state.page = 0;
         loadBooks();
     };
@@ -279,14 +335,16 @@ document.addEventListener('DOMContentLoaded', () => {
             : `<div class="book-cover w-3/4 h-5/6 bg-brand-brown border-[5px] border-white shadow-md flex items-center justify-center text-white text-center font-bold px-3 leading-snug">${title}</div>`;
 
         return `
-            <a href="${detailUrl}" class="product-card group cursor-pointer h-full">
+            <a href="${detailUrl}" data-detail-url="${detailUrl}" class="product-card group cursor-pointer h-full">
                 <div class="product-card-inner bg-white border border-brand-border rounded-xl p-4 h-full flex flex-col relative">
                     <div class="relative w-full h-60 bg-brand-bg border border-brand-border rounded-lg mb-4 flex items-center justify-center overflow-hidden">
                         ${coverHtml}
                         <div class="quick-action-group absolute bottom-3 w-full flex justify-center gap-3 px-4">
                             ${createWishlistButton(book, isSaved)}
                             <button type="button" title="Them vao gio" data-add-to-cart="true" data-book-id="${book.id}" class="bg-white text-brand-dark p-2.5 rounded-full shadow-md hover:bg-brand-brown hover:text-white transition-colors">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+</svg>
                             </button>
                         </div>
                     </div>
@@ -372,11 +430,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.q,
                 state.categoryId,
                 state.page,
-                state.size
+                state.size,
+                {
+                    author: state.author || null,
+                    minPrice: state.minPrice != null ? state.minPrice : null,
+                    maxPrice: state.maxPrice != null ? state.maxPrice : null,
+                    publishYearFrom: state.publishYearFrom || null,
+                    publishYearTo: state.publishYearTo || null,
+                    sort: state.sort || null
+                }
             );
 
             const serverBooks = Array.isArray(response?.content) ? response.content : [];
-            const books = applySort(applyPriceFilter(serverBooks));
+            let books = serverBooks.slice();
+            // client-side advanced filters (rating & publisher still applied locally to support UI selections)
+            books = applyPublisherFilter(books);
+            books = applyRatingFilter(books);
+            books = applySort(books);
 
             if (books.length === 0) {
                 renderBooksEmpty();
@@ -394,6 +464,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     booksGrid.addEventListener('click', (event) => {
+        const card = event.target.closest('.product-card[data-detail-url]');
+        if (card && !event.target.closest('button, a, input, label, select, textarea')) {
+            window.location.href = card.getAttribute('data-detail-url');
+            return;
+        }
+
         const wishlistButton = event.target.closest('button[data-toggle-wishlist="true"]');
         if (wishlistButton) {
             event.preventDefault();
@@ -457,6 +533,26 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadBooks();
     })();
 
+    // Header category nav: scroll to category section and prepare for in-place filtering
+    const navCategoryLink = document.getElementById('nav-category-link');
+    if (navCategoryLink) {
+        navCategoryLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const section = document.getElementById('danh-muc-sach');
+            if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // After scrolling, ensure category buttons are bound so user can click to filter
+            setTimeout(() => {
+                try {
+                    bindCategoryEvents();
+                    const firstBtn = homeCategoryGrid?.querySelector('[data-category-id]');
+                    if (firstBtn) firstBtn.focus();
+                } catch (err) {
+                    console.error('Category nav handler failed:', err);
+                }
+            }, 500);
+        });
+    }
+
     const token = localStorage.getItem('accessToken');
     const role = localStorage.getItem('userRole');
     const accountLink = document.getElementById('header-account-link');
@@ -473,4 +569,46 @@ document.addEventListener('DOMContentLoaded', () => {
             accountText.textContent = 'Quan ly';
         }
     }
+
+    // ===== 3D Tilt Effect for Product Cards =====
+    const cards = document.querySelectorAll('.product-card');
+
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateX = ((y - centerY) / centerY) * -6; // Max rotation 6 degrees
+            const rotateY = ((x - centerX) / centerX) * 6;  // Max rotation 6 degrees
+
+            card.style.setProperty('--rotateX', `${rotateY}deg`);
+            card.style.setProperty('--rotateY', `${rotateX}deg`);
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.setProperty('--rotateX', '0deg');
+            card.style.setProperty('--rotateY', '0deg');
+        });
+    });
+
+    // Navigate to detail page on card click (excluding buttons/links)
+    booksGrid?.addEventListener('click', (event) => {
+        const card = event.target.closest('.product-card[data-detail-url]');
+        if (!card) {
+            return;
+        }
+
+        if (event.target.closest('button, a, input, label, select, textarea')) {
+            return;
+        }
+
+        const detailUrl = card.getAttribute('data-detail-url');
+        if (detailUrl) {
+            window.location.href = detailUrl;
+        }
+    });
 });

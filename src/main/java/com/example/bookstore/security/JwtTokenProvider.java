@@ -2,6 +2,7 @@ package com.example.bookstore.security;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -10,6 +11,8 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
 
 @Component
 public class JwtTokenProvider {
@@ -28,14 +31,37 @@ public class JwtTokenProvider {
     }
 
     public String createToken(Long userId, String role) {
+        return createToken(userId, List.of(role), "SELLER".equalsIgnoreCase(role) ? userId : null);
+    }
+
+    public String createToken(Long userId, List<String> roles, Long sellerId) {
         long now = Instant.now().getEpochSecond();
         long exp = now + expirationSeconds;
 
-        String headerJson = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
-        String payloadJson = String.format("{\"userId\":%d,\"role\":\"%s\",\"iat\":%d,\"exp\":%d}", userId, role, now, exp);
+        Long normalizedSellerId = sellerId;
+        if (normalizedSellerId == null && roles != null && roles.stream().filter(Objects::nonNull).anyMatch(role -> "SELLER".equalsIgnoreCase(role))) {
+            normalizedSellerId = userId;
+        }
 
+        ObjectNode payloadNode = OBJECT_MAPPER.createObjectNode();
+        payloadNode.put("userId", userId);
+        payloadNode.putPOJO("roles", roles == null ? List.of() : roles);
+        if (normalizedSellerId == null) {
+            payloadNode.putNull("sellerId");
+        } else {
+            payloadNode.put("sellerId", normalizedSellerId);
+        }
+        payloadNode.put("iat", now);
+        payloadNode.put("exp", exp);
+
+        String headerJson = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
         String header = base64UrlEncode(headerJson.getBytes(StandardCharsets.UTF_8));
-        String payload = base64UrlEncode(payloadJson.getBytes(StandardCharsets.UTF_8));
+        String payload;
+        try {
+            payload = base64UrlEncode(OBJECT_MAPPER.writeValueAsBytes(payloadNode));
+        } catch (Exception ex) {
+            throw new IllegalStateException("Cannot serialize JWT payload", ex);
+        }
         String signature = sign(header + "." + payload);
         return header + "." + payload + "." + signature;
     }
@@ -46,6 +72,52 @@ public class JwtTokenProvider {
             return null;
         }
         return payload.get("userId").asLong();
+    }
+
+    public List<String> extractRoles(String token) {
+        JsonNode payload = validateAndParse(token);
+        if (payload == null) {
+            return List.of();
+        }
+
+        JsonNode rolesNode = payload.get("roles");
+        if (rolesNode != null && rolesNode.isArray()) {
+            List<String> roles = new java.util.ArrayList<>();
+            for (JsonNode roleNode : rolesNode) {
+                if (roleNode != null && !roleNode.isNull()) {
+                    roles.add(roleNode.asText());
+                }
+            }
+            if (!roles.isEmpty()) {
+                return roles;
+            }
+        }
+
+        if (payload.hasNonNull("role")) {
+            return List.of(payload.get("role").asText());
+        }
+
+        return List.of();
+    }
+
+    public Long extractSellerId(String token) {
+        JsonNode payload = validateAndParse(token);
+        if (payload == null) {
+            return null;
+        }
+
+        if (payload.hasNonNull("sellerId")) {
+            return payload.get("sellerId").asLong();
+        }
+
+        Long userId = extractUserId(token);
+        if (userId == null) {
+            return null;
+        }
+
+        List<String> roles = extractRoles(token);
+        boolean sellerRole = roles.stream().anyMatch(role -> "SELLER".equalsIgnoreCase(role));
+        return sellerRole ? userId : null;
     }
 
     private JsonNode validateAndParse(String token) {

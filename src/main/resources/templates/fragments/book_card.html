@@ -26,11 +26,12 @@
                th:aria-label="'Xem chi tiết ' + ${title}"></a>
 
             <div class="relative h-[280px] sm:h-[320px] w-full bg-gray-50 rounded-t-xl overflow-hidden p-4 flex items-center justify-center">
-                <img th:src="${imgUrl}"
+                 <img th:src="${imgUrl != null and imgUrl != '' ? imgUrl : 'https://via.placeholder.com/280x380?text=No+Cover'}"
                      th:alt="'Bìa sách ' + ${title}"
                      class="book-cover relative w-auto h-full object-contain drop-shadow-[0_15px_20px_rgba(74,59,50,0.2)] transition-all duration-500 ease-out group-hover:scale-110 group-hover:-translate-y-2"
                      loading="lazy"
-                     decoding="async" />
+                     decoding="async"
+                     onerror="this.onerror=null;this.src='https://via.placeholder.com/280x380?text=No+Cover'" />
             </div>
 
             <!-- Content Area -->

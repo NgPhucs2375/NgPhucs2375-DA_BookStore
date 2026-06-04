@@ -6,10 +6,12 @@ import com.example.bookstore.dto.NotificationListResponse;
 import com.example.bookstore.model.Notification;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.NotificationPriority;
+import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.repository.NotificationRepository;
 import com.example.bookstore.repository.UserRepository;
 import com.example.bookstore.sse.NotificationDeliveryQueue;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -101,7 +103,7 @@ public class NotificationService {
      *   - Client can fetch via GET /api/notifications/me (polling fallback)
      *   - Delivery is best-effort, not guaranteed
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public NotificationItemResponse createNotification(Long creatorUserId, Long targetUserId, NotificationCreateRequest req) {
         validateCreateRequest(req);
 
@@ -133,6 +135,30 @@ public class NotificationService {
         if (firstCreated == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No users available for broadcast");
         }
+        return firstCreated;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public NotificationItemResponse createNotificationForAdmins(Long creatorUserId, NotificationCreateRequest req) {
+        validateCreateRequest(req);
+
+        List<User> admins = userRepository.findAll().stream()
+            .filter(user -> user.getRole() == UserRole.ADMIN)
+            .toList();
+
+        if (admins.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No admin users available for notification");
+        }
+
+        NotificationItemResponse firstCreated = null;
+        for (User admin : admins) {
+            Notification notification = saveNotification(admin, req);
+            deliveryQueue.enqueue(notification, "SSE");
+            if (firstCreated == null) {
+                firstCreated = toItemResponse(notification);
+            }
+        }
+
         return firstCreated;
     }
 

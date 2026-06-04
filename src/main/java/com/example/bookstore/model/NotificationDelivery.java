@@ -120,7 +120,8 @@ public class NotificationDelivery {
      *   WHERE created_at >= @start_date
      */
     @Column(name = "sent_at")
-    private LocalDateTime sentAt;
+    @Builder.Default
+    private LocalDateTime sentAt = null;
     
     /**
      * Exception message from last failed delivery attempt
@@ -156,6 +157,7 @@ public class NotificationDelivery {
      *   - Metrics: avg attempts per delivery
      */
     @Column(name = "attempt_count", nullable = false)
+    @Builder.Default
     private Integer attemptCount = 0;
     
     /**

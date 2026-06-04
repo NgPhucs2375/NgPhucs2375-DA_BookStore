@@ -18,11 +18,11 @@ import java.time.LocalDateTime;
 @Builder
 public class SellerShop {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id", referencedColumnName = "id",nullable = false,unique = true)
+    @OneToOne(fetch = FetchType.EAGER)
+    @MapsId
+    @JoinColumn(name = "seller_id", referencedColumnName = "id", nullable = false, unique = true)
     private User seller;
 
     @Column(nullable = false, unique = true)
@@ -49,6 +49,9 @@ public class SellerShop {
     private String address;
     private String city;
     private String province;
+
+    @Column(name = "rejection_reason", columnDefinition = "NVARCHAR(MAX)")
+    private String rejectionReason;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

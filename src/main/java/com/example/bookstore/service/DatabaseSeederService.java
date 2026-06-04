@@ -2,14 +2,13 @@ package com.example.bookstore.service;
 
 import com.example.bookstore.dto.SeedRequest;
 import com.example.bookstore.dto.SeedResult;
-import com.example.bookstore.model.Book;
-import com.example.bookstore.model.Category;
-import com.example.bookstore.model.User;
+import com.example.bookstore.model.*;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.UserRepository;
+import com.example.bookstore.repository.SellerShopRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +36,12 @@ public class DatabaseSeederService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final SellerShopRepository sellerShopRepository;
+    private final SellerShopService sellerShopService;
     private final GeminiService geminiService;
+    private final com.example.bookstore.repository.OrderRepository orderRepository;
+    private final com.example.bookstore.repository.SubOrderRepository subOrderRepository;
+    private final com.example.bookstore.repository.OrderItemRepository orderItemRepository;
 
     @Value("${app.seeder.max-books:300}")
     private int defaultMaxBooks;
@@ -94,7 +98,54 @@ public class DatabaseSeederService {
                 result.getCategoriesAdded(), result.getCategoriesUpdated(), result.getUsersAdded(),
                 result.getBooksAdded(), result.getBooksSkipped());
 
+        // Auto-seed a sample order for buyer@gmail.com to help verify buyer dashboard
+        try {
+            User buyer = userRepository.findByUsername("buyer@gmail.com");
+            if (buyer != null && orderRepository.count() == 0) {
+                List<Book> books = bookRepository.findAll();
+                if (!books.isEmpty()) {
+                    seedSampleOrderForBuyer(buyer, books.get(0));
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Auto sample order seeding failed: {}", e.getMessage());
+        }
+
         return result;
+    }
+
+    @Transactional
+    public void seedSampleOrderForBuyer(User buyer, Book sampleBook) {
+        if (buyer == null || sampleBook == null) return;
+        if (orderRepository.count() > 0) return;
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .shippingAddress(buyer.getShopAddress() != null ? buyer.getShopAddress() : "Địa chỉ mẫu")
+                .shippingFee(30000.0)
+                .discountAmount(0.0)
+                .couponCode(null)
+                .totalAmount(sampleBook.getPrice() + 30000.0)
+                .build();
+
+        SubOrder sub = SubOrder.builder()
+                .parentOrder(order)
+                .seller(sampleBook.getSeller())
+                .status(com.example.bookstore.model.enums.OrderStatus.SHIPPING)
+                .subTotal(sampleBook.getPrice())
+                .build();
+
+        com.example.bookstore.model.OrderItem item = com.example.bookstore.model.OrderItem.builder()
+                .subOrder(sub)
+                .book(sampleBook)
+                .unitPrice(sampleBook.getPrice())
+                .quantity(1)
+                .build();
+
+        sub.setItems(List.of(item));
+        order.setSubOrders(List.of(sub));
+
+        orderRepository.save(order);
     }
 
     private boolean getOrDefault(Boolean value, boolean defaultValue) {
@@ -164,7 +215,8 @@ public class DatabaseSeederService {
     private List<User> seedUsers(SeedResult result) {
         AtomicInteger added = new AtomicInteger(0);
 
-        User admin = ensureUser("admin@gmail.com", UserRole.ADMIN, "admin123", null, null, added);
+        ensureUser("admin@gmail.com", UserRole.ADMIN, "admin123", null, null, added);
+        ensureUser("buyer@gmail.com", UserRole.BUYER, "Buyer@123", null, null, added);
         User sellerNhaNam = ensureUser(
                 "shop_nha_nam@gmail.com",
                 UserRole.SELLER,
@@ -181,6 +233,14 @@ public class DatabaseSeederService {
                 "District 3, HCMC",
                 added
         );
+
+        // Create SellerShop records for seeded sellers if they don't already exist
+        if (sellerNhaNam != null) {
+            ensureSellerShop(sellerNhaNam, "Nha Nam Official");
+        }
+        if (sellerTre != null) {
+            ensureSellerShop(sellerTre, "NXB Tre Official");
+        }
 
         result.setUsersAdded(added.get());
         return List.of(sellerNhaNam, sellerTre).stream().filter(u -> u != null).toList();
@@ -214,6 +274,40 @@ public class DatabaseSeederService {
         User saved = userRepository.save(builder.build());
         added.incrementAndGet();
         return saved;
+    }
+
+    /**
+     * Ensure SellerShop record exists for a seller user
+     * Creates SellerShop if it doesn't exist, with a unique slug generated from shop name
+     */
+    private void ensureSellerShop(User seller, String shopName) {
+        if (seller == null || seller.getRole() != UserRole.SELLER) {
+            return;
+        }
+
+        // Check if SellerShop already exists for this seller
+        if (sellerShopRepository.findBySellerId(seller.getId()).isPresent()) {
+            return;
+        }
+
+        // Generate unique slug using SellerShopService
+        String slug = sellerShopService.generateUniqueSlug(shopName);
+
+        // Create new SellerShop with all default values
+        SellerShop newSellerShop = SellerShop.builder()
+                .seller(seller)
+                .slug(slug)
+                .shopName(shopName)
+                .description("Cửa hàng sách chính thức của " + shopName)
+                .address(seller.getShopAddress() != null ? seller.getShopAddress() : shopName + " - Main Store")
+                .city("Ho Chi Minh")
+                .province("Ho Chi Minh")
+                .contactEmail(seller.getUsername())
+                .contactPhone("")
+                .approvalStatus(ApprovalStatus.PENDING)
+                .build();
+
+        sellerShopRepository.save(newSellerShop);
     }
 
     private List<Book> readAndSaveFromCsv(
@@ -263,7 +357,12 @@ public class DatabaseSeederService {
                 Book book = new Book();
                 book.setTitle(title);
                 book.setAuthor(author);
-                book.setPublishYear(data[3].replace("\"", "").trim());
+                String publishYearRaw = data[3].replace("\"", "").trim();
+                try {
+                    book.setPublishYear(Integer.parseInt(publishYearRaw));
+                } catch (NumberFormatException ex) {
+                    book.setPublishYear(null);
+                }
                 book.setPublisher(data[6].replace("\"", "").trim());
                 book.setImageUrl(data[7].replace("\"", "").trim());
 

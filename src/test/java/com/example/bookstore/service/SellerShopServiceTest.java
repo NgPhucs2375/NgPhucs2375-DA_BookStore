@@ -144,4 +144,31 @@ class SellerShopServiceTest {
 
         assertEquals("Không tìm thấy cửa hàng của bạn.", ex.getMessage());
     }
+
+    @Test
+    void changeStatus_shouldRejectSelfApproval() {
+        Long sellerId = 1L;
+
+        User seller = User.builder()
+            .id(sellerId)
+            .username("seller")
+            .passwordHash("x")
+            .role(UserRole.SELLER)
+            .build();
+
+        SellerShop shop = SellerShop.builder()
+            .id(99L)
+            .seller(seller)
+            .slug("seller-shop")
+            .shopName("Seller Shop")
+            .approvalStatus(ApprovalStatus.PENDING)
+            .build();
+
+        when(shopRepository.findBySellerId(sellerId)).thenReturn(Optional.of(shop));
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> sellerShopService.changeStatus(sellerId, ApprovalStatus.APPROVED));
+
+        assertEquals("Chỉ admin mới có quyền duyệt cửa hàng.", ex.getMessage());
+    }
 }

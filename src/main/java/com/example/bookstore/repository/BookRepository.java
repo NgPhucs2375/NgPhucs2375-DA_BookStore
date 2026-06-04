@@ -2,7 +2,6 @@ package com.example.bookstore.repository;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.User;
-import com.example.bookstore.model.OrderItem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,54 +18,68 @@ public interface BookRepository extends JpaRepository<Book, Long>{
 
     List<Book> findBySeller(User seller);
 
+    @Query("SELECT b.approvalStatus FROM Book b WHERE b.id = :bookId")
+    ApprovalStatus findApprovalStatusById(@Param("bookId") Long bookId);
+
+    @Query("""
+            SELECT CASE WHEN COUNT(b) > 0 THEN TRUE ELSE FALSE END
+            FROM Book b
+            WHERE b.id = :bookId
+              AND b.seller.id = :sellerId
+            """)
+    boolean existsByIdAndSellerId(@Param("bookId") Long bookId, @Param("sellerId") Long sellerId);
+
     // S02: Lấy sách theo trạng thái (Có phân trang cho Admin)
     Page<Book> findByApprovalStatus(ApprovalStatus approvalStatus, Pageable pageable);
 
     List<Book> findByApprovalStatus(ApprovalStatus approvalStatus);
 
+    // 🆕 NEW: Các phương thức hỗ trợ Admin quản lý
+    List<Book> findByIsActive(boolean isActive);
+
+    Page<Book> findByIsActive(boolean isActive, Pageable pageable);
+
+    Page<Book> findByApprovalStatusAndIsActive(
+            ApprovalStatus status,
+            boolean isActive,
+            Pageable pageable
+    );
+
+    Page<Book> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+
         @Query("""
             SELECT b FROM Book b
             LEFT JOIN b.category c
+            LEFT JOIN b.seller s
             WHERE b.approvalStatus = :status
+              AND b.isActive = true
               AND (
                 :q IS NULL
                 OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
                 OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
                 OR LOWER(COALESCE(b.publisher, '')) LIKE LOWER(CONCAT('%', :q, '%'))
               )
-              AND (
-                :categoryId IS NULL
-                OR c.id = :categoryId
-              )
-              AND (
-                :author IS NULL
-                OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%'))
-              )
-              AND (
-                :minPrice IS NULL
-                OR b.price >= :minPrice
-              )
-              AND (
-                :maxPrice IS NULL
-                OR b.price <= :maxPrice
-              )
-              AND (
-                :publishYearFrom IS NULL
-                OR b.publishYear >= :publishYearFrom
-              )
-              AND (
-                :publishYearTo IS NULL
-                OR b.publishYear <= :publishYearTo
-              )
+              AND (:categoryIds IS NULL OR c.id IN :categoryIds)
+              AND (:sellerIds IS NULL OR s.id IN :sellerIds)
+              AND (:author IS NULL OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%')))
+              AND (:minPrice IS NULL OR b.price >= :minPrice)
+              AND (:maxPrice IS NULL OR b.price <= :maxPrice)
+              AND (:minRating IS NULL OR b.averageRating >= :minRating)
+              AND (:inStock IS NULL OR :inStock = false OR b.stockQuantity > 0)
+              AND (:publishYearFrom IS NULL OR b.publishYear >= :publishYearFrom)
+              AND (:publishYearTo IS NULL OR b.publishYear <= :publishYearTo)
             """)
         Page<Book> searchApprovedBooks(
             @Param("q") String q,
-            @Param("categoryId") Long categoryId,
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("sellerIds") List<Long> sellerIds,
             @Param("author") String author,
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice,
-            @Param("publishYearFrom") String publishYearFrom,
-            @Param("publishYearTo") String publishYearTo,
+            @Param("minRating") Double minRating,
+            @Param("inStock") Boolean inStock,
+            @Param("publishYearFrom") Integer publishYearFrom,
+            @Param("publishYearTo") Integer publishYearTo,
             @Param("status") ApprovalStatus status,
             Pageable pageable
         );

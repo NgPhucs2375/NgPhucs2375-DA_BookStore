@@ -16,6 +16,14 @@ import java.util.List;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByBuyer(User buyer);
 
+              @Query("""
+                                          SELECT CASE WHEN COUNT(o) > 0 THEN TRUE ELSE FALSE END
+                                          FROM Order o
+                                          WHERE o.id = :orderId
+                                                 AND o.buyer.id = :buyerId
+                                          """)
+              boolean existsByIdAndBuyerId(@Param("orderId") Long orderId, @Param("buyerId") Long buyerId);
+
     List<Order> findByBuyerOrderByCreatedAtDesc(User buyer);
 
     /**
@@ -53,4 +61,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                                        @Param("minPrice") Double minPrice,
                                        @Param("maxPrice") Double maxPrice,
                                        Pageable pageable);
+
+    // 🆕 NEW: Các phương thức hỗ trợ Admin quản lý đơn hàng
+    Page<Order> findAll(Pageable pageable);
+
+    Page<Order> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
+
+    // Tìm kiếm đơn hàng theo từ khóa trong tên người mua hoặc mã đơn hàng
+    @Query("""
+        SELECT o FROM Order o
+        WHERE CAST(o.id AS string) LIKE %:keyword% 
+        OR LOWER(o.buyer.username) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        ORDER BY o.createdAt DESC
+    """)
+    Page<Order> searchOrders(@Param("keyword") String keyword, Pageable pageable);
 }

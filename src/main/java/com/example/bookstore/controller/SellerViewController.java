@@ -7,16 +7,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
-@RequestMapping("/seller/book")
+@RequestMapping("/seller")
 public class SellerViewController {
 
-    @GetMapping("/form")
+    @GetMapping("/book/form")
     public String showBookForm(@RequestParam(required = false) Long id, Model model) {
-        // Đưa cái ID vào model để Thymeleaf hoặc JS có thể lấy nếu cần (không bắt buộc vì mình lấy qua URL)
+        // 1. Dữ liệu xử lý form sách
         model.addAttribute("bookId", id);
 
-        // Trả về tên file HTML của bro trong thư mục src/main/resources/templates
-        // Ví dụ: product_detail.html -> trả về "product_detail"
+        // 2. Dữ liệu hiển thị layout giao diện (Gộp từ PanelPageController sang)
+        model.addAttribute("pageTitle", "Quản lý sách");
+        model.addAttribute("pageSubtitle", "Thêm mới hoặc cập nhật thông tin sách");
+        model.addAttribute("activeMenu", "seller-inventory");
+
         return "seller/Seller_Product_Detail";
+    }
+
+    @GetMapping("/shop/form")
+    public String showShopForm(Model model) {
+        // Dữ liệu hiển thị layout giao diện
+        model.addAttribute("pageTitle", "Quản lý cửa hàng");
+        model.addAttribute("pageSubtitle", "Cập nhật thông tin cửa hàng của bạn");
+        model.addAttribute("activeMenu", "seller-shop");
+
+        return "seller/Shop_Profile_Edit";
     }
 }

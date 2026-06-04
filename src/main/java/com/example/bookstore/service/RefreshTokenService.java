@@ -30,19 +30,20 @@ public class RefreshTokenService {
 
     @Transactional
     public RefreshToken createRefreshToken(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Delete any existing token for this user to enforce one-session-per-user
-        refreshTokenRepository.deleteByUser(user);
+        // Kiểm tra xem User này đã có bản ghi token nào chưa
+        RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
+                .orElse(new RefreshToken()); // Nếu chưa có thì khởi tạo đối tượng mới
 
-        RefreshToken refreshToken = RefreshToken.builder()
-                .user(user)
-                .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(refreshTokenDurationMs))
-                .build();
+        // Cập nhật dữ liệu mới (Dù insert hay update đều dùng chung đoạn này)
+        refreshToken.setUser(user);
+        refreshToken.setToken(UUID.randomUUID().toString());
+        refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
+
         return refreshTokenRepository.save(refreshToken);
     }
-
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
             refreshTokenRepository.delete(token);

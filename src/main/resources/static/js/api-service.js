@@ -8,7 +8,7 @@
  *   const books = await ApiService.searchBooks('keyword');
  */
 
-const ApiService = (() => {
+var ApiService = window.ApiService || (() => {
     const API_BASE = '/api';
 
     // ==========================================
@@ -839,8 +839,14 @@ const ApiService = (() => {
             localStorage.setItem('userId', authData.userId);
             localStorage.setItem('accessToken', authData.accessToken);
             localStorage.setItem('userRole', authData.role);
-        },
 
+            // Nếu có sellerId thì lưu, nếu không có (như ADMIN/BUYER) thì phải xóa sạch key cũ đi
+            if (authData.sellerId) {
+                localStorage.setItem('sellerId', String(authData.sellerId));
+            } else {
+                localStorage.removeItem('sellerId');
+            }
+        },
         // Helper: Logout
         logout: () => {
             localStorage.removeItem('userId');

@@ -6,6 +6,7 @@ import com.example.bookstore.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.bookstore.repository.BookRepository;
 
+
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,6 +36,7 @@ public class BookController {
 
     @Autowired
     private SecurityUtils securityUtils;
+
 
     @GetMapping // Bao hieu rang ham getAllBooks se duoc chay khi co ai do truy cap vao dia chi goc bang phuong thuc Get nhu khi go link tren trinh duyet
     public Page<Book> getBooks(
@@ -210,7 +212,7 @@ public class BookController {
         }
 
         if (book.getDescription() != null) {
-            book.setDescription(securityUtils.sanitizeHtml(book.getDescription()));
+            book.setDescription(securityUtils.sanitize(book.getDescription()));
         }
 
         try {
@@ -239,7 +241,7 @@ public class BookController {
         }
 
         if (bookDetails.getDescription() != null) {
-            bookDetails.setDescription(securityUtils.sanitizeHtml(bookDetails.getDescription()));
+            bookDetails.setDescription(securityUtils.sanitize(bookDetails.getDescription()));
         }
 
         try {

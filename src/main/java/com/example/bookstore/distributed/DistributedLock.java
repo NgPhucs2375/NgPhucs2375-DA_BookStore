@@ -20,9 +20,8 @@ public class DistributedLock {
     @Column(name = "lock_expires_at", nullable = false)
     private LocalDateTime lockExpiresAt = LocalDateTime.now();
 
-    // [1] THÊM BIẾN ACQUIRED_AT VÀO ĐÂY
-    @Column(name = "acquired_at", nullable = false)
-    private LocalDateTime acquiredAt = LocalDateTime.now();
+    @Column(name = "acquired_at", nullable = false, columnDefinition = "datetime2(6) DEFAULT SYSUTCDATETIME()")
+    private LocalDateTime acquiredAt;
 
     // Constructors
     public DistributedLock() {}

@@ -70,6 +70,9 @@ public class Book {
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
+    @Column(name = "is_pinned", nullable = false)
+    private boolean isPinned = false;
+
     @PrePersist
     public void onCreate() {
         if (approvalStatus == null) {

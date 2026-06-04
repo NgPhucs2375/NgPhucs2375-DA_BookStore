@@ -358,6 +358,14 @@ var ApiService = window.ApiService || (() => {
                         return response.text();
                     }
                 },
+        togglePin: async (bookId) => {
+            const response = await fetch(`${API_BASE}/books/seller/${bookId}/pin`, {
+                method: 'PATCH',
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
         /**
          * Xóa sách
          */

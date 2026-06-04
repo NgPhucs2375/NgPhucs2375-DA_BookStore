@@ -48,7 +48,7 @@ public class AdminSellerController {
         int normalizedSize = Math.min(Math.max(size, 1), 100);
         String keyword = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
 
-        List<SellerShop> filtered = shopRepository.findByApprovalStatus(ApprovalStatus.PENDING)
+        List<SellerShop> filtered = shopRepository.findAll()
             .stream()
             .filter(shop -> keyword.isBlank() || matchesKeyword(shop, keyword))
             .sorted((a, b) -> {

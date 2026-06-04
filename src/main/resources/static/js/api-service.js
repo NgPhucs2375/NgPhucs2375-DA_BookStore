@@ -175,7 +175,24 @@ const ApiService = (() => {
                 headers: getHeaders(),
                 body: JSON.stringify(payload)
             });
-            return handleResponse(response);
+
+            // Parse response body (could be JSON or text)
+            const parsed = await parseResponse(response);
+
+            // 202 Accepted: application submitted and pending admin approval
+            if (response.status === 202) {
+                return { status: 202, message: typeof parsed === 'string' ? parsed : (parsed?.message || parsed) };
+            }
+
+            // For other statuses use standard error handling
+            if (!response.ok) {
+                const message = (typeof parsed === 'string' && parsed.trim()) ? parsed : (parsed?.message || 'Request failed');
+                const error = new Error(message);
+                error.data = parsed;
+                throw error;
+            }
+
+            return parsed;
         }
     };
 
@@ -348,6 +365,43 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/books/seller/${bookId}`, {
                 method: 'DELETE',
                 headers: getHeaders()
+            });
+            return handleResponse(response);
+        }
+    };
+
+    const Admin = {
+        listSellerApplications: async ({ q = '', page = 0, size = 10 } = {}) => {
+            const params = new URLSearchParams();
+            params.set('page', page);
+            params.set('size', size);
+            if (q && `${q}`.trim()) params.set('q', q.trim());
+
+            const response = await fetch(`${API_BASE}/admin/seller-applications?${params.toString()}`, { headers: getHeaders() });
+            return handleResponse(response);
+        },
+        approveSellerApplication: async (shopId) => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/approve`, {
+                method: 'PUT', headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+        rejectSellerApplication: async (shopId, reason) => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/reject`, {
+                method: 'PUT', headers: getHeaders(), body: JSON.stringify({ reason })
+            });
+            return handleResponse(response);
+        }
+        ,
+        resendEmail: async (shopId, type = 'rejected') => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/resend-email?type=${encodeURIComponent(type)}`, {
+                method: 'PUT', headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+        resendNotification: async (shopId, type = 'rejected') => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/resend-notification?type=${encodeURIComponent(type)}`, {
+                method: 'PUT', headers: getHeaders()
             });
             return handleResponse(response);
         }

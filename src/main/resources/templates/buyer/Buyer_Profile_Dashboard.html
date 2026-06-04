@@ -71,6 +71,7 @@
                     <button id="becomeSellerBtn" class="border border-brand-dark text-brand-dark px-4 py-2 rounded-lg font-semibold hover:bg-brand-cream transition">Trở Thành Người Bán</button>
                     <button onclick="switchTab('settings')" class="border border-brand-orange text-brand-orange px-4 py-2 rounded-lg font-semibold hover:bg-brand-orange-light transition">Cài Đặt Tài Khoản</button>
                 </div>
+                <div id="sellerApplicationStatus" class="mt-3"></div>
             </div>
         </div>
     </div>
@@ -454,6 +455,39 @@
                     statusContainer.textContent = 'Chưa Xác Minh';
                 }
             }
+            // Seller application status
+            try {
+                const s = profile.sellerShop;
+                const statusEl = document.getElementById('sellerApplicationStatus');
+                if (!statusEl) return;
+                if (s && s.approvalStatus) {
+                    let text = '';
+                    if (s.approvalStatus === 'PENDING') {
+                        text = '<div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">Yêu cầu trở thành người bán: <strong>Đang chờ duyệt</strong>. Bạn sẽ nhận email khi admin quyết định.</div>';
+                    } else if (s.approvalStatus === 'APPROVED') {
+                        text = '<div class="p-3 bg-green-50 border border-green-200 rounded-lg text-sm">Yêu cầu trở thành người bán: <strong>Đã được duyệt</strong>. Kiểm tra email để biết chi tiết.' + (s.slug ? ` <a href="/shop/${s.slug}" class="font-bold text-brand-blue">Đi tới gian hàng</a>` : '') + '</div>';
+                    } else if (s.approvalStatus === 'REJECTED') {
+                        text = '<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm">Yêu cầu trở thành người bán: <strong>Không được duyệt</strong>.' + (s.rejectionReason ? ` Lý do: <strong class="text-red-700">${s.rejectionReason}</strong>.` : '') + ' Kiểm tra email để biết chi tiết và gửi lại yêu cầu sau khi chỉnh sửa.' + ' <button id="editResubmitBtn" class="ml-3 px-3 py-1 bg-brand-cream border rounded">Sửa & Gửi Lại</button>' + '</div>';
+                    } else {
+                        text = '';
+                    }
+                    statusEl.innerHTML = text;
+                    // attach click handler for edit/resubmit
+                    setTimeout(() => {
+                        const btn = document.getElementById('editResubmitBtn');
+                        if (btn) {
+                            btn.addEventListener('click', () => {
+                                try {
+                                    sessionStorage.setItem('sellerApplicationDraft', JSON.stringify(s));
+                                } catch (e) {}
+                                window.location.href = '/become-seller';
+                            });
+                        }
+                    }, 10);
+                } else {
+                    document.getElementById('sellerApplicationStatus').innerHTML = '';
+                }
+            } catch (e) { console.error('seller status render error', e); }
         } catch (error) {
             console.error('Error loading profile:', error);
         }
@@ -774,6 +808,13 @@
             if (!formValues) return;
             try {
                 const resp = await ApiService.Auth.becomeSeller(formValues);
+                // If backend returned 202 -> application pending
+                if (resp && resp.status === 202) {
+                    Swal.fire({ icon: 'info', title: 'Yêu cầu đã gửi', text: resp.message || 'Yêu cầu trở thành người bán đã được gửi. Vui lòng chờ admin duyệt.' });
+                    return;
+                }
+
+                // Otherwise expect successful upgrade (legacy) with token
                 if (resp?.accessToken) localStorage.setItem('accessToken', resp.accessToken);
                 if (resp?.userId) localStorage.setItem('userId', String(resp.userId));
                 if (resp?.role) localStorage.setItem('userRole', resp.role);

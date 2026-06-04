@@ -65,6 +65,14 @@ public class PanelPageController {
         return "admin/Admin_Coupons";
     }
 
+    @GetMapping("/admin/seller-applications")
+    public String adminSellerApplications(Model model) {
+        model.addAttribute("pageTitle", "Duyệt người bán");
+        model.addAttribute("pageSubtitle", "Tìm kiếm, phân trang và xử lý yêu cầu trở thành người bán");
+        model.addAttribute("activeMenu", "admin-seller-applications");
+        return "admin/Admin_Seller_Applications";
+    }
+
     @GetMapping("/seller/dashboard")
     public String sellerDashboard(Model model) {
         model.addAttribute("pageTitle", "Tong quan nha ban");
@@ -117,6 +125,14 @@ public class PanelPageController {
     @GetMapping("/seller/product-detail")
     public String sellerProductDetail() {
         return "seller/Seller_Product_Detail";
+    }
+
+    @GetMapping("/become-seller")
+    public String becomeSellerPage(Model model) {
+        model.addAttribute("pageTitle", "Yêu cầu trở thành người bán");
+        model.addAttribute("pageSubtitle", "Gửi thông tin cửa hàng để admin xét duyệt");
+        model.addAttribute("activeMenu", "become-seller");
+        return "buyer/Become_Seller";
     }
 
 }

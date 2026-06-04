@@ -35,6 +35,8 @@ public class Book {
     private String imageUrl; // link ảnh lấy từ CSV
     private String publisher;  // Nhà xuất bản
     private Integer publishYear; // Năm xuất bản
+    @Column(name = "average_rating")
+    private Double averageRating = 0.0;
 
     @ManyToOne
     @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS

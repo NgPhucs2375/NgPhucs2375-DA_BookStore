@@ -56,6 +56,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public routes
                         .requestMatchers("/api/auth/register-admin").hasRole("ADMIN")
+                        .requestMatchers("/api/auth/refresh").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/shops/**").permitAll()
                         .requestMatchers("/admin", "/admin/**").permitAll()
@@ -70,6 +71,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/panel/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/notifications/admin").hasRole("ADMIN")
                         .requestMatchers("/api/notifications/admin/**").hasRole("ADMIN")
 
                         // Yêu cầu đăng nhập cho Carts, Orders và Notifications

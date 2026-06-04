@@ -41,17 +41,20 @@ public class BookController {
             @RequestParam(defaultValue = "0") int page, // Trang số mấy - Mặc định trang 0
             @RequestParam(defaultValue = "20") int size // Lấy bao nhiêu cuốn - Mặc định 20
     ) {
-        Pageable pageable = PageRequest.of(page, size);
-        return bookRepository.findAll(pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return bookRepository.findByApprovalStatus(ApprovalStatus.APPROVED, pageable);
     }
 
     @GetMapping("/search")
     public Page<Book> searchApprovedBooks(
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) List<Long> categoryIds,
+            @RequestParam(required = false) List<Long> sellerIds,
             @RequestParam(required = false) String author,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) String publishYearFrom,
             @RequestParam(required = false) String publishYearTo,
             @RequestParam(defaultValue = "latest") String sort,
@@ -62,12 +65,18 @@ public class BookController {
         String authorKeyword = (author == null || author.isBlank()) ? null : author.trim();
         Integer yearFrom = parseYearBound(publishYearFrom);
         Integer yearTo = parseYearBound(publishYearTo);
-        return bookRepository.searchApprovedBooks(
+        List<Long> effectiveCategoryIds = (categoryIds != null && !categoryIds.isEmpty()) ? categoryIds : null;
+        List<Long> effectiveSellerIds = (sellerIds != null && !sellerIds.isEmpty()) ? sellerIds : null;
+
+        return bookService.searchApprovedBooks(
                 keyword,
-                categoryId,
+                effectiveCategoryIds,
+                effectiveSellerIds,
                 authorKeyword,
                 minPrice,
                 maxPrice,
+                minRating,
+                inStock,
                 yearFrom,
                 yearTo,
                 ApprovalStatus.APPROVED,
@@ -133,8 +142,14 @@ public class BookController {
     // API take one book by id (Public API - không security check)
     // Dau ngoac nhon id nghia la gia tri nay se thay doi theo tren Url vd: /api/books/1
     @GetMapping("/{id}")
-    public Book getBookById(@PathVariable Long id) {
-        return bookService.getBookbyId(id);
+    public ResponseEntity<Book> getBookById(@PathVariable Long id) {
+        Book book = bookService.getBookbyId(id);
+        // Chỉ trả về sách nếu nó tồn tại VÀ đã được duyệt
+        if (book != null && book.getApprovalStatus() == ApprovalStatus.APPROVED) {
+            return ResponseEntity.ok(book);
+        }
+        // Vì lý do bảo mật, trả về 404 cho cả trường hợp không tìm thấy và chưa được duyệt
+        return ResponseEntity.notFound().build();
     }
 
     /**

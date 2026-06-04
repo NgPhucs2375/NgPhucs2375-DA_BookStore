@@ -2,6 +2,7 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.model.Book;
 import com.example.bookstore.repository.BookRepository;
+import com.example.bookstore.repository.SellerShopRepository;
 import com.example.bookstore.service.recommendation.RecommendationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,6 +20,9 @@ public class PageController {
 
     @Autowired
     private RecommendationService recommendationService;
+
+    @Autowired
+    private SellerShopRepository sellerShopRepository;
 
     // Khi người dùng gõ link: localhost:8080/book/1
     @GetMapping("/book/{id}")
@@ -44,4 +48,14 @@ public class PageController {
         // 5. Mở file BookDetail.html (Spring Boot tự động đi tìm file này trong thư mục templates)
         return "main/Details_Produce";
     }
+
+        @GetMapping("/shop/{sellerId}")
+        public String viewPublicShopBySellerId(@PathVariable Long sellerId, Model model) {
+            var shopOpt = sellerShopRepository.findBySellerId(sellerId);
+            if (shopOpt.isPresent()) {
+                model.addAttribute("shopSlug", shopOpt.get().getSlug());
+                return "main/Shop_Public";
+            }
+            return "redirect:/";
+        }
 }

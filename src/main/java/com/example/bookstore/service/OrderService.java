@@ -171,6 +171,8 @@ public class OrderService {
         cart.getItems().clear();
         cartRepository.save(cart);
 
+        notifyOrderCreated(saved, buyer, itemsBySeller);
+
         return CheckoutResponse.builder()
                 .orderId(saved.getId())
                 .buyerId(buyer.getId())
@@ -220,6 +222,8 @@ public class OrderService {
             }
             subOrderRepository.saveAll(order.getSubOrders());
         }
+
+        notifyOrderCancelled(order, buyerId);
 
         return toOrderSummary(order);
     }
@@ -734,5 +738,125 @@ public class OrderService {
             .allMatch(subOrder -> 
                 subOrder.getStatus() == OrderStatus.PENDING_PAYMENT ||
                 subOrder.getStatus() == OrderStatus.PROCESSING);
+    }
+
+    private void notifyOrderCreated(Order order, User buyer, Map<User, List<CartItem>> itemsBySeller) {
+        if (order == null || buyer == null || itemsBySeller == null || itemsBySeller.isEmpty()) {
+            return;
+        }
+
+        try {
+            com.example.bookstore.dto.NotificationCreateRequest buyerReq = new com.example.bookstore.dto.NotificationCreateRequest();
+            buyerReq.setType(com.example.bookstore.model.enums.NotificationType.ORDER_CREATED);
+            buyerReq.setTitle("Đơn hàng đã được tạo");
+            buyerReq.setMessage(String.format("Đơn hàng #%d của bạn đã được tạo thành công.", order.getId()));
+            buyerReq.setPayloadJson(String.format("{\"orderId\":%d,\"status\":\"%s\",\"source\":\"checkout\"}",
+                    order.getId(), OrderStatus.PENDING_PAYMENT.name()));
+            buyerReq.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
+            notificationService.createNotification(buyer.getId(), buyer.getId(), buyerReq);
+        } catch (Exception e) {
+            log.warn("Failed to notify buyer about new order (orderId={}): {}", order.getId(), e.getMessage());
+        }
+
+        try {
+            com.example.bookstore.dto.NotificationCreateRequest adminReq = new com.example.bookstore.dto.NotificationCreateRequest();
+            adminReq.setType(com.example.bookstore.model.enums.NotificationType.SYSTEM_ANNOUNCEMENT);
+            adminReq.setTitle("Có đơn hàng mới");
+            adminReq.setMessage(String.format("Đơn hàng #%d vừa được tạo bởi %s.", order.getId(), buyer.getUsername()));
+            adminReq.setPayloadJson(String.format("{\"orderId\":%d,\"buyerId\":%d,\"buyerUsername\":\"%s\",\"status\":\"%s\"}",
+                    order.getId(), buyer.getId(), buyer.getUsername().replace("\"", "\\\""), OrderStatus.PENDING_PAYMENT.name()));
+            adminReq.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
+            notificationService.createNotificationForAdmins(buyer.getId(), adminReq);
+        } catch (Exception e) {
+            log.warn("Failed to notify admins about new order (orderId={}): {}", order.getId(), e.getMessage());
+        }
+
+        for (Map.Entry<User, List<CartItem>> entry : itemsBySeller.entrySet()) {
+            User seller = entry.getKey();
+            if (seller == null) {
+                continue;
+            }
+
+            double sellerTotal = entry.getValue() == null ? 0.0 : entry.getValue().stream()
+                    .mapToDouble(item -> {
+                        if (item == null || item.getBook() == null || item.getQuantity() == null) {
+                            return 0.0;
+                        }
+                        Double price = item.getBook().getPrice();
+                        return (price == null ? 0.0 : price) * item.getQuantity();
+                    })
+                    .sum();
+
+            try {
+                com.example.bookstore.dto.NotificationCreateRequest sellerReq = new com.example.bookstore.dto.NotificationCreateRequest();
+                sellerReq.setType(com.example.bookstore.model.enums.NotificationType.ORDER_CREATED);
+                sellerReq.setTitle("Có đơn hàng mới");
+                sellerReq.setMessage(String.format("Đơn hàng #%d có sản phẩm của shop bạn, tổng tiền phần shop: %.0f VND.",
+                        order.getId(), sellerTotal));
+                sellerReq.setPayloadJson(String.format("{\"orderId\":%d,\"sellerId\":%d,\"status\":\"%s\",\"subTotal\":%.0f}",
+                        order.getId(), seller.getId(), OrderStatus.PENDING_PAYMENT.name(), sellerTotal));
+                sellerReq.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
+                notificationService.createNotification(buyer.getId(), seller.getId(), sellerReq);
+            } catch (Exception e) {
+                log.warn("Failed to notify seller about new order (orderId={}, sellerId={}): {}", order.getId(), seller.getId(), e.getMessage());
+            }
+        }
+    }
+
+    private void notifyOrderCancelled(Order order, Long buyerId) {
+        if (order == null) {
+            return;
+        }
+
+        try {
+            com.example.bookstore.dto.NotificationCreateRequest buyerReq = new com.example.bookstore.dto.NotificationCreateRequest();
+            buyerReq.setType(com.example.bookstore.model.enums.NotificationType.ORDER_STATUS_CHANGED);
+            buyerReq.setTitle("Đơn hàng đã bị hủy");
+            buyerReq.setMessage(String.format("Đơn hàng #%d đã được hủy.", order.getId()));
+            buyerReq.setPayloadJson(String.format("{\"orderId\":%d,\"status\":\"%s\",\"source\":\"buyer_cancel\"}",
+                    order.getId(), OrderStatus.CANCELLED.name()));
+            buyerReq.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
+            notificationService.createNotification(buyerId, buyerId, buyerReq);
+        } catch (Exception e) {
+            log.warn("Failed to notify buyer about cancelled order (orderId={}): {}", order.getId(), e.getMessage());
+        }
+
+        try {
+            com.example.bookstore.dto.NotificationCreateRequest adminReq = new com.example.bookstore.dto.NotificationCreateRequest();
+            adminReq.setType(com.example.bookstore.model.enums.NotificationType.SYSTEM_ANNOUNCEMENT);
+            adminReq.setTitle("Đơn hàng bị hủy");
+            adminReq.setMessage(String.format("Đơn hàng #%d vừa bị buyer hủy.", order.getId()));
+            adminReq.setPayloadJson(String.format("{\"orderId\":%d,\"status\":\"%s\",\"source\":\"buyer_cancel\"}",
+                    order.getId(), OrderStatus.CANCELLED.name()));
+            adminReq.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
+            notificationService.createNotificationForAdmins(buyerId, adminReq);
+        } catch (Exception e) {
+            log.warn("Failed to notify admins about cancelled order (orderId={}): {}", order.getId(), e.getMessage());
+        }
+
+        if (order.getSubOrders() == null) {
+            return;
+        }
+
+        for (SubOrder subOrder : order.getSubOrders()) {
+            User seller = subOrder.getSeller();
+            if (seller == null) {
+                continue;
+            }
+
+            try {
+                com.example.bookstore.dto.NotificationCreateRequest sellerReq = new com.example.bookstore.dto.NotificationCreateRequest();
+                sellerReq.setType(com.example.bookstore.model.enums.NotificationType.ORDER_STATUS_CHANGED);
+                sellerReq.setTitle("Đơn hàng đã bị hủy");
+                sellerReq.setMessage(String.format("Đơn hàng #%d chứa hàng của shop bạn đã bị hủy.", order.getId()));
+                sellerReq.setPayloadJson(String.format("{\"orderId\":%d,\"subOrderId\":%d,\"status\":\"%s\"}",
+                        order.getId(), subOrder.getId(), OrderStatus.CANCELLED.name()));
+                sellerReq.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
+                notificationService.createNotification(buyerId, seller.getId(), sellerReq);
+            } catch (Exception e) {
+                log.warn("Failed to notify seller about cancelled order (orderId={}, subOrderId={}, sellerId={}): {}",
+                        order.getId(), subOrder.getId(), seller.getId(), e.getMessage());
+            }
+        }
     }
 }

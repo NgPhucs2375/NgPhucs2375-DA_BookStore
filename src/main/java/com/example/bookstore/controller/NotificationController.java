@@ -2,11 +2,13 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.NotificationItemResponse;
 import com.example.bookstore.dto.NotificationListResponse;
+import com.example.bookstore.dto.NotificationCreateRequest;
 import com.example.bookstore.dto.UnreadCountResponse;
 import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -73,10 +75,10 @@ public class NotificationController {
 
     // Admin/System endpoint to create notification (single user or broadcast)
     @PostMapping("/admin")
-    public com.example.bookstore.dto.NotificationItemResponse createByAdmin(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
-                                                                            @RequestBody com.example.bookstore.dto.NotificationCreateRequest req) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public NotificationItemResponse createByAdmin(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
+                                                                            @RequestBody NotificationCreateRequest req) {
         Long creatorUserId = resolveCurrentUserId(principal);
-        // Caller must be ADMIN (enforced by SecurityConfig)
         return notificationService.createNotification(creatorUserId, req.getUserId(), req);
     }
 

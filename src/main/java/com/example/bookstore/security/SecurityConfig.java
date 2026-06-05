@@ -36,6 +36,11 @@ public class SecurityConfig {
                 // Kích hoạt CORS toàn cầu lấy cấu hình từ Bean bên dưới
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
+                // --- VŨ KHÍ TẮT POPUP MẶC ĐỊNH ---
+                .httpBasic(basic -> basic.disable())
+                .formLogin(form -> form.disable())
+                // ---------------------------------
+
                 // 1. QUAN TRỌNG: Stateless
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 

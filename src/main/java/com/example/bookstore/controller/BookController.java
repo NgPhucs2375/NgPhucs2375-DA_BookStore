@@ -136,7 +136,7 @@ public class BookController {
         if (sellerId == null) return Page.empty();
 
         String keyword = (q == null || q.trim().isEmpty()) ? null : q.trim();
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "isPinned").and(Sort.by(Sort.Direction.DESC, "id")));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "pinned").and(Sort.by(Sort.Direction.DESC, "id")));
         return bookRepository.findBySellerIdAndKeywordAndCategory(sellerId, keyword, categoryId, pageable);
     }
 
@@ -172,7 +172,7 @@ public class BookController {
 
         try {
             Book book = bookService.getBookbyId(id);
-            
+
             if (book == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(java.util.Map.of("error", "Sách không tồn tại"));
@@ -185,7 +185,7 @@ public class BookController {
             }
 
             return ResponseEntity.ok(book);
-            
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(java.util.Map.of("error", e.getMessage()));

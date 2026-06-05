@@ -40,6 +40,7 @@ public class Book {
 
     @ManyToOne
     @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS
+    @JsonIgnore
     private Category category;
 
     // Transient field để hỗ trợ JSON deserialization từ categoryId

@@ -76,6 +76,14 @@ public class PanelPageController {
         return "admin/Admin_Coupons";
     }
 
+    @GetMapping("/admin/customers")
+    public String adminCustomers(Model model) {
+        model.addAttribute("pageTitle", "Phân tích khách hàng");
+        model.addAttribute("pageSubtitle", "Gom cụm khách hàng & dự đoán rời bỏ bằng AI");
+        model.addAttribute("activeMenu", "admin-customers");
+        return "admin/Admin_Customers";
+    }
+
     @GetMapping("/seller/dashboard")
     public String sellerDashboard(Model model) {
         model.addAttribute("pageTitle", "Tong quan nha ban");
@@ -128,6 +136,14 @@ public class PanelPageController {
     @GetMapping("/seller/product-detail")
     public String sellerProductDetail() {
         return "seller/Seller_Product_Detail";
+    }
+
+    @GetMapping("/seller/customers")
+    public String sellerCustomers(Model model) {
+        model.addAttribute("pageTitle", "Khách hàng của tôi");
+        model.addAttribute("pageSubtitle", "Phân tích khách hàng & đề xuất giữ chân");
+        model.addAttribute("activeMenu", "seller-customers");
+        return "seller/Seller_Customers";
     }
 
     @GetMapping("/seller/chat")

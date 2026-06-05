@@ -12,6 +12,7 @@ import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.UserRepository;
 import com.example.bookstore.repository.SellerShopRepository;
 import com.example.bookstore.model.SellerShop;
+import com.example.bookstore.service.cluster.CustomerAnalysisService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class DatabaseSeederService {
     private final SellerShopRepository sellerShopRepository;
     private final SellerShopService sellerShopService;
     private final GeminiService geminiService;
+    private final CustomerAnalysisService customerAnalysisService;
 
     @Value("${app.seeder.max-books:300}")
     private int defaultMaxBooks;
@@ -225,6 +227,15 @@ public class DatabaseSeederService {
 
         User saved = userRepository.save(builder.build());
         added.incrementAndGet();
+
+        // Tự động phân tích churn cho user seed (gọi Python ML API)
+        try {
+            customerAnalysisService.analyzeCustomer(saved.getId());
+            log.info("Đã phân tích churn cho seed user: {}", saved.getUsername());
+        } catch (Exception e) {
+            log.warn("Không thể phân tích churn cho seed user {}: {}", saved.getUsername(), e.getMessage());
+        }
+
         return saved;
     }
 

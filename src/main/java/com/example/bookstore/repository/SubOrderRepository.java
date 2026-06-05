@@ -156,4 +156,21 @@ public interface SubOrderRepository extends JpaRepository<SubOrder, Long> {
            "ORDER BY so.id DESC")
     List<SubOrder> findBySellerAndBuyerNameContaining(@Param("seller") User seller,
                                                       @Param("buyerName") String buyerName);
+
+    // ========================
+    // ML Feature Computation Queries
+    // ========================
+
+    /**
+     * Đếm số sub_orders của buyer có trạng thái CANCELLED (dùng cho return rate).
+     */
+    @Query("SELECT COUNT(so) FROM SubOrder so " +
+           "WHERE so.parentOrder.buyer = :buyer AND so.status = 'CANCELLED'")
+    long countCancelledByBuyer(@Param("buyer") User buyer);
+
+    /**
+     * Đếm tổng số sub_orders của buyer.
+     */
+    @Query("SELECT COUNT(so) FROM SubOrder so WHERE so.parentOrder.buyer = :buyer")
+    long countByBuyer(@Param("buyer") User buyer);
 }

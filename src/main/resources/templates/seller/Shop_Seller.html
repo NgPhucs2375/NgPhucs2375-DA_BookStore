@@ -122,8 +122,18 @@
                 </button>
             </form>
         </div>
-
         <div class="flex items-center gap-6 text-brand-dark flex-shrink-0">
+            <a th:href="@{/seller/dashboard}" class="hover:text-brand-brown transition flex items-center gap-2 group font-bold text-sm">
+                <div class="p-1.5 rounded-full bg-brand-bg border border-brand-border group-hover:border-brand-brown transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                </div>
+                <span class="hidden md:block">Kênh Quản Lý</span>
+            </a>
+
+            <div class="h-6 w-px bg-brand-border hidden md:block"></div>
+
             <a href="#" onclick="handleLogout(event)" class="hover:text-brand-orange transition flex items-center gap-2 group font-bold text-sm">
                 <div class="p-1.5 rounded-full bg-brand-bg border border-brand-border group-hover:border-brand-orange transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -302,7 +312,6 @@
                 <div class="flex flex-wrap gap-2 pt-1">
                     <button id="shop-panel-save" type="submit" class="rounded-md bg-brand-brown text-white px-3 py-2 text-xs font-bold hover:bg-brand-brown-dark transition">Luu</button>
                     <button id="shop-panel-reset" type="button" class="rounded-md border border-brand-border px-3 py-2 text-xs font-bold hover:bg-brand-bg transition">Khoi phuc</button>
-                    <button id="shop-panel-toggle" type="button" class="rounded-md border border-brand-brown text-brand-dark px-3 py-2 text-xs font-bold hover:bg-brand-hero transition" disabled>Doi trang thai</button>
                     <button id="shop-panel-delete" type="button" class="rounded-md border border-red-300 text-red-600 px-3 py-2 text-xs font-bold hover:bg-red-50 transition" disabled>Xoa shop</button>
                 </div>
             </form>

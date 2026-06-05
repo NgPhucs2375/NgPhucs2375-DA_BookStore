@@ -339,6 +339,8 @@
         });
     });
 
+
+
     function openRejectModalFor(item) {
         const m = window._adminRejectModal;
         m.currentShopId = item.id;

@@ -136,7 +136,7 @@ public class BookController {
         if (sellerId == null) return Page.empty();
 
         String keyword = (q == null || q.trim().isEmpty()) ? null : q.trim();
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "pinned").and(Sort.by(Sort.Direction.DESC, "id")));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "isPinned").and(Sort.by(Sort.Direction.DESC, "id")));
         return bookRepository.findBySellerIdAndKeywordAndCategory(sellerId, keyword, categoryId, pageable);
     }
 

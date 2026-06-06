@@ -31,5 +31,6 @@ public class SellerShopResponse {
     private Integer ratingCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String rejectionReason;
 
 }

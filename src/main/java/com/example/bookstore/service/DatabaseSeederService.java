@@ -2,9 +2,7 @@ package com.example.bookstore.service;
 
 import com.example.bookstore.dto.SeedRequest;
 import com.example.bookstore.dto.SeedResult;
-import com.example.bookstore.model.Book;
-import com.example.bookstore.model.Category;
-import com.example.bookstore.model.User;
+import com.example.bookstore.model.*;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.repository.BookRepository;
@@ -44,6 +42,9 @@ public class DatabaseSeederService {
     private final SellerShopService sellerShopService;
     private final GeminiService geminiService;
     private final CustomerAnalysisService customerAnalysisService;
+    private final com.example.bookstore.repository.OrderRepository orderRepository;
+    private final com.example.bookstore.repository.SubOrderRepository subOrderRepository;
+    private final com.example.bookstore.repository.OrderItemRepository orderItemRepository;
 
     @Value("${app.seeder.max-books:300}")
     private int defaultMaxBooks;
@@ -100,7 +101,54 @@ public class DatabaseSeederService {
                 result.getCategoriesAdded(), result.getCategoriesUpdated(), result.getUsersAdded(),
                 result.getBooksAdded(), result.getBooksSkipped());
 
+        // Auto-seed a sample order for buyer@gmail.com to help verify buyer dashboard
+        try {
+            User buyer = userRepository.findByUsername("buyer@gmail.com");
+            if (buyer != null && orderRepository.count() == 0) {
+                List<Book> books = bookRepository.findAll();
+                if (!books.isEmpty()) {
+                    seedSampleOrderForBuyer(buyer, books.get(0));
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Auto sample order seeding failed: {}", e.getMessage());
+        }
+
         return result;
+    }
+
+    @Transactional
+    public void seedSampleOrderForBuyer(User buyer, Book sampleBook) {
+        if (buyer == null || sampleBook == null) return;
+        if (orderRepository.count() > 0) return;
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .shippingAddress(buyer.getShopAddress() != null ? buyer.getShopAddress() : "Địa chỉ mẫu")
+                .shippingFee(30000.0)
+                .discountAmount(0.0)
+                .couponCode(null)
+                .totalAmount(sampleBook.getPrice() + 30000.0)
+                .build();
+
+        SubOrder sub = SubOrder.builder()
+                .parentOrder(order)
+                .seller(sampleBook.getSeller())
+                .status(com.example.bookstore.model.enums.OrderStatus.SHIPPING)
+                .subTotal(sampleBook.getPrice())
+                .build();
+
+        com.example.bookstore.model.OrderItem item = com.example.bookstore.model.OrderItem.builder()
+                .subOrder(sub)
+                .book(sampleBook)
+                .unitPrice(sampleBook.getPrice())
+                .quantity(1)
+                .build();
+
+        sub.setItems(List.of(item));
+        order.setSubOrders(List.of(sub));
+
+        orderRepository.save(order);
     }
 
     private boolean getOrDefault(Boolean value, boolean defaultValue) {
@@ -171,6 +219,7 @@ public class DatabaseSeederService {
         AtomicInteger added = new AtomicInteger(0);
 
         ensureUser("admin@gmail.com", UserRole.ADMIN, "admin123", null, null, added);
+        ensureUser("buyer@gmail.com", UserRole.BUYER, "Buyer@123", null, null, added);
         User sellerNhaNam = ensureUser(
                 "shop_nha_nam@gmail.com",
                 UserRole.SELLER,

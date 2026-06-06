@@ -49,12 +49,15 @@ class BookRepositoryYearFilterTest {
 
         Page<Book> result = bookRepository.searchApprovedBooks(
             null,
-            null,
-            null,
-            null,
-            null,
-            2000,
-            2010,
+            null, // categoryIds
+            null, // sellerIds
+            null, // author
+            null, // minPrice
+            null, // maxPrice
+            null, // minRating
+            null, // inStock
+            2000, // publishYearFrom
+            2010, // publishYearTo
             ApprovalStatus.APPROVED,
             PageRequest.of(0, 10)
         );

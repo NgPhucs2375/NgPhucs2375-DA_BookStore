@@ -69,4 +69,19 @@ public interface BookReviewRepository extends JpaRepository<BookReview, Long> {
      * Đếm tổng số review của một user.
      */
     long countByUser(User user);
+
+    /**
+     * Tìm đánh giá của người dùng cho một cuốn sách cụ thể
+     */
+    BookReview findByBookAndUser(Book book, User user);
+
+    /**
+     * Lấy tất cả đánh giá của một người dùng (có phân trang)
+     */
+    Page<BookReview> findByUserAndIsHiddenFalse(User user, Pageable pageable);
+
+    /**
+     * Đếm số lượt đánh giá của một người dùng
+     */
+    long countByUserAndIsHiddenFalse(User user);
 }

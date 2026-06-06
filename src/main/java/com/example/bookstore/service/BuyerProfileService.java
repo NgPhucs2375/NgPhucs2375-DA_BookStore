@@ -16,6 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import com.example.bookstore.repository.SellerShopRepository;
+import com.example.bookstore.dto.SellerShopResponse;
+import com.example.bookstore.model.SellerShop;
 
 @Service
 @RequiredArgsConstructor
@@ -25,13 +28,36 @@ public class BuyerProfileService {
     private final UserAddressRepository userAddressRepository;
     private final UserSecurityEventRepository securityEventRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SellerShopRepository sellerShopRepository;
 
     // ==================== PROFILE MANAGEMENT ====================
 
     public UserProfileDTO getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return UserProfileDTO.fromEntity(user);
+        UserProfileDTO dto = UserProfileDTO.fromEntity(user);
+        // Attach seller shop info when present
+        sellerShopRepository.findBySellerId(userId).ifPresent(shop -> {
+            SellerShopResponse resp = SellerShopResponse.builder()
+                    .id(shop.getId())
+                    .sellerId(shop.getSeller() != null ? shop.getSeller().getId() : null)
+                    .slug(shop.getSlug())
+                    .shopName(shop.getShopName())
+                    .description(shop.getDescription())
+                    .logoUrl(shop.getLogoUrl())
+                    .bannerUrl(shop.getBannerUrl())
+                    .contactEmail(shop.getContactEmail())
+                    .contactPhone(shop.getContactPhone())
+                    .address(shop.getAddress())
+                    .city(shop.getCity())
+                    .province(shop.getProvince())
+                    .approvalStatus(shop.getApprovalStatus())
+                    .createdAt(shop.getCreatedAt())
+                    .updatedAt(shop.getUpdatedAt())
+                    .build();
+            dto.setSellerShop(resp);
+        });
+        return dto;
     }
 
     @Transactional

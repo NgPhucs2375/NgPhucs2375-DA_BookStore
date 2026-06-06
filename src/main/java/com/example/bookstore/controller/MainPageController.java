@@ -157,7 +157,7 @@ public class MainPageController {
 
     @GetMapping("/buyer/dashboard")
     public String buyerDashboard() {
-        return "buyer/Buyer_DashBoard";
+        return "buyer/Buyer_Profile_Dashboard";
     }
 
     /**

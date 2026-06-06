@@ -27,6 +27,8 @@ public interface SellerShopRepository extends JpaRepository<SellerShop, Long> {
      */
     Optional<SellerShop> findBySlug(String slug);
 
+    java.util.List<SellerShop> findByApprovalStatus(com.example.bookstore.model.enums.ApprovalStatus status);
+
     /**
      * Kiểm tra xem Seller đã có shop được duyệt hay chưa.
      * Dùng để kiểm tra quyền truy cập của Seller.

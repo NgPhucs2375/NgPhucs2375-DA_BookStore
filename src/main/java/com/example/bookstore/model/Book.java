@@ -35,10 +35,27 @@ public class Book {
     private String imageUrl; // link ảnh lấy từ CSV
     private String publisher;  // Nhà xuất bản
     private Integer publishYear; // Năm xuất bản
+    @Column(name = "average_rating")
+    private Double averageRating;
 
     @ManyToOne
     @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS
+    @JsonIgnore
     private Category category;
+
+    // Transient field để hỗ trợ JSON deserialization từ categoryId
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("categoryId")
+    private Long categoryId;
+
+    // Getter/Setter cho categoryId để Jackson có thể deserialize
+    public Long getCategoryId() {
+        return category != null ? category.getId() : categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
+    }
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false)
@@ -53,6 +70,9 @@ public class Book {
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
+
+    @Column(name = "is_pinned", nullable = false)
+    private boolean isPinned = false;
 
     @PrePersist
     public void onCreate() {

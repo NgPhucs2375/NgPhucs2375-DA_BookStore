@@ -70,6 +70,15 @@ public class CouponController {
         }
     }
 
+    /**
+     * Get valid coupons for a specific seller (Public endpoint)
+     * GET /api/coupons/seller/{sellerId}
+     */
+    @GetMapping("/seller/{sellerId}")
+    public ResponseEntity<List<Coupon>> getSellerCoupons(@PathVariable Long sellerId) {
+        return ResponseEntity.ok(couponService.getValidCouponsForSeller(sellerId));
+    }
+
 
     /**
      * Get coupon details (Public endpoint)

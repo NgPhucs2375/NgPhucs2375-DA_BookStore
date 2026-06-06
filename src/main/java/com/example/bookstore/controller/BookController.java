@@ -6,6 +6,7 @@ import com.example.bookstore.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.bookstore.repository.BookRepository;
 
+
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,22 +37,26 @@ public class BookController {
     @Autowired
     private SecurityUtils securityUtils;
 
+
     @GetMapping // Bao hieu rang ham getAllBooks se duoc chay khi co ai do truy cap vao dia chi goc bang phuong thuc Get nhu khi go link tren trinh duyet
     public Page<Book> getBooks(
             @RequestParam(defaultValue = "0") int page, // Trang số mấy - Mặc định trang 0
             @RequestParam(defaultValue = "20") int size // Lấy bao nhiêu cuốn - Mặc định 20
     ) {
-        Pageable pageable = PageRequest.of(page, size);
-        return bookRepository.findAll(pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return bookRepository.findByApprovalStatus(ApprovalStatus.APPROVED, pageable);
     }
 
     @GetMapping("/search")
     public Page<Book> searchApprovedBooks(
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) List<Long> categoryIds,
+            @RequestParam(required = false) List<Long> sellerIds,
             @RequestParam(required = false) String author,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) String publishYearFrom,
             @RequestParam(required = false) String publishYearTo,
             @RequestParam(defaultValue = "latest") String sort,
@@ -62,12 +67,18 @@ public class BookController {
         String authorKeyword = (author == null || author.isBlank()) ? null : author.trim();
         Integer yearFrom = parseYearBound(publishYearFrom);
         Integer yearTo = parseYearBound(publishYearTo);
-        return bookRepository.searchApprovedBooks(
+        List<Long> effectiveCategoryIds = (categoryIds != null && !categoryIds.isEmpty()) ? categoryIds : null;
+        List<Long> effectiveSellerIds = (sellerIds != null && !sellerIds.isEmpty()) ? sellerIds : null;
+
+        return bookService.searchApprovedBooks(
                 keyword,
-                categoryId,
+                effectiveCategoryIds,
+                effectiveSellerIds,
                 authorKeyword,
                 minPrice,
                 maxPrice,
+                minRating,
+                inStock,
                 yearFrom,
                 yearTo,
                 ApprovalStatus.APPROVED,
@@ -125,16 +136,60 @@ public class BookController {
         if (sellerId == null) return Page.empty();
 
         String keyword = (q == null || q.trim().isEmpty()) ? null : q.trim();
-        Pageable pageable = PageRequest.of(page, size);
-
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "isPinned").and(Sort.by(Sort.Direction.DESC, "id")));
         return bookRepository.findBySellerIdAndKeywordAndCategory(sellerId, keyword, categoryId, pageable);
     }
 
-    // API take one book by id
+    // API take one book by id (Public API - không security check)
     // Dau ngoac nhon id nghia la gia tri nay se thay doi theo tren Url vd: /api/books/1
     @GetMapping("/{id}")
-    public Book getBookById(@PathVariable Long id) {
-        return bookService.getBookbyId(id);
+    public ResponseEntity<Book> getBookById(@PathVariable Long id) {
+        Book book = bookService.getBookbyId(id);
+        // Chỉ trả về sách nếu nó tồn tại VÀ đã được duyệt
+        if (book != null && book.getApprovalStatus() == ApprovalStatus.APPROVED) {
+            return ResponseEntity.ok(book);
+        }
+        // Vì lý do bảo mật, trả về 404 cho cả trường hợp không tìm thấy và chưa được duyệt
+        return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * API lấy chi tiết sách của chính seller hiện tại (Bảo mật)
+     * Endpoint: GET /api/books/seller/book/{id}
+     * Chỉ cho phép seller xem sách của họ
+     * Trả về đủ thông tin: book details + seller info
+     */
+    @GetMapping("/seller/book/{id}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> getSellerOwnBook(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
+    ) {
+        Long sellerId = currentSellerId(principal);
+        if (sellerId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bạn cần đăng nhập");
+        }
+
+        try {
+            Book book = bookService.getBookbyId(id);
+
+            if (book == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(java.util.Map.of("error", "Sách không tồn tại"));
+            }
+
+            // Kiểm tra xem seller có sở hữu sách này không (IDOR Protection)
+            if (book.getSeller() == null || !book.getSeller().getId().equals(sellerId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("error", "Không có quyền xem sách này"));
+            }
+
+            return ResponseEntity.ok(book);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     // --- API add new book cho Seller - S03 ---
@@ -156,7 +211,7 @@ public class BookController {
         }
 
         if (book.getDescription() != null) {
-            book.setDescription(securityUtils.sanitizeHtml(book.getDescription()));
+            book.setDescription(securityUtils.sanitize(book.getDescription()));
         }
 
         try {
@@ -185,7 +240,7 @@ public class BookController {
         }
 
         if (bookDetails.getDescription() != null) {
-            bookDetails.setDescription(securityUtils.sanitizeHtml(bookDetails.getDescription()));
+            bookDetails.setDescription(securityUtils.sanitize(bookDetails.getDescription()));
         }
 
         try {
@@ -240,6 +295,29 @@ public class BookController {
             // SỬA DÒNG NÀY: Bọc cái lỗi vào JSON luôn
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", e.getMessage()));
 
+        }
+    }
+
+
+    @PatchMapping({"/seller/{id}/pin"})
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> togglePinBook(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
+    ) {
+        Long sellerId = currentSellerId(principal);
+        if (sellerId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        try {
+            Book book = bookService.getBookbyId(id);
+            if (book == null || book.getSeller() == null || !book.getSeller().getId().equals(sellerId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", "Không có quyền"));
+            }
+            book.setPinned(!book.isPinned());
+            bookRepository.save(book);
+            return ResponseEntity.ok(java.util.Map.of("message", "Đã cập nhật ghim", "isPinned", book.isPinned()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
         }
     }
 

@@ -1,4 +1,5 @@
 package com.example.bookstore.repository;
+
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.User;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-
 public interface BookRepository extends JpaRepository<Book, Long>{
     // Ví dụ: Tìm sách theo tiêu đề để hỗ trợ gợi ý sản phẩm
     List<Book> findByTitleContaining(String title);
@@ -51,52 +51,42 @@ public interface BookRepository extends JpaRepository<Book, Long>{
 
     Page<Book> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 
-        @Query("""
-            SELECT b FROM Book b
-            LEFT JOIN b.category c
-            WHERE b.approvalStatus = :status
-              AND (
-                :q IS NULL
-                OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
-                OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
-                OR LOWER(COALESCE(b.publisher, '')) LIKE LOWER(CONCAT('%', :q, '%'))
-              )
-              AND (
-                :categoryId IS NULL
-                OR c.id = :categoryId
-              )
-              AND (
-                :author IS NULL
-                OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%'))
-              )
-              AND (
-                :minPrice IS NULL
-                OR b.price >= :minPrice
-              )
-              AND (
-                :maxPrice IS NULL
-                OR b.price <= :maxPrice
-              )
-              AND (
-                :publishYearFrom IS NULL
-                OR b.publishYear >= :publishYearFrom
-              )
-              AND (
-                :publishYearTo IS NULL
-                OR b.publishYear <= :publishYearTo
-              )
-            """)
-        Page<Book> searchApprovedBooks(
+    @Query("""
+        SELECT b FROM Book b
+        LEFT JOIN b.category c
+        LEFT JOIN b.seller s
+        WHERE b.approvalStatus = :status
+          AND b.isActive = true
+          AND (
+            :q IS NULL
+            OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR LOWER(COALESCE(b.publisher, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+          )
+          AND (:categoryIds IS NULL OR c.id IN :categoryIds)
+          AND (:sellerIds IS NULL OR s.id IN :sellerIds)
+          AND (:author IS NULL OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%')))
+          AND (:minPrice IS NULL OR b.price >= :minPrice)
+          AND (:maxPrice IS NULL OR b.price <= :maxPrice)
+          AND (:minRating IS NULL OR b.averageRating >= :minRating)
+          AND (:inStock IS NULL OR :inStock = false OR b.stockQuantity > 0)
+          AND (:publishYearFrom IS NULL OR b.publishYear >= :publishYearFrom)
+          AND (:publishYearTo IS NULL OR b.publishYear <= :publishYearTo)
+        """)
+    Page<Book> searchApprovedBooks(
             @Param("q") String q,
-            @Param("categoryId") Long categoryId,
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("sellerIds") List<Long> sellerIds,
             @Param("author") String author,
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice,
+            @Param("minRating") Double minRating,
+            @Param("inStock") Boolean inStock,
             @Param("publishYearFrom") Integer publishYearFrom,
             @Param("publishYearTo") Integer publishYearTo,
             @Param("status") ApprovalStatus status,
             Pageable pageable
-        );
+    );
 
     @Query("""
             SELECT b FROM Book b
@@ -161,12 +151,11 @@ public interface BookRepository extends JpaRepository<Book, Long>{
                 :categoryId IS NULL
                 OR c.id = :categoryId
               )
-            ORDER BY b.id DESC
             """)
-        Page<Book> findBySellerIdAndKeywordAndCategory(
+    Page<Book> findBySellerIdAndKeywordAndCategory(
             @Param("sellerId") Long sellerId,
             @Param("q") String keyword,
             @Param("categoryId") Long categoryId,
             Pageable pageable
-        );
+    );
 }

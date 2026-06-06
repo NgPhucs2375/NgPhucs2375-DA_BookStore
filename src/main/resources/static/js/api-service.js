@@ -8,7 +8,7 @@
  *   const books = await ApiService.searchBooks('keyword');
  */
 
-const ApiService = (() => {
+var ApiService = window.ApiService || (() => {
     const API_BASE = '/api';
 
     // ==========================================
@@ -163,6 +163,36 @@ const ApiService = (() => {
                 body: JSON.stringify(data)
             });
             return response.json();
+        },
+        /**
+         * Upgrade current authenticated BUYER to SELLER
+         * @param {Object} payload { shopName, shopAddress }
+         * @returns {Object} response containing new accessToken and role info
+         */
+        becomeSeller: async (payload = {}) => {
+            const response = await fetch(`${API_BASE}/auth/become-seller`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(payload)
+            });
+
+            // Parse response body (could be JSON or text)
+            const parsed = await parseResponse(response);
+
+            // 202 Accepted: application submitted and pending admin approval
+            if (response.status === 202) {
+                return { status: 202, message: typeof parsed === 'string' ? parsed : (parsed?.message || parsed) };
+            }
+
+            // For other statuses use standard error handling
+            if (!response.ok) {
+                const message = (typeof parsed === 'string' && parsed.trim()) ? parsed : (parsed?.message || 'Request failed');
+                const error = new Error(message);
+                error.data = parsed;
+                throw error;
+            }
+
+            return parsed;
         }
     };
 
@@ -266,6 +296,17 @@ const ApiService = (() => {
         },
 
         /**
+         * Lấy chi tiết sách của seller hiện tại (Bảo mật - kiểm tra ownership)
+         * Chỉ trả về sách mà seller sở hữu
+         */
+        getOwnBook: async (bookId) => {
+            const response = await fetch(`${API_BASE}/books/seller/book/${bookId}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
          * Tạo sách mới (seller)
          */
         create: async (bookData) => {
@@ -317,6 +358,14 @@ const ApiService = (() => {
                         return response.text();
                     }
                 },
+        togglePin: async (bookId) => {
+            const response = await fetch(`${API_BASE}/books/seller/${bookId}/pin`, {
+                method: 'PATCH',
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
         /**
          * Xóa sách
          */
@@ -324,6 +373,43 @@ const ApiService = (() => {
             const response = await fetch(`${API_BASE}/books/seller/${bookId}`, {
                 method: 'DELETE',
                 headers: getHeaders()
+            });
+            return handleResponse(response);
+        }
+    };
+
+    const Admin = {
+        listSellerApplications: async ({ q = '', page = 0, size = 10 } = {}) => {
+            const params = new URLSearchParams();
+            params.set('page', page);
+            params.set('size', size);
+            if (q && `${q}`.trim()) params.set('q', q.trim());
+
+            const response = await fetch(`${API_BASE}/admin/seller-applications?${params.toString()}`, { headers: getHeaders() });
+            return handleResponse(response);
+        },
+        approveSellerApplication: async (shopId) => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/approve`, {
+                method: 'PUT', headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+        rejectSellerApplication: async (shopId, reason) => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/reject`, {
+                method: 'PUT', headers: getHeaders(), body: JSON.stringify({ reason })
+            });
+            return handleResponse(response);
+        }
+        ,
+        resendEmail: async (shopId, type = 'rejected') => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/resend-email?type=${encodeURIComponent(type)}`, {
+                method: 'PUT', headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+        resendNotification: async (shopId, type = 'rejected') => {
+            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/resend-notification?type=${encodeURIComponent(type)}`, {
+                method: 'PUT', headers: getHeaders()
             });
             return handleResponse(response);
         }
@@ -811,6 +897,18 @@ const ApiService = (() => {
     // ==========================================
     // PUBLIC API
     // ==========================================
+    /**
+     * Fetch wrapper that adds authentication headers (keeps caller able to inspect response)
+     * @param {string} path - absolute or relative path
+     * @param {object} options - fetch options
+     */
+    const fetchWithAuth = async (path, options = {}) => {
+        const merged = Object.assign({}, options);
+        const baseHeaders = getHeaders();
+        // If caller passed headers, merge; otherwise use baseHeaders
+        merged.headers = Object.assign({}, baseHeaders, options.headers || {});
+        return fetch(path, merged);
+    };
 
     return {
         // Utility
@@ -839,8 +937,14 @@ const ApiService = (() => {
             localStorage.setItem('userId', authData.userId);
             localStorage.setItem('accessToken', authData.accessToken);
             localStorage.setItem('userRole', authData.role);
-        },
 
+            // Nếu có sellerId thì lưu, nếu không có (như ADMIN/BUYER) thì phải xóa sạch key cũ đi
+            if (authData.sellerId) {
+                localStorage.setItem('sellerId', String(authData.sellerId));
+            } else {
+                localStorage.removeItem('sellerId');
+            }
+        },
         // Helper: Logout
         logout: () => {
             localStorage.removeItem('userId');

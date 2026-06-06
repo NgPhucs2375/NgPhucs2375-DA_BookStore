@@ -47,8 +47,13 @@ public class SellerShop {
     private String contactPhone;
 
     private String address;
+    @Column(name = "city", nullable = true)
     private String city;
+    @Column(name = "province", nullable = true)
     private String province;
+
+    @Column(name = "rejection_reason", columnDefinition = "NVARCHAR(MAX)")
+    private String rejectionReason;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

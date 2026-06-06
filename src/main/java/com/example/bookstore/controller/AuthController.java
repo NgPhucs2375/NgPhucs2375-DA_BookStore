@@ -5,21 +5,27 @@ import com.example.bookstore.dto.AuthRegisterRequest;
 import com.example.bookstore.dto.EmailOtpRequest;
 import com.example.bookstore.dto.EmailOtpVerifyRequest;
 import com.example.bookstore.dto.FirebaseLoginRequest;
+import com.example.bookstore.dto.RefreshTokenRequest;
+import com.example.bookstore.dto.TokenRefreshResponse;
 import com.example.bookstore.dto.UserProfileResponse;
 import com.example.bookstore.dto.UserProfileUpdateRequest;
+import com.example.bookstore.model.RefreshToken;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.UserRole;
 import com.example.bookstore.security.JwtTokenProvider;
 import com.example.bookstore.service.AuthOtpService;
 import com.example.bookstore.service.AuthService;
+import com.example.bookstore.service.RefreshTokenService;
 import com.example.bookstore.service.FirebaseAuthService;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -36,6 +42,9 @@ public class AuthController {
 
     @Autowired
     AuthOtpService authOtpService;
+
+    @Autowired
+    RefreshTokenService refreshTokenService;
 
     @Autowired
     FirebaseAuthService firebaseAuthService;
@@ -151,16 +160,38 @@ public class AuthController {
             ? authenticated.getId()
             : null;
         java.util.List<String> roles = java.util.List.of(authenticated.getRole().name());
-        String token = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+        String accessToken = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(authenticated.getId());
 
         java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
         response.put("tokenType", "Bearer");
-        response.put("accessToken", token);
+        response.put("accessToken", accessToken);
+        response.put("refreshToken", refreshToken.getToken());
         response.put("userId", authenticated.getId());
         response.put("role", authenticated.getRole().name());
         response.put("roles", roles);
         response.put("sellerId", sellerId);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    Long sellerId = user.getRole() == UserRole.SELLER ? user.getId() : null;
+                    java.util.List<String> roles = java.util.List.of(user.getRole().name());
+                    String newAccessToken = jwtTokenProvider.createToken(user.getId(), roles, sellerId);
+
+                    return ResponseEntity.ok(new TokenRefreshResponse(newAccessToken, requestRefreshToken));
+                })
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Refresh token is not in database!"
+                ));
     }
 
     @PostMapping("/logout")
@@ -208,11 +239,13 @@ public class AuthController {
             ? authenticated.getId()
             : null;
         java.util.List<String> roles = java.util.List.of(authenticated.getRole().name());
-        String token = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+        String accessToken = jwtTokenProvider.createToken(authenticated.getId(), roles, sellerId);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(authenticated.getId());
 
         java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
         response.put("tokenType", "Bearer");
-        response.put("accessToken", token);
+        response.put("accessToken", accessToken);
+        response.put("refreshToken", refreshToken.getToken());
         response.put("userId", authenticated.getId());
         response.put("role", authenticated.getRole().name());
         response.put("roles", roles);
@@ -254,12 +287,14 @@ public class AuthController {
                 ? user.getId()
                 : null;
             java.util.List<String> roles = java.util.List.of(user.getRole().name());
-            String token = jwtTokenProvider.createToken(user.getId(), roles, sellerId);
+            String accessToken = jwtTokenProvider.createToken(user.getId(), roles, sellerId);
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
             // 3. Trả về response
             java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
             response.put("tokenType", "Bearer");
-            response.put("accessToken", token);
+            response.put("accessToken", accessToken);
+            response.put("refreshToken", refreshToken.getToken());
             response.put("userId", user.getId());
             response.put("role", user.getRole().name());
             response.put("roles", roles);
@@ -292,6 +327,41 @@ public class AuthController {
     public UserProfileResponse getProfile(@PathVariable Long userId) {
 
         return authService.getProfile(userId);
+    }
+
+    @PostMapping("/become-seller")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<?> becomeSeller(
+            @AuthenticationPrincipal org.springframework.security.core.userdetails.User principalUser,
+            @RequestBody Map<String, String> body
+    ) {
+        // principalUser may be null depending on security config; try JwtAuthenticatedPrincipal otherwise
+        Long userId = null;
+        try {
+            // try to extract id from Security Context principal if it's our JwtAuthenticatedPrincipal
+            Object principal = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal jp) {
+                userId = jp.userId();
+            }
+        } catch (Exception ignored) {}
+
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Không có thông tin xác thực");
+        }
+
+        try {
+            String shopName = body.getOrDefault("shopName", null);
+            String shopAddress = body.getOrDefault("shopAddress", null);
+            // Submit a seller application instead of immediately upgrading role.
+            authService.submitSellerApplication(userId, shopName, shopAddress);
+
+            // Return 202 Accepted to indicate the request was received and is pending admin approval
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body("Yêu cầu trở thành người bán đã được gửi. Vui lòng chờ admin duyệt.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @PutMapping("/profile/{userId}")

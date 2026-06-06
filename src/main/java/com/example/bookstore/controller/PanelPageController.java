@@ -159,6 +159,14 @@ public class PanelPageController {
         return "admin/Admin_Customers";
     }
 
+    @GetMapping("/admin/seller-applications")
+    public String adminSellerApplications(Model model) {
+        model.addAttribute("pageTitle", "Duyệt người bán");
+        model.addAttribute("pageSubtitle", "Tìm kiếm, phân trang và xử lý yêu cầu trở thành người bán");
+        model.addAttribute("activeMenu", "admin-seller-applications");
+        return "admin/Admin_Seller_Applications";
+    }
+
     @GetMapping("/seller/dashboard")
     public String sellerDashboard(Model model) {
         model.addAttribute("pageTitle", "Tong quan nha ban");
@@ -199,8 +207,16 @@ public class PanelPageController {
         return "seller/Seller_Vouchers";
     }
 
-    @GetMapping("/seller/product-detail")
+    @GetMapping("/seller/shop")
+    public String sellerShop(Model model) {
+        model.addAttribute("pageTitle", "Ho so gian hang");
+        model.addAttribute("pageSubtitle", "Cap nhat thong tin shop va trang thai hoat dong");
+        model.addAttribute("activeMenu", "seller-shop");
+        return "seller/Shop_Seller";
+    }
 
+
+    @GetMapping("/seller/product-detail")
     public String sellerProductDetail() {
         return "seller/Seller_Product_Detail";
     }
@@ -256,6 +272,14 @@ public class PanelPageController {
         }
 
         return "seller/Chat_Page";
+    }
+
+    @GetMapping("/become-seller")
+    public String becomeSellerPage(Model model) {
+        model.addAttribute("pageTitle", "Yêu cầu trở thành người bán");
+        model.addAttribute("pageSubtitle", "Gửi thông tin cửa hàng để admin xét duyệt");
+        model.addAttribute("activeMenu", "become-seller");
+        return "buyer/Become_Seller";
     }
 
 }

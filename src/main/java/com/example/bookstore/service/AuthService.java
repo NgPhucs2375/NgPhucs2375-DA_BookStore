@@ -49,6 +49,32 @@ public class AuthService {
     @Autowired
     private CustomerService customerService;
 
+    /**
+     * Submit a seller application: create a SellerShop record with PENDING approval.
+     * Does NOT change the user's role — admin must approve to set role to SELLER.
+     */
+    public SellerShop submitSellerApplication(Long userId, String shopName, String shopAddress) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        // Prevent duplicate applications / existing shop
+        if (sellerShopRepository.findBySellerId(userId).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bạn đã gửi yêu cầu hoặc đã có cửa hàng.");
+        }
+
+        String slug = sellerShopService.generateUniqueSlug(user.getUsername());
+        com.example.bookstore.model.SellerShop newShop = com.example.bookstore.model.SellerShop.builder()
+                .seller(user)
+                .slug(slug)
+                .shopName(shopName != null && !shopName.isBlank() ? shopName.trim() : user.getUsername())
+                .address(shopAddress != null && !shopAddress.isBlank() ? shopAddress.trim() : "Chưa cập nhật")
+                .approvalStatus(ApprovalStatus.PENDING)
+                .build();
+
+        com.example.bookstore.model.SellerShop saved = sellerShopRepository.save(newShop);
+        return saved;
+    }
+
     //    Register
     public boolean register(String username, String rawPassword, String avatarUrl, List<Long> favoriteCategoryIds){
         return registerWithRole(username, rawPassword, avatarUrl, favoriteCategoryIds, UserRole.BUYER);
@@ -175,6 +201,29 @@ public class AuthService {
 
         userRepository.save(user);
         return toUserProfileResponse(user);
+    }
+
+    /**
+     * Upgrade a BUYER user to SELLER with optional shop info.
+     */
+    public User upgradeToSeller(Long userId, String shopName, String shopAddress) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getRole() == UserRole.SELLER) {
+            return user; // already a seller
+        }
+
+        if (user.getRole() != UserRole.BUYER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only buyers can be upgraded to seller");
+        }
+
+        user.setRole(UserRole.SELLER);
+        if (shopName != null && !shopName.isBlank()) user.setShopName(shopName.trim());
+        if (shopAddress != null && !shopAddress.isBlank()) user.setShopAddress(shopAddress.trim());
+
+        userRepository.save(user);
+        return user;
     }
 
     private UserProfileResponse toUserProfileResponse(User user) {

@@ -2,23 +2,98 @@
 package com.example.bookstore.controller;
 
 import com.example.bookstore.config.JwtUtil;
+import com.example.bookstore.model.Book;
+import com.example.bookstore.model.Category;
+import com.example.bookstore.model.SellerShop;
 import com.example.bookstore.model.User;
+import com.example.bookstore.model.enums.ApprovalStatus;
+import com.example.bookstore.repository.BookRepository;
+import com.example.bookstore.repository.CategoryRepository;
+import com.example.bookstore.repository.SellerShopRepository;
 import com.example.bookstore.repository.UserRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
 @Controller
 public class PanelPageController {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final SellerShopRepository sellerShopRepository;
+    private final BookRepository bookRepository;
+    private final CategoryRepository categoryRepository;
 
-    public PanelPageController(JwtUtil jwtUtil, UserRepository userRepository) {
+    public PanelPageController(JwtUtil jwtUtil, UserRepository userRepository,
+                               SellerShopRepository sellerShopRepository,
+                               BookRepository bookRepository,
+                               CategoryRepository categoryRepository) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.sellerShopRepository = sellerShopRepository;
+        this.bookRepository = bookRepository;
+        this.categoryRepository = categoryRepository;
     }
+    @GetMapping("/seller/shop")
+    public String sellerShop(Model model, Authentication authentication) {
+        model.addAttribute("pageTitle", "Ho so gian hang");
+        model.addAttribute("pageSubtitle", "Cap nhat thong tin shop va trang thai hoat dong");
+        model.addAttribute("activeMenu", "seller-shop");
+
+        // Load shop data for the current seller
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+            Long userId = null;
+
+            if (principal instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal jwtPrincipal) {
+                userId = jwtPrincipal.userId();
+            } else if (principal instanceof User user) {
+                userId = user.getId();
+            }
+
+            if (userId != null) {
+                // Find seller's shop
+                SellerShop shop = sellerShopRepository.findBySellerId(userId).orElse(null);
+                model.addAttribute("shop", shop);
+
+                if (shop != null) {
+                    // Load books for this shop
+                    List<Book> books = bookRepository.findBySeller(shop.getSeller());
+                    model.addAttribute("books", books);
+                    model.addAttribute("bookCount", books.size());
+
+                    // Calculate join duration
+                    String joinDuration = "Mới";
+                    if (shop.getCreatedAt() != null) {
+                        long years = ChronoUnit.YEARS.between(shop.getCreatedAt(), LocalDateTime.now());
+                        if (years > 0) {
+                            joinDuration = years + " năm";
+                        } else {
+                            long months = ChronoUnit.MONTHS.between(shop.getCreatedAt(), LocalDateTime.now());
+                            joinDuration = (months > 0 ? months + " tháng" : "Mới");
+                        }
+                    }
+                    model.addAttribute("joinDuration", joinDuration);
+                } else {
+                    model.addAttribute("books", List.of());
+                    model.addAttribute("bookCount", 0);
+                    model.addAttribute("joinDuration", "Mới");
+                }
+
+                // Load categories
+                List<Category> categories = categoryRepository.findAll();
+                model.addAttribute("categories", categories);
+            }
+        }
+
+        return "seller/Shop_Seller";
+    }
+
 
     @GetMapping("/admin")
     public String adminDashboard(Model model) {
@@ -124,16 +199,8 @@ public class PanelPageController {
         return "seller/Seller_Vouchers";
     }
 
-    @GetMapping("/seller/shop")
-    public String sellerShop(Model model) {
-        model.addAttribute("pageTitle", "Ho so gian hang");
-        model.addAttribute("pageSubtitle", "Cap nhat thong tin shop va trang thai hoat dong");
-        model.addAttribute("activeMenu", "seller-shop");
-        return "seller/Shop_Seller";
-    }
-
-
     @GetMapping("/seller/product-detail")
+
     public String sellerProductDetail() {
         return "seller/Seller_Product_Detail";
     }

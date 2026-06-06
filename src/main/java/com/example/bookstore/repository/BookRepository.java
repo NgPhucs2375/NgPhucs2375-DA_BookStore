@@ -18,6 +18,10 @@ public interface BookRepository extends JpaRepository<Book, Long>{
 
     List<Book> findBySeller(User seller);
 
+    List<Book> findBySellerAndApprovalStatus(User seller, ApprovalStatus approvalStatus);
+
+    Page<Book> findBySellerAndApprovalStatus(User seller, ApprovalStatus approvalStatus, Pageable pageable);
+
     @Query("SELECT b.approvalStatus FROM Book b WHERE b.id = :bookId")
     ApprovalStatus findApprovalStatusById(@Param("bookId") Long bookId);
 

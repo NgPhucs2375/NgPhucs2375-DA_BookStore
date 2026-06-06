@@ -26,6 +26,9 @@ public class SellerShopResponse {
     private String city;
     private String province;
     private ApprovalStatus approvalStatus;
+    private Integer followerCount;
+    private Double rating;
+    private Integer ratingCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

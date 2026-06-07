@@ -208,14 +208,25 @@ public class MainPageController {
         Page<Book> booksPage;
         if (category != null || minPrice != null || maxPrice != null) {
             // Sử dụng search query với filter
+            List<Long> sellerIdList = List.of(shop.getSeller().getId());
             booksPage = bookRepository.searchApprovedBooks(
-                    null, category, null, minPrice, maxPrice, null, null,
-                    ApprovalStatus.APPROVED, pageable);
+                    null,                                                    // q
+                    category != null ? List.of(category) : null,             // categoryIds
+                    sellerIdList,                                            // sellerIds
+                    null,                                                    // author
+                    minPrice,                                                // minPrice
+                    maxPrice,                                                // maxPrice
+                    null,                                                    // minRating
+                    null,                                                    // inStock
+                    null,                                                    // publishYearFrom
+                    null,                                                    // publishYearTo
+                    ApprovalStatus.APPROVED,                                 // status
+                    pageable                                                 // pageable
+            );
         } else {
             booksPage = bookRepository.findBySellerAndApprovalStatus(
                     shop.getSeller(), ApprovalStatus.APPROVED, pageable);
         }
-
         // 4. Lấy danh sách categories
         List<Category> categories = categoryRepository.findAll();
 

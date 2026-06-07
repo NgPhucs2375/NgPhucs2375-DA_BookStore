@@ -207,13 +207,13 @@ public class PanelPageController {
         return "seller/Seller_Vouchers";
     }
 
-    @GetMapping("/seller/shop")
+    /*@GetMapping("/seller/shop")
     public String sellerShop(Model model) {
         model.addAttribute("pageTitle", "Ho so gian hang");
         model.addAttribute("pageSubtitle", "Cap nhat thong tin shop va trang thai hoat dong");
         model.addAttribute("activeMenu", "seller-shop");
         return "seller/Shop_Seller";
-    }
+    }*/
 
 
     @GetMapping("/seller/product-detail")

@@ -190,21 +190,21 @@
                         <div class="p-2.5 rounded-full bg-brand-hero text-brand-brown"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg></div>
                         <div>
                             <div class="text-xs text-gray-500 font-medium">Sản phẩm</div>
-                            <div class="text-brand-orange font-bold text-lg">1,245</div>
+                            <div class="text-brand-orange font-bold text-lg"><span id="stats-product-count" th:text="${bookCount}">0</span></div>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="p-2.5 rounded-full bg-brand-hero text-brand-brown"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
                         <div>
                             <div class="text-xs text-gray-500 font-medium">Người theo dõi</div>
-                            <div class="text-brand-orange font-bold text-lg">145.2k</div>
+                            <div class="text-brand-orange font-bold text-lg"><span id="stats-follower-count">0</span></div>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="p-2.5 rounded-full bg-brand-hero text-brand-brown"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg></div>
                         <div>
                             <div class="text-xs text-gray-500 font-medium">Đánh giá</div>
-                            <div class="text-brand-orange font-bold text-lg">4.9 <span class="text-xs text-gray-500">(24k)</span></div>
+                            <div class="text-brand-orange font-bold text-lg"><span id="stats-rating-score">0.0</span> <span class="text-xs text-gray-500">(<span id="stats-rating-count">0</span>)</span></div>
                         </div>
                     </div>
                 </div>
@@ -248,6 +248,14 @@
             </div>
 
             <div id="seller-books-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div th:each="book : ${books}" th:replace="~{fragments/book_card :: card(
+                    title=${book.title},
+                    author=${book.author},
+                    imgUrl=${book.imageUrl != null ? book.imageUrl : 'https://via.placeholder.com/280x380?text=No+Cover'},
+                    price=${book.price},
+                    discount=0,
+                    href=@{/books/{id}(id=${book.id})}
+                )}"></div>
             </div>
         </div>
     </section>
@@ -403,66 +411,6 @@
         }
         // ==============================================
 
-
-        // === CODE RENDER SÁCH & GHIM SÁCH ===
-        window.togglePin = async function(bookId) {
-            try {
-                if (typeof ApiService !== 'undefined' && ApiService.Book && ApiService.Book.togglePin) {
-                    await ApiService.Book.togglePin(bookId);
-                } else {
-                    await request(`/api/books/seller/${bookId}/pin`, { method: 'PATCH' });
-                }
-                alert('Đã cập nhật trạng thái ghim sách!');
-                loadSellerBooks();
-            } catch(e) {
-                console.error(e);
-                alert('Lỗi: ' + (e.message || e));
-            }
-        };
-
-        function renderProduct(book) {
-            const pinnedBadge = book.pinned ? `<div class="absolute top-2 left-2 z-10 bg-brand-orange text-white text-[10px] font-bold py-1 px-2 rounded-md shadow-sm flex items-center gap-1">📌 Đã Ghim</div>` : '';
-            const pinActionText = book.pinned ? 'Bỏ Ghim' : 'Ghim Sách';
-            const coverUrl = book.imageUrl || book.coverImageUrl || '/images/covers/default.jpg';
-
-            const priceFormatted = (typeof ApiService !== 'undefined' && ApiService.formatVND)
-                                    ? ApiService.formatVND(book.price)
-                                    : (book.price || 0).toLocaleString('vi-VN') + 'đ';
-
-            return `
-            <div class="product-card relative group p-3 border border-brand-border rounded-xl hover:shadow-md transition-shadow bg-white flex flex-col h-full">
-                ${pinnedBadge}
-                <div class="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" onclick="togglePin(${book.id})" class="bg-white text-brand-brown hover:bg-brand-brown hover:text-white text-[10px] font-bold py-1 px-2 rounded-full shadow border border-brand-brown transition-colors">${pinActionText}</button>
-                </div>
-                <img src="${coverUrl}" class="w-full h-44 object-cover rounded-lg mb-3">
-                <h3 class="text-sm font-bold line-clamp-2 mb-1 flex-grow">${book.title}</h3>
-                <div class="text-brand-orange font-bold mt-2">${priceFormatted}</div>
-            </div>`;
-        }
-
-        async function loadSellerBooks() {
-            const bookContainer = document.getElementById('seller-books-container');
-            if (!bookContainer) return;
-
-            try {
-                const response = await request('/api/books/seller/me?size=50', { method: 'GET' });
-                const books = response.content || response || [];
-
-                if (books.length === 0) {
-                    bookContainer.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10 font-bold">Bạn chưa có sản phẩm nào trên kệ.</p>';
-                    return;
-                }
-
-                bookContainer.innerHTML = books.map(book => renderProduct(book)).join('');
-            } catch (e) {
-                console.error('Lỗi khi tải danh sách sách:', e);
-                bookContainer.innerHTML = '<p class="text-red-500 col-span-full text-center py-10 font-bold">Không thể tải dữ liệu sản phẩm.</p>';
-            }
-        }
-        // ==============================================
-
-
         // === CÁC HÀM XỬ LÝ FORM ===
         function getAuthHeaders() {
             const token = localStorage.getItem('token') || localStorage.getItem('jwt') || localStorage.getItem('accessToken');
@@ -531,6 +479,29 @@
             return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join('');
         }
 
+        function syncStats(shop) {
+            // Cập nhật số liệu thống kê từ dữ liệu shop
+            const followerCountEl = document.getElementById('stats-follower-count');
+            const ratingScoreEl = document.getElementById('stats-rating-score');
+            const ratingCountEl = document.getElementById('stats-rating-count');
+
+            if (followerCountEl && shop) {
+                const count = shop.followerCount || 0;
+                followerCountEl.textContent = count >= 1000
+                    ? (count / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
+                    : count.toLocaleString('vi-VN');
+            }
+            if (ratingScoreEl && shop) {
+                ratingScoreEl.textContent = (shop.rating || 0).toFixed(1);
+            }
+            if (ratingCountEl && shop) {
+                const count = shop.ratingCount || 0;
+                ratingCountEl.textContent = count >= 1000
+                    ? (count / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
+                    : count.toLocaleString('vi-VN');
+            }
+        }
+
         function syncHero(shop) {
             if (!shop) return;
             displayName.textContent = shop.shopName || 'Nha Nam Official';
@@ -596,6 +567,7 @@
                 currentShop = data;
                 fillForm(data);
                 syncHero(data);
+                syncStats(data);
                 updatePanelStatus(data);
             } catch (error) {
                 currentShop = null;
@@ -692,9 +664,8 @@
             }
         });
 
-        // Chạy song song cả load Shop, load Sách và load Voucher
+        // Chạy song song cả load Shop và load Voucher
         loadShop().then(() => {
-            loadSellerBooks();
             loadSellerVouchers();
         });
     })();

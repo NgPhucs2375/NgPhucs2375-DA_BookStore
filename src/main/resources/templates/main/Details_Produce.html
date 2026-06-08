@@ -448,7 +448,7 @@
 
               <div class="flex-grow flex flex-col justify-center">
                 <div class="flex items-center gap-2 mb-1">
-                  <h3 class="font-bold text-lg text-brand-dark">
+                  <h3 class="font-bold text-lg text-brand-dark" th:text="${book.seller != null ? book.seller.shopName : 'Người bán'}">
                     Nhã Nam Official
                   </h3>
                   <span
@@ -478,6 +478,9 @@
                 </div>
                 <div class="flex gap-2">
                   <button
+                    id="chat-now-btn"
+                    type="button"
+                    th:attr="data-product-id=${book.id}, data-seller-id=${book.seller != null ? book.seller.id : ''}, data-product-title=${book.title}, data-product-image=${book.imageUrl}, data-product-price=${book.price}"
                     class="flex-1 border border-brand-brown text-brand-brown text-[12px] font-bold py-2 px-4 rounded-full hover:bg-brand-brown/5 transition shadow-sm uppercase flex items-center justify-center gap-2"
                   >
                     <svg
@@ -1438,6 +1441,27 @@
 
     <script src="/js/api-service.js"></script>
     <script src="/js/pages/details-page.js"></script>
+    <script src="/js/chat-service.js"></script>
+    <script src="/js/chat-ui.js"></script>
+
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    // Inject authentication data from server into localStorage for chat-service.js
+    var serverAuthUserId = /*[[${authUserId}]]*/ null;
+    var serverAuthRole = /*[[${authUserRole}]]*/ null;
+    var serverAuthToken = /*[[${authAccessToken}]]*/ null;
+
+    if (serverAuthUserId && !localStorage.getItem('userId')) {
+        localStorage.setItem('userId', serverAuthUserId);
+    }
+    if (serverAuthRole && !localStorage.getItem('userRole')) {
+        localStorage.setItem('userRole', serverAuthRole);
+    }
+    if (serverAuthToken && !localStorage.getItem('accessToken')) {
+        localStorage.setItem('accessToken', serverAuthToken);
+    }
+    /*]]>*/
+  </script>
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
@@ -1475,8 +1499,59 @@
             loadBoughtTogetherRecommendations(currentBookId);
         }
 
-        // --- (GIỮ NGUYÊN LOGIC BẤM MUA NGAY/THÊM VÀO GIỎ CỦA BẠN Ở ĐÂY) ---
-        // Ví dụ: buyNowBtn.addEventListener('click', async () => { ... })
+        // --- LOGIC 3: CHAT - KHỞI TẠO POPUP VÀ XỬ LÝ NÚT CHAT NGAY ---
+        if (window.ChatUI && typeof window.ChatUI.initBuyerPopup === 'function') {
+            window.ChatUI.initBuyerPopup();
+        }
+
+        // Xử lý sự kiện click nút "Chat Ngay"
+        const chatNowBtn = document.getElementById('chat-now-btn');
+        if (chatNowBtn) {
+            chatNowBtn.addEventListener('click', async () => {
+                // Kiểm tra đăng nhập
+                const { userId } = window.ChatService.getAuth();
+                if (!userId) {
+                    window.location.href = '/main/auth';
+                    return;
+                }
+
+                const productId = chatNowBtn.dataset.productId;
+                const sellerId = chatNowBtn.dataset.sellerId;
+                const productTitle = chatNowBtn.dataset.productTitle;
+                const productImage = chatNowBtn.dataset.productImage;
+                const productPrice = parseFloat(chatNowBtn.dataset.productPrice || '0');
+
+                if (!sellerId) {
+                    alert('Không tìm thấy thông tin người bán');
+                    return;
+                }
+
+                try {
+                    // Tạo hoặc lấy room chat
+                    const result = await window.ChatService.createRoom(
+                        productId, sellerId, productTitle, productImage, productPrice
+                    );
+
+                    if (result.success && result.data) {
+                        const chatId = result.data.chatId || result.data;
+                        // Mở popup chat với room này
+                        if (window.ChatUI && typeof window.ChatUI.openBuyerChat === 'function') {
+                            await window.ChatUI.openBuyerChat(chatId);
+                        }
+                    } else {
+                        alert('Không thể tạo phòng chat');
+                    }
+                } catch (err) {
+                    console.error('Chat error:', err);
+                    alert('Lỗi kết nối chat: ' + err.message);
+                }
+            });
+        }
+
+        // --- LOGIC 4: KHỞI TẠO ICON CHAT TOÀN CỤC ---
+        if (window.ChatUI && typeof window.ChatUI.initGlobalChatIcon === 'function') {
+            window.ChatUI.initGlobalChatIcon();
+        }
     });
 
     // HÀM RENDER SÁCH GỢI Ý (UI CỰC PREMIUM)

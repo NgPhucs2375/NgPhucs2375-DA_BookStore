@@ -74,6 +74,8 @@ var ApiService = window.ApiService || (() => {
                 : 'Request failed';
             const error = new Error(message);
             error.data = data;
+            error.status = response.status;
+            error.statusText = response.statusText;
             throw error;
         }
         return data;

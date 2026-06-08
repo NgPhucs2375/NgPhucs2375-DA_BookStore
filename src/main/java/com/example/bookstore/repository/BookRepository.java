@@ -30,6 +30,8 @@ public interface BookRepository extends JpaRepository<Book, Long>{
 
     List<Book> findBySeller(User seller);
 
+    long countBySellerId(Long sellerId);
+
     @Query("SELECT b.approvalStatus FROM Book b WHERE b.id = :bookId")
     ApprovalStatus findApprovalStatusById(@Param("bookId") Long bookId);
 
@@ -161,7 +163,6 @@ public interface BookRepository extends JpaRepository<Book, Long>{
                 :categoryId IS NULL
                 OR c.id = :categoryId
               )
-            ORDER BY b.id DESC
             """)
         Page<Book> findBySellerIdAndKeywordAndCategory(
             @Param("sellerId") Long sellerId,

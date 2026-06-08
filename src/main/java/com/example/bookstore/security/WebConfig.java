@@ -12,5 +12,9 @@ public class WebConfig implements WebMvcConfigurer {
         // Mở "đường hầm" mapping link web /images/covers/ thẳng vào ổ cứng thư mục src
         registry.addResourceHandler("/images/covers/**")
                 .addResourceLocations("file:src/main/resources/static/images/covers/");
+
+        // Phục vụ ảnh upload cho shop (logo, banner) từ thư mục uploads/shops/
+        registry.addResourceHandler("/uploads/shops/**")
+                .addResourceLocations("file:uploads/shops/");
     }
 }

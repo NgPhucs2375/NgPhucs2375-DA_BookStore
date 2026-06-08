@@ -4,11 +4,13 @@ package com.example.bookstore.controller;
 import com.example.bookstore.config.JwtUtil;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.Category;
+import com.example.bookstore.model.Coupon;
 import com.example.bookstore.model.SellerShop;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.CategoryRepository;
+import com.example.bookstore.repository.CouponRepository;
 import com.example.bookstore.repository.SellerShopRepository;
 import com.example.bookstore.repository.UserRepository;
 import org.springframework.security.core.Authentication;
@@ -28,16 +30,19 @@ public class PanelPageController {
     private final SellerShopRepository sellerShopRepository;
     private final BookRepository bookRepository;
     private final CategoryRepository categoryRepository;
+    private final CouponRepository couponRepository;
 
     public PanelPageController(JwtUtil jwtUtil, UserRepository userRepository,
                                SellerShopRepository sellerShopRepository,
                                BookRepository bookRepository,
-                               CategoryRepository categoryRepository) {
+                               CategoryRepository categoryRepository,
+                               CouponRepository couponRepository) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.sellerShopRepository = sellerShopRepository;
         this.bookRepository = bookRepository;
         this.categoryRepository = categoryRepository;
+        this.couponRepository = couponRepository;
     }
     @GetMapping("/seller/shop")
     public String sellerShop(Model model, Authentication authentication) {
@@ -49,14 +54,36 @@ public class PanelPageController {
         if (authentication != null && authentication.isAuthenticated()) {
             Object principal = authentication.getPrincipal();
             Long userId = null;
+            String role = null;
+            String accessToken = null;
 
             if (principal instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal jwtPrincipal) {
                 userId = jwtPrincipal.userId();
+                role = jwtPrincipal.roles() != null && !jwtPrincipal.roles().isEmpty()
+                    ? jwtPrincipal.roles().get(0) : null;
             } else if (principal instanceof User user) {
                 userId = user.getId();
+                role = user.getRole() != null ? user.getRole().name() : null;
             }
 
             if (userId != null) {
+                // Generate JWT token for the authenticated user (for JS to use)
+                if (role != null) {
+                    try {
+                        User user = userRepository.findById(userId).orElse(null);
+                        if (user != null) {
+                            accessToken = jwtUtil.generateToken(user);
+                        }
+                    } catch (Exception e) {
+                        // Token generation failed silently - frontend will use X-User-Id fallback
+                    }
+                }
+
+                // Inject auth data into model for JS to use
+                model.addAttribute("authUserId", userId);
+                model.addAttribute("authUserRole", role != null ? role : "BUYER");
+                model.addAttribute("authAccessToken", accessToken);
+
                 // Find seller's shop
                 SellerShop shop = sellerShopRepository.findBySellerId(userId).orElse(null);
                 model.addAttribute("shop", shop);
@@ -79,10 +106,15 @@ public class PanelPageController {
                         }
                     }
                     model.addAttribute("joinDuration", joinDuration);
+
+                    // Load vouchers for this seller's shop
+                    List<Coupon> vouchers = couponRepository.findAllValidVouchersForSeller(shop.getSeller().getId());
+                    model.addAttribute("vouchers", vouchers);
                 } else {
                     model.addAttribute("books", List.of());
                     model.addAttribute("bookCount", 0);
                     model.addAttribute("joinDuration", "Mới");
+                    model.addAttribute("vouchers", List.of());
                 }
 
                 // Load categories

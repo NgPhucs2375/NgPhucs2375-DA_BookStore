@@ -2,11 +2,13 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.Category;
+import com.example.bookstore.model.Coupon;
 import com.example.bookstore.model.SellerShop;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.SellerShopRepository;
+import com.example.bookstore.service.CouponService;
 import com.example.bookstore.service.SellerShopService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -38,6 +40,9 @@ public class MainPageController {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private CouponService couponService;
 
     @GetMapping("/")
     public String home(Model model) {
@@ -245,7 +250,10 @@ public class MainPageController {
             }
         }
 
-        // 7. Đưa dữ liệu vào model
+        // 7. Load valid vouchers for this shop
+        List<Coupon> vouchers = couponService.getValidCouponsForSeller(shop.getSeller().getId());
+
+        // 8. Đưa dữ liệu vào model
         model.addAttribute("shop", shop);
         model.addAttribute("books", booksPage.getContent());
         model.addAttribute("bookCount", bookCount);
@@ -258,6 +266,7 @@ public class MainPageController {
         model.addAttribute("selectedCategory", category);
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
+        model.addAttribute("vouchers", vouchers);
 
         return "seller/Shop_Seller";
     }

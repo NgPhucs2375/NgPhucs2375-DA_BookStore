@@ -807,6 +807,10 @@ var ApiService = window.ApiService || (() => {
         }
     };
 
+
+
+
+
     // ==========================================
     // PUBLIC API
     // ==========================================
@@ -838,6 +842,34 @@ var ApiService = window.ApiService || (() => {
         SellerShop,
         Category,
         Admin,
+    // ==========================================
+    // 7. Recommemdation APIs
+    // ============================================
+    // ... các code phía trên ...
+        Wishlist,
+        Order,
+        SellerShop,
+        Category,
+        Admin,
+
+        // 👇 BẮT ĐẦU DÁN TỪ ĐÂY 👇
+        Recommendation: {
+            getBoughtTogether: async (bookId) => {
+                const response = await fetch(`${API_BASE}/recommendations/${bookId}/bought-together`, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                return handleResponse(response);
+            },
+            getSimilar: async (bookId) => {
+                const response = await fetch(`${API_BASE}/recommendations/${bookId}/similar`, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                return handleResponse(response);
+            }
+        },
+
 
         // Helper: Kiểm tra role
         isAuthenticated: () => !!getAuth().userId,

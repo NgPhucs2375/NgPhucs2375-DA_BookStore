@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
@@ -29,6 +29,7 @@
                         'soft': '0 4px 20px -2px rgba(74, 59, 50, 0.05)',
                         'hover': '0 10px 25px -5px rgba(74, 59, 50, 0.1)',
                     }
+
                 }
             }
         }
@@ -89,6 +90,10 @@
         /* Nút Quick action hiện lên khi hover */
         .quick-action-group { opacity: 0; transform: translateY(10px); transition: all 0.3s ease; }
         .product-card:hover .quick-action-group { opacity: 1; transform: translateY(0); }
+
+        /* Ẩn thanh cuộn cho khu vực scroll ngang */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         /* Checkbox custom */
         input[type="checkbox"].custom-cb { appearance: none; background-color: #fff; margin: 0; font: inherit; color: currentColor; width: 1.15em; height: 1.15em; border: 1px solid var(--brand-brown); border-radius: 0.15em; display: grid; place-content: center; cursor: pointer; }
@@ -169,51 +174,80 @@
     </div>
 </header>
 
-<main class="flex-grow">
+<main class="flex-grow bg-brand-bg">
 
-    <section class="bg-brand-hero py-20 border-b border-brand-border">
-        <div class="max-w-[1400px] mx-auto px-6 flex flex-col items-center justify-center text-center">
-            <h1 class="text-4xl md:text-5xl font-bold mb-8 text-brand-dark tracking-tight">Chào mừng bạn đến thế giới sách</h1>
-            <a href="#danh-muc-sach" class="bg-brand-brown border-2 border-brand-brown text-white font-bold text-lg px-10 py-3 rounded hover:bg-transparent hover:text-brand-dark transition-all duration-300 shadow-md">
-                Mua ngay
-            </a>
-        </div>
-    </section>
-
-    <section id="danh-muc-sach" class="bg-white py-16 border-b border-brand-border">
-        <div class="max-w-[1400px] mx-auto px-6">
-            <h2 class="text-3xl font-bold text-center mb-12 text-brand-dark">Danh mục</h2>
-
-            <div id="home-category-grid" class="flex flex-wrap justify-center gap-6 md:gap-10">
-                <a href="#" class="w-36 h-36 bg-brand-bg border-2 border-brand-brown rounded-lg flex flex-col items-center justify-center text-brand-dark hover:bg-brand-brown hover:text-white transition-colors duration-300 shadow-sm group">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-brand-brown group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                    <span class="font-bold text-sm">Tiểu thuyết</span>
-                </a>
-
-                <a href="#" class="w-36 h-36 bg-brand-bg border-2 border-brand-brown rounded-lg flex flex-col items-center justify-center text-brand-dark hover:bg-brand-brown hover:text-white transition-colors duration-300 shadow-sm group">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-brand-brown group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
-                    <span class="font-bold text-sm">Truyện</span>
-                </a>
-
-                <a href="#" class="w-36 h-36 bg-brand-bg border-2 border-brand-brown rounded-lg flex flex-col items-center justify-center text-brand-dark hover:bg-brand-brown hover:text-white transition-colors duration-300 shadow-sm group">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-brand-brown group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>
-                    <span class="font-bold text-sm">SGK</span>
-                </a>
-
-                <a href="#" class="w-36 h-36 bg-brand-bg border-2 border-brand-brown rounded-lg flex flex-col items-center justify-center text-brand-dark hover:bg-brand-brown hover:text-white transition-colors duration-300 shadow-sm group">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-brand-brown group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                    <span class="font-bold text-sm">Đồ dùng</span>
-                </a>
-
-                <a href="#" class="w-36 h-36 bg-brand-bg border-2 border-brand-brown rounded-lg flex flex-col items-center justify-center text-brand-dark hover:bg-brand-brown hover:text-white transition-colors duration-300 shadow-sm group hidden md:flex">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-brand-brown group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
-                    <span class="font-bold text-sm">Ngoại ngữ</span>
-                </a>
+    <section class="max-w-[1400px] mx-auto px-6 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-auto lg:h-[400px]">
+            <div class="lg:col-span-2 bg-gradient-to-br from-[#2c3e50] to-[#3498db] rounded-2xl p-10 flex flex-col justify-center text-white shadow-lg relative overflow-hidden group">
+                <div class="absolute inset-0 bg-black opacity-10 group-hover:opacity-0 transition-opacity duration-500"></div>
+                <div class="relative z-10" data-aos="fade-right">
+                    <span class="inline-block bg-brand-orange text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest mb-4 animate-bounce">Sự kiện tháng 6</span>
+                    <h1 class="text-4xl md:text-5xl font-black mb-4 leading-tight">Lễ Hội Văn Học<br><span class="text-yellow-400">Giảm Đến 50%</span></h1>
+                    <p class="mb-8 text-gray-200 max-w-md">Khám phá hàng ngàn tựa sách kinh điển với mức giá không thể tin nổi. Freeship mọi đơn hàng từ 150k.</p>
+                    <a href="#goi-y-cho-ban" class="inline-block bg-white text-[#2c3e50] font-black text-lg px-8 py-3 rounded-full hover:bg-brand-orange hover:text-white transition-all transform hover:scale-105 shadow-md">Săn Sale Ngay</a>
+                </div>
+                <div class="absolute -bottom-20 -right-20 w-64 h-64 border-[30px] border-white/10 rounded-full group-hover:scale-110 transition-transform duration-700"></div>
+            </div>
+            <div class="flex flex-col gap-4 h-full" data-aos="fade-left">
+                <div class="flex-1 bg-gradient-to-r from-[#d35400] to-[#e67e22] rounded-2xl p-6 flex flex-col justify-center relative overflow-hidden shadow-md group cursor-pointer hover:shadow-xl transition-all">
+                    <h3 class="text-2xl font-black text-white mb-1">Mã Giảm 20K</h3>
+                    <p class="text-orange-100 text-sm mb-3">Nhập: <span class="bg-white text-[#d35400] font-bold px-2 py-0.5 rounded border border-dashed border-[#d35400]">BOOKOM20</span></p>
+                </div>
+                <div class="flex-1 bg-gradient-to-r from-[#8e44ad] to-[#9b59b6] rounded-2xl p-6 flex flex-col justify-center relative overflow-hidden shadow-md group cursor-pointer hover:shadow-xl transition-all">
+                    <h3 class="text-xl font-black text-white mb-1">Sách Ngoại Văn</h3>
+                    <p class="text-purple-100 text-sm">Mua 1 Tặng 1 Bookmark Độc Quyền</p>
+                </div>
             </div>
         </div>
     </section>
 
-    <section class="max-w-[1400px] mx-auto px-6 py-12 flex flex-col lg:flex-row gap-10">
+    <section id="danh-muc-sach" class="max-w-[1400px] mx-auto px-6 py-6 border-b border-brand-border">
+        <h2 class="text-xl font-bold text-brand-dark mb-4">Danh mục nổi bật</h2>
+        <div id="home-category-grid" class="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 no-scrollbar">
+            <a href="#" class="snap-start min-w-[144px] h-36 bg-white border border-brand-border rounded-xl flex flex-col items-center justify-center text-brand-dark hover:border-brand-brown hover:text-brand-brown transition-all duration-300 shadow-sm group">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-brand-brown" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                <span class="font-bold text-sm">Tiểu thuyết</span>
+            </a>
+            <a href="#" class="snap-start min-w-[144px] h-36 bg-white border border-brand-border rounded-xl flex flex-col items-center justify-center text-brand-dark hover:border-brand-brown hover:text-brand-brown transition-all duration-300 shadow-sm group">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-brand-brown" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                <span class="font-bold text-sm">Truyện</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="bg-gradient-to-r from-red-50 to-orange-50 py-10 border-b border-brand-border" data-aos="fade-up">
+        <div class="max-w-[1400px] mx-auto px-6">
+            <div class="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+                <div class="flex items-center gap-4 bg-white px-4 py-2 rounded-full shadow-sm border border-orange-100">
+                    <h2 class="text-3xl font-black text-brand-orange uppercase flex items-center gap-2">
+                        <svg class="w-8 h-8 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Flash Sale
+                    </h2>
+                    <div id="flash-sale-timer" class="flex gap-2 font-mono font-bold text-lg ml-2">
+                        <span class="bg-brand-dark text-white px-3 py-1 rounded shadow-inner" id="fs-hours">00</span><span class="text-brand-dark pt-1">:</span>
+                        <span class="bg-brand-dark text-white px-3 py-1 rounded shadow-inner" id="fs-minutes">00</span><span class="text-brand-dark pt-1">:</span>
+                        <span class="bg-brand-dark text-white px-3 py-1 rounded shadow-inner" id="fs-seconds">00</span>
+                    </div>
+                </div>
+                <a href="#" class="text-brand-orange font-bold hover:bg-orange-100 px-4 py-2 rounded-full transition-colors flex items-center gap-1">Xem tất cả <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></a>
+            </div>
+
+            <div id="flash-sale-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                <div th:replace="~{fragments/book_card :: card(id=999, title='Sách Flash Sale Demo', author='Admin', imgUrl='https://via.placeholder.com/280x380', price=200000, discount=50000, href='#')}"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="max-w-[1400px] mx-auto px-6 py-12 border-b border-brand-border" data-aos="fade-up">
+        <h2 class="text-3xl font-black text-brand-dark uppercase mb-8 flex items-center gap-3">
+            <span class="text-4xl">🔥</span> Top Bán Chạy Trong Tuần
+        </h2>
+        <div id="index-best-sellers-grid" class="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-6 no-scrollbar px-2">
+            <div class="text-gray-400 font-medium w-full text-center py-10">Đang tải bảng xếp hạng...</div>
+        </div>
+    </section>
+
+    <section id="goi-y-cho-ban" class="max-w-[1400px] mx-auto px-6 py-12 flex flex-col lg:flex-row gap-10">
 
         <aside class="w-full lg:w-1/4 xl:w-1/5 flex-shrink-0">
             <div class="bg-white border border-brand-border rounded-xl p-6 shadow-soft sticky top-28">
@@ -313,25 +347,25 @@
                     <ul id="publisher-filter-list" class="space-y-3 text-sm font-medium text-brand-dark">
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-cb">
+                                <input type="checkbox" class="custom-cb publisher-filter-checkbox" value="NXB Trẻ">
                                 <span class="group-hover:text-brand-brown transition">NXB Trẻ</span>
                             </label>
                         </li>
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-cb">
+                                <input type="checkbox" class="custom-cb publisher-filter-checkbox" value="NXB Kim Đồng">
                                 <span class="group-hover:text-brand-brown transition">NXB Kim Đồng</span>
                             </label>
                         </li>
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-cb">
+                                <input type="checkbox" class="custom-cb publisher-filter-checkbox" value="NXB Tổng Hợp TP.HCM">
                                 <span class="group-hover:text-brand-brown transition">NXB Tổng Hợp TP.HCM</span>
                             </label>
                         </li>
                         <li>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-cb">
+                                <input type="checkbox" class="custom-cb publisher-filter-checkbox" value="Nhã Nam">
                                 <span class="group-hover:text-brand-brown transition">Nhã Nam</span>
                             </label>
                         </li>
@@ -368,13 +402,13 @@
             </div>
 
             <div id="books-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
-                <!-- Fallback card for when Thymeleaf model is empty, for layout preview -->
                 <div th:if="${books == null or #lists.isEmpty(books)}">
-                    <div th:replace="~{fragments/book_card :: card('How to Make an American Quilt','Whitney Otto','/static/images/sample-book.jpg',203000,20,'/book/1')}"></div>
+                    <div th:replace="~{fragments/book_card :: card(id=1, title='How to Make an American Quilt', author='Whitney Otto', imgUrl='/static/images/sample-book.jpg', price=203000, discount=20, href='/book/1')}"></div>
                 </div>
-                <!-- Book card loop -->
-                <th:block th:each="book : ${books}">
-                    <div th:replace="~{fragments/book_card :: card(${book.title}, ${book.author}, ${book.imageUrl}, ${book.price}, 0, @{/book/{id}(id=${book.id})})}"></div>
+                <th:block th:each="book, iterStat : ${books}">
+                    <div data-aos="fade-up" th:attr="data-aos-delay=${iterStat.index % 4 * 100}">
+                        <div th:replace="~{fragments/book_card :: card(id=${book.id}, title=${book.title}, author=${book.author}, imgUrl=${book.imageUrl}, price=${book.price}, discount=${book.discountAmount}, href=@{/books/{id}(id=${book.id})})}"></div>
+                    </div>
                 </th:block>
             </div>
 
@@ -391,7 +425,7 @@
                     <a href="#" class="relative inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-brand-dark hover:bg-brand-bg transition-colors mx-1">10</a>
                     <a href="#" class="relative inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-500 hover:bg-brand-bg transition-colors">
                         <span class="sr-only">Next</span>
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4-4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
                     </a>
                 </nav>
             </div>
@@ -411,7 +445,6 @@
     </section>
 
 </main>
-
 <footer class="bg-brand-brown text-brand-dark pt-16 pb-8 border-t border-brand-border">
     <div class="max-w-[1400px] mx-auto px-6">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
@@ -497,5 +530,11 @@
 
 <script src="/js/api-service.js"></script>
 <script src="/js/pages/index-page.js"></script>
+<script>
+    function openQuickView(bookId) {
+        if (!bookId) return;
+        window.dispatchEvent(new CustomEvent('open-quick-view', { detail: { bookId: bookId } }));
+    }
+</script>
 </body>
 </html>

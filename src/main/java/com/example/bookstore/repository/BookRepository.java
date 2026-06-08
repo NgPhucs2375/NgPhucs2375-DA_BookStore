@@ -16,6 +16,18 @@ public interface BookRepository extends JpaRepository<Book, Long>{
     // Ví dụ: Tìm sách theo tiêu đề để hỗ trợ gợi ý sản phẩm
     List<Book> findByTitleContaining(String title);
 
+    // 1. Dùng cho Trang chủ (index.html) - CHỈ hiển thị sách đã duyệt và đang bán
+    Page<Book> findByApprovalStatusAndIsActiveTrue(ApprovalStatus status, Pageable pageable);
+
+    // 2. Dùng cho mục "Thường được mua kèm" (Details_Produce.html)
+    // Lấy sách cùng danh mục, trừ cuốn hiện tại ra, ưu tiên sách đã duyệt
+    List<Book> findByCategoryIdAndIdNotAndApprovalStatusAndIsActiveTrue(
+            Long categoryId,
+            Long currentBookId,
+            ApprovalStatus status,
+            Pageable pageable
+    );
+
     List<Book> findBySeller(User seller);
 
     @Query("SELECT b.approvalStatus FROM Book b WHERE b.id = :bookId")
@@ -47,32 +59,34 @@ public interface BookRepository extends JpaRepository<Book, Long>{
 
     Page<Book> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 
-        @Query("""
-            SELECT b FROM Book b
-            LEFT JOIN b.category c
-            LEFT JOIN b.seller s
-            WHERE b.approvalStatus = :status
-              AND b.isActive = true
-              AND (
-                :q IS NULL
-                OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
-                OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
-                OR LOWER(COALESCE(b.publisher, '')) LIKE LOWER(CONCAT('%', :q, '%'))
-              )
-              AND (:categoryIds IS NULL OR c.id IN :categoryIds)
-              AND (:sellerIds IS NULL OR s.id IN :sellerIds)
-              AND (:author IS NULL OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%')))
-              AND (:minPrice IS NULL OR b.price >= :minPrice)
-              AND (:maxPrice IS NULL OR b.price <= :maxPrice)
-              AND (:minRating IS NULL OR b.averageRating >= :minRating)
-              AND (:inStock IS NULL OR :inStock = false OR b.stockQuantity > 0)
-              AND (:publishYearFrom IS NULL OR b.publishYear >= :publishYearFrom)
-              AND (:publishYearTo IS NULL OR b.publishYear <= :publishYearTo)
-            """)
+    @Query("""
+        SELECT b FROM Book b
+        LEFT JOIN b.category c
+        LEFT JOIN b.seller s
+        WHERE b.approvalStatus = :status
+          AND b.isActive = true
+          AND (
+            :q IS NULL
+            OR LOWER(b.title) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR LOWER(b.author) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR LOWER(COALESCE(b.publisher, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+          )
+          AND (:categoryIds IS NULL OR c.id IN :categoryIds)
+          AND (:sellerIds IS NULL OR s.id IN :sellerIds)
+          AND (:publishers IS NULL OR b.publisher IN :publishers) 
+          AND (:author IS NULL OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%')))
+          AND (:minPrice IS NULL OR b.price >= :minPrice)
+          AND (:maxPrice IS NULL OR b.price <= :maxPrice)
+          AND (:minRating IS NULL OR b.averageRating >= :minRating)
+          AND (:inStock IS NULL OR :inStock = false OR b.stockQuantity > 0)
+          AND (:publishYearFrom IS NULL OR b.publishYear >= :publishYearFrom)
+          AND (:publishYearTo IS NULL OR b.publishYear <= :publishYearTo)
+        """)
         Page<Book> searchApprovedBooks(
             @Param("q") String q,
             @Param("categoryIds") List<Long> categoryIds,
             @Param("sellerIds") List<Long> sellerIds,
+            @Param("publishers") List<String> publishers,
             @Param("author") String author,
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice,

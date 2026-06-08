@@ -57,7 +57,12 @@ public class CartService {
                 .orElseGet(() -> cartRepository.save(Cart.builder().buyer(buyer).build()));
 
         CartItem item = cartItemRepository.findByCartIdAndBookId(cart.getId(), book.getId())
-                .orElseGet(() -> CartItem.builder().cart(cart).book(book).quantity(0).build());
+                .orElseGet(() -> {
+                    CartItem newItem = CartItem.builder().cart(cart).book(book).quantity(0).build();
+                    // ĐỒNG BỘ CACHE: Thêm item mới vào thẳng list của Cart
+                    cart.getItems().add(newItem);
+                    return newItem;
+                });
 
         int newQuantity = item.getQuantity() + request.getQuantity();
         if (newQuantity > book.getStockQuantity()) {
@@ -67,7 +72,7 @@ public class CartService {
         item.setQuantity(newQuantity);
         cartItemRepository.save(item);
 
-        return toCartResponse(cartRepository.findById(cart.getId()).orElse(cart));
+        return toCartResponse(cart);
     }
 
     @Transactional
@@ -91,7 +96,7 @@ public class CartService {
         item.setQuantity(quantity);
         cartItemRepository.save(item);
 
-        return toCartResponse(cartRepository.findById(cart.getId()).orElse(cart));
+        return toCartResponse(cart);
     }
 
     @Transactional
@@ -103,10 +108,12 @@ public class CartService {
         CartItem item = cartItemRepository.findByIdAndCartId(itemId, cart.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cart item not found"));
 
-        cartItemRepository.delete(item);
-        return toCartResponse(cartRepository.findById(cart.getId()).orElse(cart));
-    }
+        cart.getItems().remove(item);
 
+        cartItemRepository.delete(item);
+
+        return toCartResponse(cart);
+    }
     private User requireBuyer(Long buyerId) {
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Buyer not found"));

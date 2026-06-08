@@ -41,7 +41,7 @@ public class SellerDashboardController {
      * GET /api/seller/dashboard-stats?period=week
      */
     @GetMapping("/dashboard-stats")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public Map<String, Object> sellerDashboardStats(
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
             @RequestHeader(value = "X-User-Id", required = false) String xUserId,
@@ -248,7 +248,7 @@ public class SellerDashboardController {
      * GET /api/seller/analytics
      */
     @GetMapping("/analytics")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public Map<String, Object> sellerAnalytics(
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
             @RequestHeader(value = "X-User-Id", required = false) String xUserId

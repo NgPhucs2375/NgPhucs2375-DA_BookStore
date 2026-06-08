@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin("*")
-@RequestMapping("/api/admin/seller-applications")
+@RequestMapping("/api/admin/seller-shops-management")
 public class AdminSellerController {
 
     @Autowired
@@ -38,7 +38,7 @@ public class AdminSellerController {
     private MailService mailService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> listPending(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -46,7 +46,7 @@ public class AdminSellerController {
     ) {
         int normalizedPage = Math.max(page, 0);
         int normalizedSize = Math.min(Math.max(size, 1), 100);
-        String keyword = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
+        String keyword = (q == null || q.equalsIgnoreCase("null") || q.equalsIgnoreCase("undefined")) ? "" : q.trim().toLowerCase(Locale.ROOT);
 
         List<SellerShop> filtered = shopRepository.findAll()
             .stream()
@@ -60,13 +60,14 @@ public class AdminSellerController {
             .collect(Collectors.toList());
 
         int totalItems = filtered.size();
-        int totalPages = (int) Math.ceil(totalItems / (double) normalizedSize);
-        int fromIndex = Math.min(normalizedPage * normalizedSize, totalItems);
+        int totalPages = (int) Math.ceil(totalItems / (double) normalizedSize);        int fromIndex = Math.min(normalizedPage * normalizedSize, totalItems);
         int toIndex = Math.min(fromIndex + normalizedSize, totalItems);
 
-        List<Map<String, Object>> items = filtered.subList(fromIndex, toIndex).stream()
-            .map(this::toAdminRow)
-            .toList();
+        List<Map<String, Object>> items = filtered.stream()
+                .skip((long) normalizedPage * normalizedSize)
+                .limit(normalizedSize)
+                .map(this::toAdminRow)
+                .toList();
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("items", items);
@@ -80,7 +81,7 @@ public class AdminSellerController {
     }
 
     @PutMapping("/{shopId}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> approve(@PathVariable Long shopId) {
         SellerShop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
         // Promote user and approve via service
@@ -106,20 +107,50 @@ public class AdminSellerController {
     }
 
     @PutMapping("/{shopId}/reject")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> reject(@PathVariable Long shopId, @RequestBody(required = false) java.util.Map<String, String> body) {
-        SellerShop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> reject(
+            @PathVariable Long shopId,
+            @RequestBody(required = false) java.util.Map<String, Object> body // Đổi sang Object cho an toàn
+    ) {
+        SellerShop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new RuntimeException("Shop not found"));
+
+        // Cập nhật trạng thái thành REJECTED bài bản
         shop.setApprovalStatus(ApprovalStatus.REJECTED);
-        String reason = body == null ? null : body.getOrDefault("reason", null);
-        if (reason != null && !reason.isBlank()) {
-            shop.setRejectionReason(reason);
+
+        // Kiểm tra và lấy lý do an toàn
+        String reason = "";
+        if (body != null && body.containsKey("reason") && body.get("reason") != null) {
+            reason = body.get("reason").toString().trim();
         }
+
+        if (!reason.isBlank()) {
+            shop.setRejectionReason(reason);
+        } else {
+            shop.setRejectionReason("Không có lý do cụ thể.");
+            reason = "Không có lý do cụ thể.";
+        }
+
+        // Lưu thay đổi vào DB trước khi tạo thông báo
         shopRepository.save(shop);
+
+        // Tạo Notification
         NotificationCreateRequest nc = new NotificationCreateRequest();
         nc.setType(com.example.bookstore.model.enums.NotificationType.SHOP_APPROVAL_UPDATED);
         nc.setTitle("Yêu cầu mở cửa hàng bị từ chối");
-        nc.setMessage("Yêu cầu của bạn bị từ chối" + (reason != null ? (": " + reason) : "."));
-        nc.setPayloadJson(String.format("{\"shopId\":%d,\"status\":\"REJECTED\",\"reason\":\"%s\"}", shop.getId(), reason == null ? "" : reason.replaceAll("\"","\\\"")));
+        nc.setMessage("Yêu cầu của bạn bị từ chối: " + reason);
+
+        // Sử dụng ObjectMapper hoặc Map để sinh chuỗi JSON an toàn thay vì String.format cộng chuỗi thủ công
+        try {
+            java.util.Map<String, Object> payloadMap = new java.util.HashMap<>();
+            payloadMap.put("shopId", shop.getId());
+            payloadMap.put("status", "REJECTED");
+            payloadMap.put("reason", reason);
+            nc.setPayloadJson(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(payloadMap));
+        } catch (Exception e) {
+            nc.setPayloadJson("{\"status\":\"REJECTED\"}");
+        }
+
         var notificationResp = notificationService.createNotification(null, shop.getSeller().getId(), nc);
 
         boolean mailConfigured = mailService.isConfigured();
@@ -132,9 +163,8 @@ public class AdminSellerController {
         resp.put("mailSent", mailSent);
         return ResponseEntity.ok(resp);
     }
-
     @PutMapping("/{shopId}/resend-email")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> resendEmail(@PathVariable Long shopId, @RequestParam(defaultValue = "rejected") String type) {
         SellerShop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
         boolean configured = mailService.isConfigured();
@@ -148,7 +178,7 @@ public class AdminSellerController {
     }
 
     @PutMapping("/{shopId}/resend-notification")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> resendNotification(@PathVariable Long shopId, @RequestParam(defaultValue = "rejected") String type) {
         SellerShop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
         NotificationCreateRequest nc = new NotificationCreateRequest();
@@ -167,6 +197,7 @@ public class AdminSellerController {
     }
 
     private boolean matchesKeyword(SellerShop shop, String keyword) {
+        if (keyword == null || keyword.isBlank()) return true;
         String shopName = shop.getShopName() == null ? "" : shop.getShopName().toLowerCase(Locale.ROOT);
         String slug = shop.getSlug() == null ? "" : shop.getSlug().toLowerCase(Locale.ROOT);
         User seller = shop.getSeller();
@@ -184,8 +215,7 @@ public class AdminSellerController {
         row.put("slug", shop.getSlug());
         row.put("shopName", shop.getShopName());
         row.put("address", shop.getAddress());
-        row.put("approvalStatus", shop.getApprovalStatus());
-        row.put("rejectionReason", shop.getRejectionReason());
+        row.put("approvalStatus", shop.getApprovalStatus() != null ? shop.getApprovalStatus().name() : "PENDING");        row.put("rejectionReason", shop.getRejectionReason());
         row.put("createdAt", shop.getCreatedAt());
         row.put("updatedAt", shop.getUpdatedAt());
         return row;

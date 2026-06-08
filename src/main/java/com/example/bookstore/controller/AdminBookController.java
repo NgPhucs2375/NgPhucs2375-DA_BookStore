@@ -26,7 +26,7 @@ public class AdminBookController {
 
     // Lấy danh sách sách chờ duyệt (PENDING)
     @GetMapping("/pending")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> getPendingBooks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
@@ -37,7 +37,7 @@ public class AdminBookController {
 
     // Duyệt hoặc từ chối sách
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> updateBookStatus(
             @PathVariable Long id,
             @RequestParam ApprovalStatus status // Truyền status lên URL, ví dụ: ?status=APPROVED
@@ -54,7 +54,7 @@ public class AdminBookController {
      * Xóa sách
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> deleteBook(
             @PathVariable Long id
     ) {
@@ -70,7 +70,7 @@ public class AdminBookController {
      * Cập nhật thông tin sách
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> updateBook(
             @PathVariable Long id,
             @RequestBody com.example.bookstore.dto.BookUpdateDto dto
@@ -87,7 +87,7 @@ public class AdminBookController {
      * Khóa sách (không cho phép hiển thị)
      */
     @PutMapping("/{id}/lock")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> lockBook(
             @PathVariable Long id
     ) {
@@ -103,7 +103,7 @@ public class AdminBookController {
      * Mở khóa sách
      */
     @PutMapping("/{id}/unlock")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> unlockBook(
             @PathVariable Long id
     ) {
@@ -119,7 +119,7 @@ public class AdminBookController {
      * Lấy danh sách tất cả đánh giá của một cuốn sách (bao gồm cả bị ẩn)
      */
     @GetMapping("/{id}/reviews")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> getBookReviewsForAdmin(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") int page,
@@ -133,7 +133,7 @@ public class AdminBookController {
      * Ẩn/Hiện một đánh giá
      */
     @PutMapping("/reviews/{reviewId}/toggle-visibility")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> toggleReviewVisibility(
             @PathVariable Long reviewId
     ) {

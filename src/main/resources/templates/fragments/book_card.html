@@ -1,32 +1,21 @@
-<!-- 
-    Reusable Book Card Fragment 2.0 - Professional & Interactive
-    - 3D Tilt Hover Effect
-    - Dynamic Shadow & Glow
-    - Smooth Quick-Action Buttons Reveal
-    - Prominent Discount Badge
-    - Enhanced Image Zoom & Drop Shadow
-    Usage: th:replace="~{fragments/book_card :: card(title, author, imgUrl, price, discount, href)}"
--->
-<div th:fragment="card(title, author, imgUrl, price, discount, href)">
+<div th:fragment="card(id, title, author, imgUrl, price, discount, href)">
     <article class="product-card group relative bg-white rounded-xl shadow-soft transition-all duration-300 hover:shadow-hover"
              th:attr="data-detail-url=${href}"
              style="perspective: 1000px;">
 
         <div class="product-card-inner relative w-full h-full rounded-xl transition-transform duration-500 ease-out group-hover:[transform:rotateY(var(--rotateX))_rotateX(var(--rotateY))]">
 
-            <!-- Discount Badge -->
             <div th:if="${discount != null and discount > 0}"
                  class="absolute top-0 left-0 z-20 m-3 px-2.5 py-1 bg-brand-orange text-white text-[11px] font-bold uppercase tracking-wider rounded-full shadow-md">
                 Giảm <span th:text="${discount}">20</span>%
             </div>
 
-            <!-- Main Image Link -->
             <a th:href="${href}"
                class="main-link absolute inset-0 z-10"
                th:aria-label="'Xem chi tiết ' + ${title}"></a>
 
             <div class="relative h-[280px] sm:h-[320px] w-full bg-gray-50 rounded-t-xl overflow-hidden p-4 flex items-center justify-center">
-                 <img th:src="${imgUrl != null and imgUrl != '' ? imgUrl : 'https://via.placeholder.com/280x380?text=No+Cover'}"
+                <img th:src="${imgUrl != null and imgUrl != '' ? imgUrl : 'https://via.placeholder.com/280x380?text=No+Cover'}"
                      th:alt="'Bìa sách ' + ${title}"
                      class="book-cover relative w-auto h-full object-contain drop-shadow-[0_15px_20px_rgba(74,59,50,0.2)] transition-all duration-500 ease-out group-hover:scale-110 group-hover:-translate-y-2"
                      loading="lazy"
@@ -34,14 +23,12 @@
                      onerror="this.onerror=null;this.src='https://via.placeholder.com/280x380?text=No+Cover'" />
             </div>
 
-            <!-- Content Area -->
             <div class="p-4 flex flex-col">
                 <p class="text-xs text-gray-500 font-medium mb-1 line-clamp-1" th:text="${author}">Tác giả</p>
                 <h3 class="text-base font-bold text-brand-dark leading-snug line-clamp-2 h-12 mb-2">
-                    <a th:href="${href}" class="hover:text-brand-orange transition-colors" th:text="${title}">Tên Sách Rất Dài Để Kiểm Tra Giao Diện</a>
+                    <a th:href="${href}" class="hover:text-brand-orange transition-colors" th:text="${title}">Tên Sách</a>
                 </h3>
 
-                <!-- Rating & Stock -->
                 <div class="flex items-center gap-2 text-xs text-gray-500 mb-3">
                     <div class="flex items-center gap-0.5 text-yellow-400">
                         <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
@@ -51,28 +38,23 @@
                     <span>Đã bán 1.2k</span>
                 </div>
 
-                <!-- Price -->
                 <div class="mt-auto pt-3 border-t border-gray-100">
-                    <div class="flex items-baseline justify-between">
-                        <div class="flex flex-col">
-                             <span th:if="${discount != null and discount > 0}"
-                                   class="text-[11px] text-gray-400 line-through"
-                                   th:text="|${#numbers.formatDecimal(price, 0, 'COMMA', 0, 'POINT')}₫|">
-                                 0₫
-                             </span>
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col"
+                             th:with="safePrice=${price != null ? price : 0},
+                  safeDiscount=${discount != null ? discount : 0},
+                  finalPrice=${safePrice - safeDiscount}">
+
+        <span th:if="${safeDiscount > 0}"
+              class="text-[11px] text-gray-400 line-through"
+              th:text="|${#numbers.formatDecimal(safePrice, 0, 'COMMA', 0, 'POINT')}đ|">
+        </span>
+
                             <span class="text-lg font-extrabold text-brand-dark"
-                                  th:text="|${#numbers.formatDecimal(price * (100 - discount) / 100, 0, 'COMMA', 0, 'POINT')}₫|">
-                                0₫
-                            </span>
+                                  th:text="|${#numbers.formatDecimal(finalPrice, 0, 'COMMA', 0, 'POINT')}đ|">
+        </span>
                         </div>
-                        <button type="button"
-                                class="add-to-cart-btn z-20 relative w-10 h-10 flex items-center justify-center bg-brand-dark text-white rounded-full hover:bg-brand-orange transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-brand-orange focus:ring-opacity-50"
-                                th:aria-label="'Thêm ' + ${title} + ' vào giỏ hàng'">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </article>
+
+                    </div>                </div>
+            </div> </div> </article>
 </div>

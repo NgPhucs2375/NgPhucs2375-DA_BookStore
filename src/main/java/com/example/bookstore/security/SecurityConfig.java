@@ -42,20 +42,29 @@ public class SecurityConfig {
                 // 2. Xử lý lỗi
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
+                            String requestURI = request.getRequestURI();
                             String acceptHeader = request.getHeader("Accept");
-                            // Nếu là request từ browser (HTML), redirect về trang đăng nhập
-                            if (acceptHeader != null && acceptHeader.contains("text/html")) {
+
+                            // 1. Nếu request gọi API hoặc lấy file tĩnh (.js, .css), không bao giờ được redirect HTML
+                            if ((requestURI != null && requestURI.startsWith("/api/")) ||
+                                    requestURI.endsWith(".js") || requestURI.endsWith(".css")) {
+                                response.setContentType("application/json;charset=UTF-8");
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Access Denied\"}");
+                            }
+                            // 2. Chỉ request tải trang giao diện HTML chính thống từ URL thanh địa chỉ mới redirect
+                            else if (acceptHeader != null && acceptHeader.contains("text/html") && !requestURI.contains(".")) {
                                 response.sendRedirect("/main/auth");
                             } else {
-                                // API request -> trả về 401
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Token is missing or invalid");
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
                             }
                         })
                 )
 
                 .authorizeHttpRequests(auth -> auth
                         // Public routes
-                        .requestMatchers("/api/auth/register-admin").hasRole("ADMIN")
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/assets/**", "/webjars/**", "/favicon.ico").permitAll() // mở khóa file tĩnh
+                        .requestMatchers("/api/auth/register-admin").hasAuthority("ADMIN")
                         .requestMatchers("/api/auth/refresh").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/shops/**").permitAll()
@@ -63,16 +72,16 @@ public class SecurityConfig {
                         .requestMatchers("/seller", "/seller/**").permitAll()
                         .requestMatchers("/buyer", "/buyer/**").permitAll()
 
-                        .requestMatchers("/api/admin/seeder/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/seeder/**").hasAuthority("ADMIN")
 
                         // Protected routes dựa trên Role
-                        .requestMatchers("/api/seller/**").hasRole("SELLER")
-                        .requestMatchers("/api/books/seller/**").hasRole("SELLER")
+                        .requestMatchers("/api/seller/**").hasAuthority("SELLER")
+                        .requestMatchers("/api/books/seller/**").hasAuthority("SELLER")
 
-                        .requestMatchers("/api/panel/**").hasRole("ADMIN")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/notifications/admin").hasRole("ADMIN")
-                        .requestMatchers("/api/notifications/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/panel/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/notifications/admin").hasAuthority("ADMIN")
+                        .requestMatchers("/api/notifications/admin/**").hasAuthority("ADMIN")
 
                         // Yêu cầu đăng nhập cho Carts, Orders và Notifications
                         .requestMatchers("/api/carts/**", "/api/orders/**", "/api/notifications/**").authenticated()

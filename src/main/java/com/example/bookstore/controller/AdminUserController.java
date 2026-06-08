@@ -25,7 +25,7 @@ public class AdminUserController {
      * Endpoint: PUT /api/admin/users/{id}/lock
      */
     @PutMapping("/{id}/lock")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> lockUser(
             @PathVariable Long id
     ) {
@@ -43,7 +43,7 @@ public class AdminUserController {
      * Endpoint: PUT /api/admin/users/{id}/unlock
      */
     @PutMapping("/{id}/unlock")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> unlockUser(
             @PathVariable Long id
     ) {
@@ -61,7 +61,7 @@ public class AdminUserController {
      * Endpoint: GET /api/admin/users/{id}
      */
     @GetMapping("/{id}")
-        @PreAuthorize("hasRole('ADMIN')")
+        @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> getUserById(
             @PathVariable Long id
     ) {
@@ -84,7 +84,7 @@ public class AdminUserController {
      * 4. Seller can now access order management features
      */
     @PutMapping("/{id}/approve-seller")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> approveSeller(
             @PathVariable Long id
     ) {

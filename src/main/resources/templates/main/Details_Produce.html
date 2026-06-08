@@ -340,13 +340,17 @@
 
                 <div class="flex flex-col sm:flex-row gap-4 mt-auto">
                     <button
-                        id="detail-add-to-cart-btn"
-                        type="button"
-                        th:attr="data-book-id=${book.id}"
-                        class="flex-1 bg-brand-orange-light border border-brand-orange text-brand-orange text-lg font-bold py-3.5 px-6 rounded-lg hover:bg-orange-100 transition shadow-sm flex items-center justify-center gap-2 group"
-                    >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                        Thêm Vào Giỏ Hàng
+                            id="detail-add-to-cart-btn"
+                            type="button"
+                            th:disabled="${book.stockQuantity <= 0}"
+                            th:classappend="${book.stockQuantity <= 0 ? 'opacity-50 cursor-not-allowed bg-gray-300 border-gray-400 text-gray-600' : 'bg-brand-orange-light border-brand-orange text-brand-orange hover:bg-orange-100 group'}"
+                            th:attr="data-book-id=${book.id}"
+                            class="flex-1 text-lg font-bold py-3.5 px-6 rounded-lg transition shadow-sm flex items-center justify-center gap-2 border">
+
+                        <svg th:if="${book.stockQuantity > 0}" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <svg th:if="${book.stockQuantity <= 0}" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+
+                        <span th:text="${book.stockQuantity <= 0 ? 'Tạm Hết Hàng' : 'Thêm Vào Giỏ Hàng'}"></span>
                     </button>
                     <button
                         id="detail-toggle-wishlist-btn"
@@ -357,7 +361,11 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                         Luu Yeu Thich
                     </button>
-                    <button id="detail-buy-now-btn" type="button" class="flex-1 bg-brand-orange text-white text-lg font-bold py-3.5 px-6 rounded-lg hover:bg-orange-700 transition shadow-md shadow-brand-orange/30">
+                    <button id="detail-buy-now-btn"
+                            type="button"
+                            th:disabled="${book.stockQuantity <= 0}"
+                            th:classappend="${book.stockQuantity <= 0 ? 'bg-gray-400 text-gray-100 cursor-not-allowed' : 'bg-brand-orange text-white hover:bg-orange-700'}"
+                            class="flex-1 text-lg font-bold py-3.5 px-6 rounded-lg transition shadow-md shadow-brand-orange/30">
                         Mua Ngay
                     </button>
                 </div>
@@ -616,5 +624,46 @@
 <script src="/js/api-service.js"></script>
 <script src="/js/pages/details-page.js"></script>
 
+<!-- SCRIPT TO FIX BUY NOW BUTTON -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', () => {
+        const buyNowBtn = document.getElementById('detail-buy-now-btn');
+        const addToCartBtn = document.getElementById('detail-add-to-cart-btn');
+        const qtyInput = document.getElementById('detail-qty-input');
+
+        if (buyNowBtn && addToCartBtn && qtyInput) {
+            buyNowBtn.addEventListener('click', async () => {
+                // 1. Kiểm tra đăng nhập
+                const { userId, role } = ApiService.getAuth();
+                if (!userId || role !== 'BUYER') {
+                    alert('Vui lòng đăng nhập để mua hàng.');
+                    window.location.href = '/main/auth';
+                    return;
+                }
+
+                // 2. Lấy thông tin sản phẩm
+                const bookId = addToCartBtn.dataset.bookId;
+                const quantity = parseInt(qtyInput.value, 10);
+
+                if (!bookId || isNaN(quantity) || quantity <= 0) {
+                    alert('Thông tin sản phẩm hoặc số lượng không hợp lệ.');
+                    return;
+                }
+
+                try {
+                    // 3. Thêm vào giỏ hàng
+                    await ApiService.Cart.addItem(userId, { bookId, quantity });
+                    // 4. Chuyển hướng đến trang giỏ hàng
+                    window.location.href = '/main/cart';
+                } catch (error) {
+                    const message = error?.message || 'Có lỗi xảy ra, không thể thực hiện Mua Ngay.';
+                    alert(message);
+                }
+            });
+        }
+    });
+    /*]]>*/
+</script>
 </body>
 </html>

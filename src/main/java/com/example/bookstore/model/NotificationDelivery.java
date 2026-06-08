@@ -46,7 +46,7 @@ import java.time.LocalDateTime;
            unique = false),
     // Index 4: For channel health monitoring
     @Index(name = "IX_notification_delivery_channel",
-           columnList = "channel, created_at DESC, status",
+           columnList = "delivery_channel, created_at DESC, status",
            unique = false)
 })
 @Data
@@ -87,7 +87,7 @@ public class NotificationDelivery {
      *   - PUSH: Mobile push notification (future)
      *   - SMS: SMS text message (future)
      */
-    @Column(name = "channel", length = 50, nullable = false)
+    @Column(name = "delivery_channel", length = 50, nullable = false)
     private String channel;
     
     /**
@@ -119,9 +119,8 @@ public class NotificationDelivery {
      *   FROM notification_delivery
      *   WHERE created_at >= @start_date
      */
-    @Column(name = "sent_at")
-    @Builder.Default
-    private LocalDateTime sentAt = null;
+    @Column(name = "sent_at", nullable = true)
+    private LocalDateTime sentAt;
     
     /**
      * Exception message from last failed delivery attempt

@@ -23,7 +23,7 @@ public class AdminCouponController {
      * Get all coupons with pagination (Admin)
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> getAllCoupons(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
@@ -40,7 +40,7 @@ public class AdminCouponController {
      * Search coupons (Admin)
      */
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> searchCoupons(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
@@ -58,7 +58,7 @@ public class AdminCouponController {
      * Get coupon by ID (Admin)
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> getCouponById(@PathVariable Long id) {
         try {
             Coupon coupon = couponService.getCouponById(id);
@@ -72,7 +72,7 @@ public class AdminCouponController {
      * Create new coupon (Admin)
      */
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> createCoupon(@RequestBody Coupon coupon) {
         try {
             Coupon created = couponService.createCoupon(coupon);
@@ -89,7 +89,7 @@ public class AdminCouponController {
      * Update coupon (Admin)
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> updateCoupon(
             @PathVariable Long id,
             @RequestBody Coupon updates
@@ -109,7 +109,7 @@ public class AdminCouponController {
      * Deactivate coupon (soft delete - Admin)
      */
     @PutMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> deactivateCoupon(@PathVariable Long id) {
         try {
             couponService.deactivateCoupon(id);
@@ -123,7 +123,7 @@ public class AdminCouponController {
      * Delete coupon permanently (Admin)
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> deleteCoupon(@PathVariable Long id) {
         try {
             couponService.deleteCoupon(id);

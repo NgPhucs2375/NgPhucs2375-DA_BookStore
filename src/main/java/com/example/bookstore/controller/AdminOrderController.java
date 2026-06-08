@@ -45,7 +45,7 @@ public class AdminOrderController {
      * Lấy chi tiết đơn hàng
      */
     @GetMapping("/{id}")
-        @PreAuthorize("hasRole('ADMIN')")
+        @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> getOrderDetails(
             @PathVariable Long id
     ) {

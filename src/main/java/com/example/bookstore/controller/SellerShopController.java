@@ -26,7 +26,7 @@ public class SellerShopController {
     // ==========================================
 
     @GetMapping("/seller/me/shop")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public ResponseEntity<SellerShopResponse> getMyShop(@org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
         Long sellerId = getCurrentSellerId(principal);
         SellerShopResponse response = shopService.getMyShop(sellerId);
@@ -34,7 +34,7 @@ public class SellerShopController {
     }
 
     @PostMapping("/seller/me/shop")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public ResponseEntity<SellerShopResponse> createMyShop(
             @Valid @RequestBody SellerShopUpsertRequest request,
             @org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal
@@ -45,7 +45,7 @@ public class SellerShopController {
     }
 
     @PutMapping("/seller/me/shop")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public ResponseEntity<SellerShopResponse> updateMyShop(
             @Valid @RequestBody SellerShopUpsertRequest request,
             @org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal
@@ -56,7 +56,7 @@ public class SellerShopController {
     }
 
     @PatchMapping("/seller/me/shop/status")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public ResponseEntity<SellerShopResponse> changeStatus(
             @RequestParam ApprovalStatus status,
             @org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal
@@ -67,7 +67,7 @@ public class SellerShopController {
     }
 
     @DeleteMapping("/seller/me/shop")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public ResponseEntity<Void> deleteMyShop(@org.springframework.security.core.annotation.AuthenticationPrincipal JwtAuthenticatedPrincipal principal) {
         Long sellerId = getCurrentSellerId(principal);
         shopService.deleteMyShop(sellerId);

@@ -1,5 +1,4 @@
 package com.example.bookstore.repository;
-
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.User;
@@ -12,15 +11,24 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
+
 public interface BookRepository extends JpaRepository<Book, Long>{
     // Ví dụ: Tìm sách theo tiêu đề để hỗ trợ gợi ý sản phẩm
     List<Book> findByTitleContaining(String title);
 
+    // 1. Dùng cho Trang chủ (index.html) - CHỈ hiển thị sách đã duyệt và đang bán
+    Page<Book> findByApprovalStatusAndIsActiveTrue(ApprovalStatus status, Pageable pageable);
+
+    // 2. Dùng cho mục "Thường được mua kèm" (Details_Produce.html)
+    // Lấy sách cùng danh mục, trừ cuốn hiện tại ra, ưu tiên sách đã duyệt
+    List<Book> findByCategoryIdAndIdNotAndApprovalStatusAndIsActiveTrue(
+            Long categoryId,
+            Long currentBookId,
+            ApprovalStatus status,
+            Pageable pageable
+    );
+
     List<Book> findBySeller(User seller);
-
-    List<Book> findBySellerAndApprovalStatus(User seller, ApprovalStatus approvalStatus);
-
-    Page<Book> findBySellerAndApprovalStatus(User seller, ApprovalStatus approvalStatus, Pageable pageable);
 
     @Query("SELECT b.approvalStatus FROM Book b WHERE b.id = :bookId")
     ApprovalStatus findApprovalStatusById(@Param("bookId") Long bookId);
@@ -65,6 +73,7 @@ public interface BookRepository extends JpaRepository<Book, Long>{
           )
           AND (:categoryIds IS NULL OR c.id IN :categoryIds)
           AND (:sellerIds IS NULL OR s.id IN :sellerIds)
+          AND (:publishers IS NULL OR b.publisher IN :publishers) 
           AND (:author IS NULL OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%')))
           AND (:minPrice IS NULL OR b.price >= :minPrice)
           AND (:maxPrice IS NULL OR b.price <= :maxPrice)
@@ -73,10 +82,11 @@ public interface BookRepository extends JpaRepository<Book, Long>{
           AND (:publishYearFrom IS NULL OR b.publishYear >= :publishYearFrom)
           AND (:publishYearTo IS NULL OR b.publishYear <= :publishYearTo)
         """)
-    Page<Book> searchApprovedBooks(
+        Page<Book> searchApprovedBooks(
             @Param("q") String q,
             @Param("categoryIds") List<Long> categoryIds,
             @Param("sellerIds") List<Long> sellerIds,
+            @Param("publishers") List<String> publishers,
             @Param("author") String author,
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice,
@@ -86,7 +96,7 @@ public interface BookRepository extends JpaRepository<Book, Long>{
             @Param("publishYearTo") Integer publishYearTo,
             @Param("status") ApprovalStatus status,
             Pageable pageable
-    );
+        );
 
     @Query("""
             SELECT b FROM Book b
@@ -151,11 +161,12 @@ public interface BookRepository extends JpaRepository<Book, Long>{
                 :categoryId IS NULL
                 OR c.id = :categoryId
               )
+            ORDER BY b.id DESC
             """)
-    Page<Book> findBySellerIdAndKeywordAndCategory(
+        Page<Book> findBySellerIdAndKeywordAndCategory(
             @Param("sellerId") Long sellerId,
             @Param("q") String keyword,
             @Param("categoryId") Long categoryId,
             Pageable pageable
-    );
+        );
 }

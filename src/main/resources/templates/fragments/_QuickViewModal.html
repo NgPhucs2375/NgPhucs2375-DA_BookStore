@@ -56,70 +56,75 @@
                     <!-- Cột ảnh sản phẩm -->
                     <div class="w-full">
                         <div class="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden group">
-                            <img id="quick-view-image" src="" alt="Book Cover" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300 ease-in-out">
+                            <img :src="bookData?.imageUrl || '/images/placeholder.png'" :alt="bookData?.title" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300 ease-in-out">
                         </div>
                         <!-- Thumbnails (nếu có) -->
-                        <div id="quick-view-thumbnails" class="flex gap-2 mt-4">
+                        <div class="flex gap-2 mt-4">
                             <!-- JS sẽ đổ thumbnail vào đây -->
                         </div>
                     </div>
 
                     <!-- Cột thông tin chi tiết -->
                     <div class="flex flex-col">
-                        <h2 id="quick-view-title" class="text-3xl font-bold text-brand-dark mb-2 leading-tight">Tên sách</h2>
-                        <p class="text-sm text-gray-500 mb-3">Tác giả: <span id="quick-view-author" class="font-medium text-gray-700">...</span></p>
+                        <h2 x-text="bookData?.title || 'Tên sách'" class="text-3xl font-bold text-brand-dark mb-2 leading-tight"></h2>
+                        <p class="text-sm text-gray-500 mb-3">Tác giả: <span x-text="bookData?.author || '...'" class="font-medium text-gray-700"></span></p>
 
                         <!-- Đánh giá và người bán -->
                         <div class="flex items-center gap-4 text-sm mb-4 border-b pb-4">
-                            <div id="quick-view-rating" class="flex items-center gap-1">
-                                <span class="font-bold text-brand-orange">5.0</span>
-                                <div class="flex text-yellow-400">
-                                    <!-- JS sẽ đổ sao vào đây -->
-                                </div>
+                            <div class="flex items-center gap-1">
+                                <span x-text="bookData?.averageRating?.toFixed(1) || '0.0'" class="font-bold text-brand-orange"></span>
+                                <div x-html="renderStars(bookData?.averageRating || 0)" class="flex text-yellow-400"></div>
                             </div>
                             <span class="text-gray-300">|</span>
-                            <div>Đã bán <span id="quick-view-sold-count">0</span></div>
+                            <div>Đã bán <span x-text="bookData?.soldQuantity || 0"></span></div>
                             <span class="text-gray-300">|</span>
-                            <a id="quick-view-seller-link" href="#" class="text-brand-purple hover:underline">
-                                <span id="quick-view-seller-name">Tên người bán</span>
+                            <a :href="'/shop/' + (bookData?.seller?.slug || '#')" class="text-brand-purple hover:underline">
+                                <span x-text="bookData?.seller?.shopName || 'Tên người bán'"></span>
                             </a>
                         </div>
 
                         <!-- Giá -->
                         <div class="my-4">
-                            <span id="quick-view-price" class="text-4xl font-extrabold text-brand-orange">0đ</span>
-                            <span id="quick-view-original-price" class="text-lg text-gray-400 line-through ml-2">0đ</span>
+                            <span x-text="formatVND(bookData?.price)" class="text-4xl font-extrabold text-brand-orange"></span>
+                            <span x-show="bookData?.originalPrice && bookData.originalPrice > bookData.price" x-text="formatVND(bookData?.originalPrice)" class="text-lg text-gray-400 line-through ml-2"></span>
                         </div>
 
                         <!-- Mô tả ngắn -->
-                        <p id="quick-view-description" class="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-3">Mô tả ngắn về sản phẩm...</p>
+                        <p x-text="bookData?.description" class="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-3"></p>
 
                         <div class="mt-auto">
                             <!-- Chọn số lượng -->
                             <div class="flex items-center gap-4 mb-4">
                                 <span class="font-bold text-gray-700">Số lượng:</span>
                                 <div class="flex items-center border border-gray-300 rounded-lg">
-                                    <button @click="quantity = Math.max(1, quantity - 1)" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-l-lg transition">-</button>
+                                    <button @click="quantity = Math.max(1, quantity - 1)" :disabled="!bookData || bookData.stockQuantity <= 0" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-l-lg transition disabled:opacity-50 disabled:cursor-not-allowed">-</button>
                                     <input type="text" x-model.number="quantity" class="w-12 text-center font-bold border-l border-r focus:outline-none">
-                                    <button @click="quantity++" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-r-lg transition">+</button>
+                                    <button @click="quantity = Math.min(bookData?.stockQuantity || 1, quantity + 1)" :disabled="!bookData || bookData.stockQuantity <= 0" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-r-lg transition disabled:opacity-50 disabled:cursor-not-allowed">+</button>
                                 </div>
                             </div>
 
                             <!-- Trạng thái kho -->
-                            <div id="quick-view-stock-status" class="text-sm font-medium text-green-600 mb-3">Còn 100 sản phẩm</div>
+                            <div class="text-sm font-medium mb-3"
+                                 :class="{
+                                    'text-green-600': bookData?.stockQuantity > 10,
+                                    'text-yellow-600': bookData?.stockQuantity > 0 && bookData?.stockQuantity <= 10,
+                                    'text-red-600': bookData?.stockQuantity <= 0
+                                 }"
+                                 x-text="bookData?.stockQuantity > 0 ? 'Còn ' + bookData.stockQuantity + ' sản phẩm' : 'Hết hàng'">
+                            </div>
 
                             <!-- Các nút hành động -->
                             <div class="grid grid-cols-2 gap-3">
-                                <button id="quick-view-add-to-cart-btn" class="w-full bg-brand-orange text-white font-bold py-3 rounded-lg hover:bg-brand-brown transition flex items-center justify-center gap-2">
+                                <button @click="addToCart()" :disabled="!bookData || bookData.stockQuantity <= 0" class="w-full bg-brand-orange text-white font-bold py-3 rounded-lg hover:bg-brand-brown transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l.892-.893a.997.997 0 00.042-.01l.04-.028.016-.012.004-.004.017-.014.004-.004.012-.01.004-.004.028-.022l.04-.032.016-.012.004-.004.017-.014.004-.004.012-.01.004-.004.028-.022l7.84-4.233A.997.997 0 0017 5H5.21l-.94-3.762A1 1 0 003 1z"></path><path d="M15 16a1 1 0 100 2 1 1 0 000-2zM6 16a1 1 0 100 2 1 1 0 000-2z"></path></svg>
-                                    Thêm vào giỏ
+                                    <span x-text="bookData?.stockQuantity > 0 ? 'Thêm vào giỏ' : 'Hết hàng'"></span>
                                 </button>
-                                <button id="quick-view-wishlist-btn" class="w-full bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition flex items-center justify-center gap-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z"></path></svg>
-                                    Yêu thích
+                                <button @click="toggleWishlist()" :class="{ 'bg-red-100 text-red-600': isWished, 'bg-gray-200 text-gray-800': !isWished }" class="w-full font-bold py-3 rounded-lg hover:bg-gray-300 transition flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" :class="{ 'text-red-500 fill-current': isWished }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z"></path></svg>
+                                    <span x-text="isWished ? 'Đã thích' : 'Yêu thích'"></span>
                                 </button>
                             </div>
-                            <a id="quick-view-details-link" href="#" class="block text-center mt-4 text-sm text-brand-purple font-medium hover:underline">Xem chi tiết sản phẩm →</a>
+                            <a :href="'/main/product-details?id=' + bookId" class="block text-center mt-4 text-sm text-brand-purple font-medium hover:underline">Xem chi tiết sản phẩm →</a>
                         </div>
                     </div>
                 </div>
@@ -136,6 +141,7 @@ function quickViewModal() {
         bookId: null,
         quantity: 1,
         bookData: null,
+        isWished: false, // THÊM: Trạng thái yêu thích
 
         formatVND(price) {
             return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
@@ -155,56 +161,20 @@ function quickViewModal() {
         },
 
         async open(bookId) {
+            if (!bookId) return;
             this.isOpen = true;
             this.isLoading = true;
             this.bookId = bookId;
             this.quantity = 1;
-            this.bookData = null;
+            this.bookData = null; // Reset dữ liệu cũ tránh bị nháy hình
+            this.isWished = ApiService.Wishlist.isSaved(bookId); // THÊM: Kiểm tra trạng thái yêu thích ban đầu
 
             try {
-                const book = await ApiService.Book.getById(bookId);
+                // SỬA: Dùng getById thay vì getDetail để nhất quán
+                const book = await ApiService.Book.getById(bookId); // Lấy dữ liệu sách
+                
+                // Chỉ cần gán vào dữ liệu phản ứng, Alpine tự động đổ ra các thẻ x-text
                 this.bookData = book;
-
-                document.getElementById('quick-view-image').src = book.imageUrl || 'https://via.placeholder.com/400x560?text=No+Image';
-                document.getElementById('quick-view-title').textContent = book.title || 'Tên sách đang cập nhật';
-                document.getElementById('quick-view-author').textContent = book.author || 'Tác giả đang cập nhật';
-                document.getElementById('quick-view-price').textContent = this.formatVND(book.price);
-                document.getElementById('quick-view-original-price').textContent = ''; // Giả sử không có giá gốc
-                document.getElementById('quick-view-description').textContent = book.description || 'Mô tả đang được cập nhật.';
-
-                const ratingContainer = document.getElementById('quick-view-rating');
-                ratingContainer.innerHTML = `
-                    <span class="font-bold text-brand-orange">${(book.averageRating || 0).toFixed(1)}</span>
-                    <div class="flex text-yellow-400">${this.renderStars(book.averageRating || 0)}</div>
-                `;
-
-                document.getElementById('quick-view-sold-count').textContent = book.soldQuantity || 0;
-                document.getElementById('quick-view-seller-name').textContent = book.seller?.shopName || 'Nhà sách Bookom';
-                document.getElementById('quick-view-seller-link').href = book.seller ? `/seller/shop/${book.seller.id}` : '#';
-                document.getElementById('quick-view-details-link').href = `/book/${book.id}`;
-
-                const stockStatusEl = document.getElementById('quick-view-stock-status');
-                const addToCartBtn = document.getElementById('quick-view-add-to-cart-btn');
-                const stock = book.stockQuantity || 0;
-
-                if (stock > 10) {
-                    stockStatusEl.textContent = `Còn hàng (${stock} sản phẩm)`;
-                    stockStatusEl.className = 'text-sm font-medium text-green-600 mb-3';
-                    addToCartBtn.classList.remove('hidden');
-                } else if (stock > 0) {
-                    stockStatusEl.textContent = `Chỉ còn lại ${stock} sản phẩm!`;
-                    stockStatusEl.className = 'text-sm font-medium text-red-600 mb-3 animate-pulse';
-                    addToCartBtn.classList.remove('hidden');
-                } else {
-                    stockStatusEl.textContent = 'Hết hàng';
-                    stockStatusEl.className = 'text-sm font-medium text-gray-500 mb-3';
-                    addToCartBtn.classList.add('hidden');
-                }
-
-                const newAddToCartBtn = addToCartBtn.cloneNode(true);
-                addToCartBtn.parentNode.replaceChild(newAddToCartBtn, addToCartBtn);
-                newAddToCartBtn.addEventListener('click', () => this.addToCart());
-
                 this.isLoading = false;
             } catch (error) {
                 console.error('Lỗi khi tải chi tiết sách cho Quick View:', error);
@@ -212,8 +182,9 @@ function quickViewModal() {
                 this.close();
             }
         },
-
         async addToCart() {
+            if (!this.bookData || this.bookData.stockQuantity <= 0) return;
+
             const { userId, role } = ApiService.getAuth();
             if (!userId || role !== 'BUYER') {
                 alert('Vui lòng đăng nhập với tài khoản người mua để thêm vào giỏ hàng.');
@@ -234,6 +205,20 @@ function quickViewModal() {
                 alert(`Đã thêm ${this.quantity} sản phẩm "${this.bookData.title}" vào giỏ hàng.`);
             } catch (error) {
                 const message = error?.message || 'Thêm vào giỏ hàng thất bại.';
+                alert(message);
+            }
+        },
+
+        // THÊM: Hàm xử lý nút Yêu thích
+        async toggleWishlist() {
+            if (!this.bookData) return;
+            try {
+                const result = await ApiService.Wishlist.toggle(this.bookData);
+                this.isWished = result.saved;
+                // Tùy chọn: Hiển thị thông báo toast
+                alert(result.saved ? 'Đã thêm vào Yêu thích' : 'Đã xóa khỏi Yêu thích');
+            } catch (error) {
+                const message = error?.message || 'Vui lòng đăng nhập để sử dụng tính năng này.';
                 alert(message);
             }
         },

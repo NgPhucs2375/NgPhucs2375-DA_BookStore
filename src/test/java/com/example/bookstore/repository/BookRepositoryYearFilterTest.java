@@ -50,7 +50,8 @@ class BookRepositoryYearFilterTest {
         Page<Book> result = bookRepository.searchApprovedBooks(
             null,
             null, // categoryIds
-            null, // sellerIds
+            null, // sellerId
+                 null, //
             null, // author
             null, // minPrice
             null, // maxPrice

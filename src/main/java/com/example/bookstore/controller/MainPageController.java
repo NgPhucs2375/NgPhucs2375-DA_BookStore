@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort; // Thêm import Sort để sắp xếp
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -46,9 +47,9 @@ public class MainPageController {
 
     @GetMapping("/")
     public String home(Model model) {
-        // Load approved books for display (limit to 20)
-        Pageable pageable = PageRequest.of(0, 20);
-        model.addAttribute("books", bookRepository.findByApprovalStatus(ApprovalStatus.APPROVED, pageable).getContent());
+        // Cập nhật: Lấy 20 cuốn đã duyệt, đang bán (active) và sắp xếp theo ID mới nhất
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("id").descending());
+        model.addAttribute("books", bookRepository.findByApprovalStatusAndIsActiveTrue(ApprovalStatus.APPROVED, pageable).getContent());
         return "main/index";
     }
 
@@ -59,9 +60,9 @@ public class MainPageController {
 
     @GetMapping("/main/discovery")
     public String discovery(Model model) {
-        // Load approved books for discovery page
-        Pageable pageable = PageRequest.of(0, 20);
-        model.addAttribute("books", bookRepository.findByApprovalStatus(ApprovalStatus.APPROVED, pageable).getContent());
+        // Tương tự trang chủ, Trang khám phá cũng chỉ nên hiển thị sách hợp lệ
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("id").descending());
+        model.addAttribute("books", bookRepository.findByApprovalStatusAndIsActiveTrue(ApprovalStatus.APPROVED, pageable).getContent());
         return "main/Discovery_Page";
     }
 
@@ -163,111 +164,5 @@ public class MainPageController {
     @GetMapping("/buyer/dashboard")
     public String buyerDashboard() {
         return "buyer/Buyer_Profile_Dashboard";
-    }
-
-    /**
-     * Public shop page - hiển thị thông tin shop và danh sách sản phẩm
-     * Dữ liệu được đồng bộ từ database thay vì mock data
-     */
-    @GetMapping("/shop/{slug}")
-    public String viewShop(
-            @PathVariable String slug,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size,
-            @RequestParam(defaultValue = "popular") String sort,
-            @RequestParam(required = false) Long category,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            Model model) {
-        // 1. Lấy thông tin shop từ database
-        SellerShop shop = sellerShopRepository.findBySlug(slug)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy cửa hàng."));
-
-        // 2. Chỉ hiển thị shop đã được duyệt
-        if (shop.getApprovalStatus() != ApprovalStatus.APPROVED) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cửa hàng này hiện không hoạt động.");
-        }
-
-        // 3. Lấy danh sách sách APPROVED của shop (có phân trang)
-        Sort sorting;
-        switch (sort) {
-            case "newest":
-                sorting = Sort.by(Sort.Direction.DESC, "id");
-                break;
-            case "price_asc":
-                sorting = Sort.by(Sort.Direction.ASC, "price");
-                break;
-            case "price_desc":
-                sorting = Sort.by(Sort.Direction.DESC, "price");
-                break;
-            case "bestselling":
-                sorting = Sort.by(Sort.Direction.DESC, "id"); // fallback, sẽ dùng query riêng
-                break;
-            default: // popular
-                sorting = Sort.by(Sort.Direction.DESC, "id");
-                break;
-        }
-        Pageable pageable = PageRequest.of(page, size, sorting);
-
-        // Lấy sách APPROVED của shop với filter
-        Page<Book> booksPage;
-        if (category != null || minPrice != null || maxPrice != null) {
-            // Sử dụng search query với filter
-            List<Long> sellerIdList = List.of(shop.getSeller().getId());
-            booksPage = bookRepository.searchApprovedBooks(
-                    null,                                                    // q
-                    category != null ? List.of(category) : null,             // categoryIds
-                    sellerIdList,                                            // sellerIds
-                    null,                                                    // author
-                    minPrice,                                                // minPrice
-                    maxPrice,                                                // maxPrice
-                    null,                                                    // minRating
-                    null,                                                    // inStock
-                    null,                                                    // publishYearFrom
-                    null,                                                    // publishYearTo
-                    ApprovalStatus.APPROVED,                                 // status
-                    pageable                                                 // pageable
-            );
-        } else {
-            booksPage = bookRepository.findBySellerAndApprovalStatus(
-                    shop.getSeller(), ApprovalStatus.APPROVED, pageable);
-        }
-        // 4. Lấy danh sách categories
-        List<Category> categories = categoryRepository.findAll();
-
-        // 5. Đếm số lượng sách
-        int bookCount = (int) booksPage.getTotalElements();
-
-        // 6. Tính thời gian tham gia
-        String joinDuration = "Mới";
-        if (shop.getCreatedAt() != null) {
-            long years = ChronoUnit.YEARS.between(shop.getCreatedAt(), LocalDateTime.now());
-            if (years > 0) {
-                joinDuration = years + " năm";
-            } else {
-                long months = ChronoUnit.MONTHS.between(shop.getCreatedAt(), LocalDateTime.now());
-                joinDuration = (months > 0 ? months + " tháng" : "Mới");
-            }
-        }
-
-        // 7. Load valid vouchers for this shop
-        List<Coupon> vouchers = couponService.getValidCouponsForSeller(shop.getSeller().getId());
-
-        // 8. Đưa dữ liệu vào model
-        model.addAttribute("shop", shop);
-        model.addAttribute("books", booksPage.getContent());
-        model.addAttribute("bookCount", bookCount);
-        model.addAttribute("categories", categories);
-        model.addAttribute("joinDuration", joinDuration);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", booksPage.getTotalPages());
-        model.addAttribute("totalElements", booksPage.getTotalElements());
-        model.addAttribute("currentSort", sort);
-        model.addAttribute("selectedCategory", category);
-        model.addAttribute("minPrice", minPrice);
-        model.addAttribute("maxPrice", maxPrice);
-        model.addAttribute("vouchers", vouchers);
-
-        return "seller/Shop_Seller";
     }
 }

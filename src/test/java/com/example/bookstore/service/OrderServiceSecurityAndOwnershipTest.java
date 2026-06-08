@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
-
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 @ExtendWith(MockitoExtension.class)
 class OrderServiceSecurityAndOwnershipTest {
 
@@ -45,6 +45,11 @@ class OrderServiceSecurityAndOwnershipTest {
 
     private OrderService orderService;
 
+    @Mock
+    private RabbitTemplate rabbitTemplate;
+
+
+
     @BeforeEach
     void setUp() {
         // 2. Cập nhật Constructor: thêm couponService vào vị trí số 5
@@ -54,7 +59,8 @@ class OrderServiceSecurityAndOwnershipTest {
                 orderRepository,
                 subOrderRepository,
                 couponService,
-                notificationService
+                notificationService,
+                rabbitTemplate
         );
     }
 

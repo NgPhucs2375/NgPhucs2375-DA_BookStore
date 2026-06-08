@@ -10,7 +10,9 @@ import com.example.bookstore.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -157,6 +159,7 @@ public class BookService {
             String q,
             List<Long> categoryIds,
             List<Long> sellerIds,
+            List<String> publishers,
             String author,
             Double minPrice,
             Double maxPrice,
@@ -171,6 +174,7 @@ public class BookService {
                 q,
                 categoryIds,
                 sellerIds,
+                publishers,
                 author,
                 minPrice,
                 maxPrice,
@@ -307,5 +311,6 @@ public class BookService {
 
         bookRepository.delete(existingBook);
     }
+
 
 }

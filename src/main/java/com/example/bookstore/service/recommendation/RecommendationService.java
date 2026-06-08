@@ -45,6 +45,9 @@ public class RecommendationService {
     @Autowired
     private CosineSimilarityAlgorithm cosineAlgorithm;
 
+    @Autowired
+    private RecommendationRedisService redisService;
+
     /**
      * Get "bought together" recommendations from mined association rules.
      * 
@@ -58,55 +61,56 @@ public class RecommendationService {
      * @return List of recommended books (up to maxBoughtTogether)
      */
     public List<Book> getBoughtTogetherBooks(Long bookId) {
-        logger.debug("[RecommendationService] Getting 'bought together' for bookId={}", bookId);
-        
+        logger.debug("[RecommendationService] Bắt đầu lấy gợi ý Lambda (Redis + FP-Growth DB) cho Sách {}", bookId);
+
         List<Book> result = new ArrayList<>();
-        
+        Set<Long> addedBookIds = new LinkedHashSet<>(); // Giữ thứ tự và chống trùng
+        int maxResults = config.getMaxBoughtTogether();
+
         try {
-            // Step 1: Query database for association rules
-            List<AssociationRule> rules = associationRuleRepository.findBoughtTogetherByBookId(
-                bookId, 
-                MIN_CONFIDENCE
-            );
-            
-            logger.debug("[RecommendationService] Found {} rules for bookId={}", rules.size(), bookId);
-            
-            // Step 2: Convert rules to Book objects (limit to maxBoughtTogether)
-            if (!rules.isEmpty()) {
-                result = rules.stream()
-                    .limit(config.getMaxBoughtTogether())
-                    .map(rule -> rule.getBookB())
-                    .filter(b -> b.getApprovalStatus() == ApprovalStatus.APPROVED)
-                    .collect(Collectors.toList());
-                
-                logger.info("[RecommendationService] Returning {} 'bought together' books for bookId={}", 
-                    result.size(), bookId);
+            // LAYER 1: SPEED LAYER (Lấy từ REDIS - Real-time)
+            List<Long> realTimeIds = redisService.getRealTimeRecommendations(bookId, maxResults);
+            for (Long id : realTimeIds) {
+                if (addedBookIds.size() >= maxResults) break;
+                Optional<Book> b = bookRepository.findById(id);
+                if (b.isPresent() && b.get().getApprovalStatus() == ApprovalStatus.APPROVED) {
+                    result.add(b.get());
+                    addedBookIds.add(id);
+                }
             }
-            
+            logger.debug("Lấy được {} sách nóng từ Redis", result.size());
+
+            // LAYER 2: BATCH LAYER (Lấy từ DB do FP-Growth tính ra)
+            if (result.size() < maxResults) {
+                List<AssociationRule> dbRules = associationRuleRepository.findBoughtTogetherByBookId(bookId, MIN_CONFIDENCE);
+                for (AssociationRule rule : dbRules) {
+                    if (addedBookIds.size() >= maxResults) break;
+                    Book bookB = rule.getBookB();
+
+                    // Chỉ thêm nếu chưa có (tránh trùng với sách bên Redis đã lấy)
+                    if (bookB.getApprovalStatus() == ApprovalStatus.APPROVED && !addedBookIds.contains(bookB.getId())) {
+                        result.add(bookB);
+                        addedBookIds.add(bookB.getId());
+                    }
+                }
+            }
+
         } catch (Exception e) {
-            logger.error("[RecommendationService] Error querying association rules for bookId={}", bookId, e);
+            logger.error("[RecommendationService] Lỗi khi xử lý Lambda Architecture", e);
         }
 
-        // Step 3: Fallback if insufficient results
-        if (result.size() < config.getMaxBoughtTogether()) {
+        // LAYER 3: FALLBACK (Nếu vẫn không đủ số lượng, lấy sách cùng tác giả/thể loại)
+        if (result.size() < maxResults) {
             Optional<Book> currentBookOpt = bookRepository.findById(bookId);
             if (currentBookOpt.isPresent()) {
-                int needed = config.getMaxBoughtTogether() - result.size();
-                logger.debug("[RecommendationService] Fallback: need {} more recommendations", needed);
-                
-                List<Book> fallback = fallbackEngine.fallbackSameAuthorOrCategory(
-                    currentBookOpt.get(), 
-                    needed, 
-                    result
-                );
+                int needed = maxResults - result.size();
+                List<Book> fallback = fallbackEngine.fallbackSameAuthorOrCategory(currentBookOpt.get(), needed, result);
                 result.addAll(fallback);
-                logger.info("[RecommendationService] After fallback: {} recommendations", result.size());
             }
         }
 
         return result;
     }
-
     /**
      * Get "similar books" recommendations using CosineSimilarity algorithm.
      * 

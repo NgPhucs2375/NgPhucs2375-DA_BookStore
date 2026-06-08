@@ -1,11 +1,10 @@
 /**
  * 📱 API Service Module - Bookom Bookstore
  * Cung cấp các hàm tiện ích để gọi API từ Frontend
- * 
- * Usage:
- *   <script src="api-service.js"></script>
- *   const auth = ApiService.getAuth();
- *   const books = await ApiService.searchBooks('keyword');
+ * * Usage:
+ * <script src="api-service.js"></script>
+ * const auth = ApiService.getAuth();
+ * const books = await ApiService.searchBooks('keyword');
  */
 
 var ApiService = window.ApiService || (() => {
@@ -20,9 +19,9 @@ var ApiService = window.ApiService || (() => {
      */
     const getAuth = () => {
         return {
-            userId: localStorage.getItem('userId'),
-            token: localStorage.getItem('accessToken'),
-            role: localStorage.getItem('userRole')
+            userId: localStorage.getItem('userId') || sessionStorage.getItem('userId'),
+            token: localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken'),
+            role: localStorage.getItem('userRole') || sessionStorage.getItem('userRole')
         };
     };
 
@@ -209,7 +208,8 @@ var ApiService = window.ApiService || (() => {
             params.set('q', query || '');
             params.set('page', page);
             params.set('size', size);
-            if (categoryId) params.append('categoryId', categoryId);
+
+            if (categoryId) params.append('categoryIds', categoryId);
 
             const appendIfPresent = (key, value) => {
                 if (value !== null && value !== undefined && `${value}`.trim() !== '') {
@@ -223,6 +223,16 @@ var ApiService = window.ApiService || (() => {
             appendIfPresent('publishYearFrom', filters.publishYearFrom);
             appendIfPresent('publishYearTo', filters.publishYearTo);
             appendIfPresent('sort', filters.sort);
+
+            // ✅ ĐÃ SỬA: Đẩy minRating xuống Backend
+            appendIfPresent('minRating', filters.minRating);
+
+            // ✅ ĐÃ SỬA: Đẩy danh sách nhà xuất bản (publishers) xuống Backend
+            if (filters.publishers && Array.isArray(filters.publishers)) {
+                filters.publishers.forEach(pub => {
+                    if (pub) params.append('publishers', pub);
+                });
+            }
 
             const response = await fetch(`${API_BASE}/books/search?${params}`, {
                 headers: getHeaders()
@@ -330,42 +340,34 @@ var ApiService = window.ApiService || (() => {
             return handleResponse(response);
         },
         uploadCover: async (bookId, formData) => {
-                    // CẦN LƯU Ý: Khi dùng fetch với FormData, KHÔNG set header Content-Type.
-                    // Trình duyệt sẽ tự động set 'multipart/form-data' kèm theo Boundary (ranh giới file).
+            // CẦN LƯU Ý: Khi dùng fetch với FormData, KHÔNG set header Content-Type.
+            // Trình duyệt sẽ tự động set 'multipart/form-data' kèm theo Boundary (ranh giới file).
 
-                    const { userId, token } = getAuth();
-                    const headers = {
-                        'X-User-Id': userId || ''
-                    };
-                    if (token) {
-                        headers['Authorization'] = `Bearer ${token}`;
-                    }
+            const { userId, token } = getAuth();
+            const headers = {
+                'X-User-Id': userId || ''
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
 
-                    const response = await fetch(`${API_BASE}/books/seller/${bookId}/upload-cover`, {
-                        method: 'POST',
-                        headers: headers, // Dùng bộ header riêng, KHÔNG dùng getHeaders() vì cái đó đang set cứng application/json
-                        body: formData
-                    });
-
-                    // Nếu Backend trả về text (đường dẫn link) thay vì JSON, thì return dạng text
-                    if (!response.ok) throw new Error('Upload ảnh thất bại');
-
-                    // Xử lý cẩn thận: nếu response là text thì lấy text, json thì lấy json
-                    const contentType = response.headers.get("content-type");
-                    if (contentType && contentType.indexOf("application/json") !== -1) {
-                        return response.json();
-                    } else {
-                        return response.text();
-                    }
-                },
-        togglePin: async (bookId) => {
-            const response = await fetch(`${API_BASE}/books/seller/${bookId}/pin`, {
-                method: 'PATCH',
-                headers: getHeaders()
+            const response = await fetch(`${API_BASE}/books/seller/${bookId}/upload-cover`, {
+                method: 'POST',
+                headers: headers, // Dùng bộ header riêng, KHÔNG dùng getHeaders() vì cái đó đang set cứng application/json
+                body: formData
             });
-            return handleResponse(response);
-        },
 
+            // Nếu Backend trả về text (đường dẫn link) thay vì JSON, thì return dạng text
+            if (!response.ok) throw new Error('Upload ảnh thất bại');
+
+            // Xử lý cẩn thận: nếu response là text thì lấy text, json thì lấy json
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                return response.json();
+            } else {
+                return response.text();
+            }
+        },
         /**
          * Xóa sách
          */
@@ -384,31 +386,31 @@ var ApiService = window.ApiService || (() => {
             params.set('page', page);
             params.set('size', size);
             if (q && `${q}`.trim()) params.set('q', q.trim());
-
-            const response = await fetch(`${API_BASE}/admin/seller-applications?${params.toString()}`, { headers: getHeaders() });
+            console.log("Đang kích hoạt gọi API listSellerApplications với URL:", `${API_BASE}/admin/seller-shops-management?${params.toString()}`);
+            const response = await fetch(`${API_BASE}/admin/seller-shops-management?${params.toString()}`, { headers: getHeaders() });
             return handleResponse(response);
         },
         approveSellerApplication: async (shopId) => {
-            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/approve`, {
+            const response = await fetch(`${API_BASE}/admin/seller-shops-management/${encodeURIComponent(shopId)}/approve`, {
                 method: 'PUT', headers: getHeaders()
             });
             return handleResponse(response);
         },
         rejectSellerApplication: async (shopId, reason) => {
-            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/reject`, {
+            const response = await fetch(`${API_BASE}/admin/seller-shops-management/${encodeURIComponent(shopId)}/reject`, {
                 method: 'PUT', headers: getHeaders(), body: JSON.stringify({ reason })
             });
             return handleResponse(response);
         }
         ,
         resendEmail: async (shopId, type = 'rejected') => {
-            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/resend-email?type=${encodeURIComponent(type)}`, {
+            const response = await fetch(`${API_BASE}/admin/seller-shops-management/${encodeURIComponent(shopId)}/resend-email?type=${encodeURIComponent(type)}`, {
                 method: 'PUT', headers: getHeaders()
             });
             return handleResponse(response);
         },
         resendNotification: async (shopId, type = 'rejected') => {
-            const response = await fetch(`${API_BASE}/admin/seller-applications/${encodeURIComponent(shopId)}/resend-notification?type=${encodeURIComponent(type)}`, {
+            const response = await fetch(`${API_BASE}/admin/seller-shops-management/${encodeURIComponent(shopId)}/resend-notification?type=${encodeURIComponent(type)}`, {
                 method: 'PUT', headers: getHeaders()
             });
             return handleResponse(response);
@@ -644,7 +646,7 @@ var ApiService = window.ApiService || (() => {
         checkout: async (shippingAddress, couponCode = null) => {
             const body = { shippingAddress };
             if (couponCode) body.couponCode = couponCode;
-            
+
             const response = await fetch(`${API_BASE}/orders/me/checkout`, {
                 method: 'POST',
                 headers: getHeaders(),
@@ -894,6 +896,10 @@ var ApiService = window.ApiService || (() => {
         }
     };
 
+
+
+
+
     // ==========================================
     // PUBLIC API
     // ==========================================
@@ -925,6 +931,35 @@ var ApiService = window.ApiService || (() => {
         SellerShop,
         Category,
         Chat,
+        Admin,
+    // ==========================================
+    // 7. Recommemdation APIs
+    // ============================================
+    // ... các code phía trên ...
+        Wishlist,
+        Order,
+        SellerShop,
+        Category,
+        Admin,
+
+        // 👇 BẮT ĐẦU DÁN TỪ ĐÂY 👇
+        Recommendation: {
+            getBoughtTogether: async (bookId) => {
+                const response = await fetch(`${API_BASE}/recommendations/${bookId}/bought-together`, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                return handleResponse(response);
+            },
+            getSimilar: async (bookId) => {
+                const response = await fetch(`${API_BASE}/recommendations/${bookId}/similar`, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                return handleResponse(response);
+            }
+        },
+
 
         // Helper: Kiểm tra role
         isAuthenticated: () => !!getAuth().userId,
@@ -950,6 +985,9 @@ var ApiService = window.ApiService || (() => {
             localStorage.removeItem('userId');
             localStorage.removeItem('accessToken');
             localStorage.removeItem('userRole');
+            sessionStorage.removeItem('userId');
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('userRole');
             window.location.href = '/';
         }
     };

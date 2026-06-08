@@ -52,6 +52,7 @@ public class BookController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) List<Long> categoryIds,
             @RequestParam(required = false) List<Long> sellerIds,
+            @RequestParam(required = false) List<String> publishers,
             @RequestParam(required = false) String author,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
@@ -69,11 +70,12 @@ public class BookController {
         Integer yearTo = parseYearBound(publishYearTo);
         List<Long> effectiveCategoryIds = (categoryIds != null && !categoryIds.isEmpty()) ? categoryIds : null;
         List<Long> effectiveSellerIds = (sellerIds != null && !sellerIds.isEmpty()) ? sellerIds : null;
-
+        List<String> effectivePublishers = (publishers != null && !publishers.isEmpty()) ? publishers : null;
         return bookService.searchApprovedBooks(
                 keyword,
                 effectiveCategoryIds,
                 effectiveSellerIds,
+                effectivePublishers,
                 authorKeyword,
                 minPrice,
                 maxPrice,
@@ -125,7 +127,7 @@ public class BookController {
      * Dùng cho trang quản lý kho - S03
      */
     @GetMapping("/seller/me")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public Page<Book> getSellerBooks(
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
             @RequestParam(required = false) String q,
@@ -160,7 +162,7 @@ public class BookController {
      * Trả về đủ thông tin: book details + seller info
      */
     @GetMapping("/seller/book/{id}")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public ResponseEntity<?> getSellerOwnBook(
             @PathVariable Long id,
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
@@ -195,7 +197,7 @@ public class BookController {
     // --- API add new book cho Seller - S03 ---
     // @RequestBody : khi gui 1 cuc dl Json chua thong tin sach SB auto nan JSON do thanh 1 Doi tuong Object Book in Java tinh nang nay same FromBody trong .Net API
     @PostMapping({"", "/seller"})
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public ResponseEntity<?> createBookForSeller(
             @RequestBody Book book,
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
@@ -224,7 +226,7 @@ public class BookController {
 
     // API Update book cho Seller - S03
     @PutMapping({"/{id}", "/seller/{id}"})
-    @PreAuthorize("hasRole('SELLER') and hasPermission(#id, 'Book', 'update')")
+    @PreAuthorize("hasAuthority('SELLER') and hasPermission(#id, 'Book', 'update')")
     public ResponseEntity<?> updateBookForSeller(
             @PathVariable Long id,
             @RequestBody Book bookDetails,
@@ -254,7 +256,7 @@ public class BookController {
 
     // API upload ảnh cho sách - S03
     @PostMapping({"/{id}/upload-cover", "/seller/{id}/upload-cover"})
-    @PreAuthorize("hasRole('SELLER') and hasPermission(#id, 'Book', 'update')")
+    @PreAuthorize("hasAuthority('SELLER') and hasPermission(#id, 'Book', 'update')")
     public ResponseEntity<?> upLoadBookCover(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file,
@@ -274,7 +276,7 @@ public class BookController {
 
     // Thêm API xóa sách cho Seller (S03)
     @DeleteMapping({"/{id}", "/seller/{id}"})
-    @PreAuthorize("hasRole('SELLER') and hasPermission(#id, 'Book', 'delete')")
+    @PreAuthorize("hasAuthority('SELLER') and hasPermission(#id, 'Book', 'delete')")
     public ResponseEntity<?> deleteBookForSeller(
             @PathVariable Long id,
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal

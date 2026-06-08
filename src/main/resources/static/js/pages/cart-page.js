@@ -54,6 +54,7 @@
 
         liveContainer.innerHTML = grouped.map((shop) => {
             const rows = shop.rows.map((item) => {
+                const currentItemId = item.id || item.itemId;
                 return `
                     <div class="p-5 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-0 border-b border-brand-accent/50 hover:bg-brand-cream/30 transition" data-item-id="${item.itemId}">
                         <div class="flex items-start gap-4 w-full md:w-5/12">

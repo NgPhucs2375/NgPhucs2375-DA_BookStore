@@ -57,11 +57,11 @@ public class Coupon {
     @Builder.Default
     private Integer usedCount = 0;  // Already used count
 
-    @Column(nullable = false, columnDefinition = "BIT DEFAULT 1")
+    @Column(nullable = false, columnDefinition = "boolean default true")
     @Builder.Default
     private boolean isActive = true;  // true = usable, false = disabled
 
-    @Column(nullable = false, columnDefinition = "DATETIME DEFAULT GETDATE()")
+    @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 

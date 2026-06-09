@@ -55,6 +55,21 @@ public interface BookReviewRepository extends JpaRepository<BookReview, Long> {
            "GROUP BY r.rating")
     List<Map<String, Object>> countRatingDistributionByBook(@Param("book") Book book);
 
+    // ========================
+    // ML Feature Computation Queries
+    // ========================
+
+    /**
+     * Tính điểm đánh giá trung bình của một user (cho tất cả review họ đã viết).
+     */
+    @Query("SELECT AVG(r.rating) FROM BookReview r WHERE r.user = :user AND r.isHidden = false")
+    Double findAverageRatingByUser(@Param("user") User user);
+
+    /**
+     * Đếm tổng số review của một user.
+     */
+    long countByUser(User user);
+
     /**
      * Tìm đánh giá của người dùng cho một cuốn sách cụ thể
      */

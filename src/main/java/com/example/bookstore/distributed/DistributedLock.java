@@ -23,7 +23,10 @@ public class DistributedLock {
     @Column(name = "lock_expires_at", nullable = false)
     private LocalDateTime lockExpiresAt = LocalDateTime.now();
 
-    @Column(name = "acquired_at", nullable = false, columnDefinition = "datetime2(6) DEFAULT SYSUTCDATETIME()")
+    @Column(name = "last_heartbeat_at", nullable = false)
+    private LocalDateTime lastHeartbeatAt = LocalDateTime.now();
+
+    @Column(name = "acquired_at", nullable = false, columnDefinition = "TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime acquiredAt;
 
     // Constructors
@@ -58,6 +61,10 @@ public class DistributedLock {
 
     public LocalDateTime getLockExpiresAt() { return lockExpiresAt; }
     public void setLockExpiresAt(LocalDateTime lockExpiresAt) { this.lockExpiresAt = lockExpiresAt; }
+
+    //public LocalDateTime getLastHeartbeatAt() { return lastHeartbeatAt; }
+    //public void setLastHeartbeatAt(LocalDateTime lastHeartbeatAt) { this.lastHeartbeatAt = lastHeartbeatAt; }
+
 
     // [3] THÊM GETTER & SETTER CHO ACQUIRED_AT ĐỂ HẾT BÁO ĐỎ
     public LocalDateTime getAcquiredAt() { return acquiredAt; }

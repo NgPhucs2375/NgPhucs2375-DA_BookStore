@@ -1,6 +1,6 @@
--- Align other enum-backed columns to NVARCHAR for SQL Server
+-- Align other enum-backed columns to VARCHAR for SQL Server
 
-DECLARE @sql NVARCHAR(MAX);
+DECLARE @sql TEXT;
 
 -- ==========================================
 -- 1. BẢNG USERS - Cột role
@@ -24,7 +24,7 @@ IF @sql IS NOT NULL
 ALTER TABLE users DROP CONSTRAINT DF_users_role;
 
 -- Thay đổi kiểu dữ liệu cột
-ALTER TABLE users ALTER COLUMN role NVARCHAR(20) NOT NULL;
+ALTER TABLE users ALTER COLUMN role VARCHAR(20) NOT NULL;
 
 -- Phục hồi Default Constraint
 IF OBJECT_ID('DF_users_role', 'D') IS NULL
@@ -54,7 +54,7 @@ IF @sql IS NOT NULL
 ALTER TABLE sub_orders DROP CONSTRAINT DF_sub_orders_status;
 
 -- Thay đổi kiểu dữ liệu cột
-ALTER TABLE sub_orders ALTER COLUMN status NVARCHAR(30) NOT NULL;
+ALTER TABLE sub_orders ALTER COLUMN status VARCHAR(30) NOT NULL;
 
 -- Phục hồi Default Constraint
 IF OBJECT_ID('DF_sub_orders_status', 'D') IS NULL

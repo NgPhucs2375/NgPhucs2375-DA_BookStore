@@ -23,33 +23,33 @@ CREATE TABLE notification_delivery (
     notification_id BIGINT NOT NULL,
     
     -- Delivery channel: 'SSE', 'EMAIL', 'PUSH', 'SMS' (for future extensibility)
-    channel NVARCHAR(50) NOT NULL,
+    channel VARCHAR(50) NOT NULL,
     
     -- Status enum: PENDING, SENT, FAILED, DROPPED
     -- PENDING   = awaiting first send attempt or retry
     -- SENT      = delivered successfully
     -- FAILED    = failed after max retries, manually reviewable
     -- DROPPED   = exceeded retry limit, abandoned
-    status NVARCHAR(20) NOT NULL,
+    status VARCHAR(20) NOT NULL,
     
     -- Timestamp when notification was actually sent successfully (NULL if not yet sent)
-    sent_at DATETIME2 NULL,
+    sent_at TIMESTAMP NULL,
     
     -- Error message from last failed attempt (for debugging)
-    last_error NVARCHAR(500) NULL,
+    last_error VARCHAR(500) NULL,
     
     -- How many times we've tried to send this (starts at 0, incremented on each retry)
     attempt_count INT NOT NULL DEFAULT 0,
     
     -- When to try again (NULL if sent or dropped)
-    -- Queue worker polls: SELECT * WHERE status='PENDING' AND next_retry_at <= SYSUTCDATETIME()
-    next_retry_at DATETIME2 NULL,
+    -- Queue worker polls: SELECT * WHERE status='PENDING' AND next_retry_at <= CURRENT_TIMESTAMP
+    next_retry_at TIMESTAMP NULL,
     
     -- Audit: when this record was created (same as or shortly after notification.created_at)
-    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- Audit: when this record was last updated (tracking attempt history)
-    updated_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- Foreign key constraint: cascade delete when notification is deleted
     CONSTRAINT FK_notification_delivery_notification 
@@ -95,7 +95,7 @@ CREATE INDEX IX_notification_delivery_failed
 -- Index 4: For per-channel monitoring
 -- Purpose: Monitor specific channel health (e.g., all SSE deliveries)
 -- Usage: SELECT status, COUNT(*) FROM notification_delivery 
---        WHERE channel = 'SSE' AND created_at >= DATEADD(hour, -1, SYSUTCDATETIME())
+--        WHERE channel = 'SSE' AND created_at >= DATEADD(hour, -1, CURRENT_TIMESTAMP)
 --        GROUP BY status
 -- ============================================================================
 CREATE INDEX IX_notification_delivery_channel

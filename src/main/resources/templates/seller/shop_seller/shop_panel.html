@@ -1,0 +1,56 @@
+<section th:fragment="shop_panel" class="fixed bottom-4 right-4 z-50 w-[92vw] max-w-md">
+    <details id="seller-shop-panel" class="rounded-2xl border border-brand-border bg-white shadow-premium">
+        <summary class="cursor-pointer list-none px-4 py-3 flex items-center justify-between">
+            <span class="text-sm font-bold text-brand-dark">Quan ly ho so shop (S01)</span>
+            <span id="shop-panel-status" class="text-[10px] font-bold px-2 py-1 rounded bg-brand-hero text-brand-dark">CHUA DONG BO</span>
+        </summary>
+        <div class="px-4 pb-4 pt-1 border-t border-brand-border">
+            <div id="shop-panel-alert" class="hidden mb-3 rounded-lg border px-3 py-2 text-xs font-semibold"></div>
+            <form id="shop-panel-form" class="space-y-2">
+                <div>
+                    <label for="shopName" class="text-xs font-bold">Ten shop *</label>
+                    <input id="shopName" class="mt-1 w-full rounded-md border border-brand-border px-3 py-2 text-sm" required maxlength="120" placeholder="Nha Nam Official">
+                </div>
+                <div>
+                    <label for="slug" class="text-xs font-bold">Slug *</label>
+                    <input id="slug" class="mt-1 w-full rounded-md border border-brand-border px-3 py-2 text-sm" required pattern="^[a-z0-9-]+$" placeholder="nha-nam-official">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                        <label for="contactEmail" class="text-xs font-bold">Email</label>
+                        <input id="contactEmail" type="email" class="mt-1 w-full rounded-md border border-brand-border px-3 py-2 text-sm" placeholder="shop@email.com">
+                    </div>
+                    <div>
+                        <label for="contactPhone" class="text-xs font-bold">Dien thoai</label>
+                        <input id="contactPhone" class="mt-1 w-full rounded-md border border-brand-border px-3 py-2 text-sm" placeholder="090xxxxxxx">
+                    </div>
+                </div>
+                <div>
+                    <label for="description" class="text-xs font-bold">Mo ta</label>
+                    <textarea id="description" rows="2" class="mt-1 w-full rounded-md border border-brand-border px-3 py-2 text-sm" placeholder="Gioi thieu ngan ve shop"></textarea>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                        <label for="logoUrl" class="text-xs font-bold">Logo URL</label>
+                        <input id="logoUrl" type="url" class="mt-1 w-full rounded-md border border-brand-border px-3 py-2 text-sm" placeholder="https://...">
+                    </div>
+                    <div>
+                        <label for="bannerUrl" class="text-xs font-bold">Banner URL</label>
+                        <input id="bannerUrl" type="url" class="mt-1 w-full rounded-md border border-brand-border px-3 py-2 text-sm" placeholder="https://...">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input id="address" class="rounded-md border border-brand-border px-3 py-2 text-sm sm:col-span-2" placeholder="Dia chi">
+                    <input id="city" class="rounded-md border border-brand-border px-3 py-2 text-sm" placeholder="Thanh pho">
+                </div>
+                <input id="province" class="w-full rounded-md border border-brand-border px-3 py-2 text-sm" placeholder="Tinh/Thanh">
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button id="shop-panel-save" type="submit" class="rounded-md bg-brand-brown text-white px-3 py-2 text-xs font-bold hover:bg-brand-brown-dark transition">Luu</button>
+                    <button id="shop-panel-reset" type="button" class="rounded-md border border-brand-border px-3 py-2 text-xs font-bold hover:bg-brand-bg transition">Khoi phuc</button>
+                    <button id="shop-panel-toggle" type="button" class="rounded-md border border-brand-brown text-brand-dark px-3 py-2 text-xs font-bold hover:bg-brand-hero transition" disabled>Doi trang thai</button>
+                    <button id="shop-panel-delete" type="button" class="rounded-md border border-red-300 text-red-600 px-3 py-2 text-xs font-bold hover:bg-red-50 transition" disabled>Xoa shop</button>
+                </div>
+            </form>
+        </div>
+    </details>
+</section>

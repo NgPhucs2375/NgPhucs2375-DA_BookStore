@@ -9,6 +9,8 @@ import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.UserRepository;
 import com.example.bookstore.repository.SellerShopRepository;
+import com.example.bookstore.model.SellerShop;
+import com.example.bookstore.service.cluster.CustomerAnalysisService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,7 @@ public class DatabaseSeederService {
     private final SellerShopRepository sellerShopRepository;
     private final SellerShopService sellerShopService;
     private final GeminiService geminiService;
+    private final CustomerAnalysisService customerAnalysisService;
     private final com.example.bookstore.repository.OrderRepository orderRepository;
     private final com.example.bookstore.repository.SubOrderRepository subOrderRepository;
     private final com.example.bookstore.repository.OrderItemRepository orderItemRepository;
@@ -186,22 +189,19 @@ public class DatabaseSeederService {
                     existing = categoryRepository.save(seed);
                     added++;
                 } catch (Exception e) {
-                    result.getWarnings().add("Failed to add category: " + seed.getName());
-                    continue;
+                    log.error("Loi them The loai: " + seed.getName(), e);
+                    throw e; // Ném ngược lỗi ra để dừng transaction và in log
                 }
-            } else {
+            }  else {
                 boolean isNameDiff = existing.getName() == null || !existing.getName().equals(seed.getName());
                 boolean isDescDiff = existing.getDescription() == null || !existing.getDescription().equals(seed.getDescription());
 
-                if (isNameDiff || isDescDiff) {
-                    existing.setName(seed.getName());
-                    existing.setDescription(seed.getDescription());
-                    try {
-                        existing = categoryRepository.save(existing);
-                        updated++;
-                    } catch (Exception e) {
-                        result.getWarnings().add("Failed to update category: " + seed.getName());
-                    }
+                try {
+                    existing = categoryRepository.save(existing);
+                    updated++;
+                } catch (Exception e) {
+                    log.error("Loi cap nhat The loai: " + seed.getName(), e);
+                    throw e;
                 }
             }
             orderedCategories.add(existing);
@@ -273,6 +273,15 @@ public class DatabaseSeederService {
 
         User saved = userRepository.save(builder.build());
         added.incrementAndGet();
+
+        // Tự động phân tích churn cho user seed (gọi Python ML API)
+        try {
+            customerAnalysisService.analyzeCustomer(saved.getId());
+            log.info("Đã phân tích churn cho seed user: {}", saved.getUsername());
+        } catch (Exception e) {
+            log.warn("Không thể phân tích churn cho seed user {}: {}", saved.getUsername(), e.getMessage());
+        }
+
         return saved;
     }
 

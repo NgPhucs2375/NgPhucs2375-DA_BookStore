@@ -1,32 +1,57 @@
+version: '3.8'
+
 services:
-  # SQL Server staging database used by the containerized Spring Boot app
-  bookom-mssql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: bookom-mssql
+  # =========================================
+  # 1. HẠ TẦNG CƠ SỞ (DATABASE, CACHE, QUEUE)
+  # =========================================
+  bookom-postgres:
+    image: postgres:15-alpine
+    container_name: bookom-postgres
     environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_PID: "Developer"
-      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-BookomStaging!123}"
+      POSTGRES_DB: BookstoreDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Bookom123
+    ports:
+      - "5432:5432"
     volumes:
-      - mssql-data:/var/opt/mssql
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - bookom-network
     healthcheck:
-      test: ["CMD-SHELL", "bash -lc 'exec 3<>/dev/tcp/localhost/1433'"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d BookstoreDB"]
       interval: 10s
       timeout: 5s
-      retries: 20
-      start_period: 40s
+      retries: 5
 
-  # Load Balancer Nginx
+  bookom-redis:
+    image: redis:7-alpine
+    container_name: bookom-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - bookom-network
+
+  bookom-rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: bookom-rabbitmq
+    ports:
+      - "5672:5672"   # Cổng giao tiếp cho Spring Boot
+      - "15672:15672" # Cổng giao diện web quản lý RabbitMQ (truy cập localhost:15672)
+    networks:
+      - bookom-network
+
+  # =========================================
+  # 2. ỨNG DỤNG VÀ LOAD BALANCER
+  # =========================================
   nginx-lb:
-    image: nginx:latest
+    image: nginx:alpine
     container_name: bookom-nginx-lb
     ports:
       - "80:80"
     volumes:
-      # Nginx CHỈ CẦN file cấu hình này thôi
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - bookom-app-1
       - bookom-app-2
@@ -34,64 +59,69 @@ services:
     networks:
       - bookom-network
 
-  # Bản sao Spring Boot số 1
   bookom-app-1:
     image: eclipse-temurin:17-jdk-alpine
     container_name: bookom-app-1
     depends_on:
-      bookom-mssql:
+      bookom-postgres:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:sqlserver://bookom-mssql:1433;databaseName=BookstoreDB;encrypt=true;trustServerCertificate=true
-      SPRING_DATASOURCE_USERNAME: sa
-      SPRING_DATASOURCE_PASSWORD: ${MSSQL_SA_PASSWORD:-BookomStaging!123}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bookom-postgres:5432/BookstoreDB
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Bookom123
+      SPRING_DATA_REDIS_HOST: bookom-redis
+      SPRING_RABBITMQ_HOST: bookom-rabbitmq
     volumes:
-      # TRỎ ĐÚNG FILE JAR CHO APP JAVA
       - ./target/BookStore-0.0.1-SNAPSHOT.jar:/app/bookom.jar
     command: ["java", "-jar", "/app/bookom.jar"]
     networks:
       - bookom-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-  # Bản sao Spring Boot số 2
   bookom-app-2:
     image: eclipse-temurin:17-jdk-alpine
     container_name: bookom-app-2
     depends_on:
-      bookom-mssql:
+      bookom-postgres:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:sqlserver://bookom-mssql:1433;databaseName=BookstoreDB;encrypt=true;trustServerCertificate=true
-      SPRING_DATASOURCE_USERNAME: sa
-      SPRING_DATASOURCE_PASSWORD: ${MSSQL_SA_PASSWORD:-BookomStaging!123}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bookom-postgres:5432/BookstoreDB
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Bookom123
+      SPRING_DATA_REDIS_HOST: bookom-redis
+      SPRING_RABBITMQ_HOST: bookom-rabbitmq
     volumes:
-      # TRỎ ĐÚNG FILE JAR CHO APP JAVA
       - ./target/BookStore-0.0.1-SNAPSHOT.jar:/app/bookom.jar
     command: ["java", "-jar", "/app/bookom.jar"]
     networks:
       - bookom-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-  # Bản sao Spring Boot số 3
   bookom-app-3:
     image: eclipse-temurin:17-jdk-alpine
     container_name: bookom-app-3
     depends_on:
-      bookom-mssql:
+      bookom-postgres:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:sqlserver://bookom-mssql:1433;databaseName=BookstoreDB;encrypt=true;trustServerCertificate=true
-      SPRING_DATASOURCE_USERNAME: sa
-      SPRING_DATASOURCE_PASSWORD: ${MSSQL_SA_PASSWORD:-BookomStaging!123}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bookom-postgres:5432/BookstoreDB
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Bookom123
+      SPRING_DATA_REDIS_HOST: bookom-redis
+      SPRING_RABBITMQ_HOST: bookom-rabbitmq
     volumes:
-      # TRỎ ĐÚNG FILE JAR CHO APP JAVA
       - ./target/BookStore-0.0.1-SNAPSHOT.jar:/app/bookom.jar
     command: ["java", "-jar", "/app/bookom.jar"]
     networks:
       - bookom-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-# Tạo mạng nội bộ để các container tự nói chuyện với nhau
 networks:
   bookom-network:
     driver: bridge
 
 volumes:
-  mssql-data:
+  postgres-data:

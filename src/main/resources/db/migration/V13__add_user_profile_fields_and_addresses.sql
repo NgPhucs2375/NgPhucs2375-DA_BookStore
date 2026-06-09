@@ -1,22 +1,22 @@
 -- Add profile fields to users table
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'first_name')
 BEGIN
-    ALTER TABLE users ADD first_name NVARCHAR(100) NULL;
+    ALTER TABLE users ADD first_name VARCHAR(100) NULL;
 END;
 
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'last_name')
 BEGIN
-    ALTER TABLE users ADD last_name NVARCHAR(100) NULL;
+    ALTER TABLE users ADD last_name VARCHAR(100) NULL;
 END;
 
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'email')
 BEGIN
-    ALTER TABLE users ADD email NVARCHAR(255) NULL;
+    ALTER TABLE users ADD email VARCHAR(255) NULL;
 END;
 
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'phone')
 BEGIN
-    ALTER TABLE users ADD phone NVARCHAR(20) NULL;
+    ALTER TABLE users ADD phone VARCHAR(20) NULL;
 END;
 
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'date_of_birth')
@@ -26,12 +26,12 @@ END;
 
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'bio')
 BEGIN
-    ALTER TABLE users ADD bio NVARCHAR(500) NULL;
+    ALTER TABLE users ADD bio VARCHAR(500) NULL;
 END;
 
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'gender')
 BEGIN
-    ALTER TABLE users ADD gender NVARCHAR(20) NULL;
+    ALTER TABLE users ADD gender VARCHAR(20) NULL;
 END;
 
 -- Create user addresses table
@@ -40,17 +40,17 @@ BEGIN
     CREATE TABLE user_addresses (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
         user_id BIGINT NOT NULL,
-        address_type NVARCHAR(50) NOT NULL,
-        recipient_name NVARCHAR(100) NOT NULL,
-        recipient_phone NVARCHAR(20) NOT NULL,
-        address_line NVARCHAR(500) NOT NULL,
-        ward NVARCHAR(100) NULL,
-        district NVARCHAR(100) NOT NULL,
-        province NVARCHAR(100) NOT NULL,
-        postal_code NVARCHAR(20) NULL,
+        address_type VARCHAR(50) NOT NULL,
+        recipient_name VARCHAR(100) NOT NULL,
+        recipient_phone VARCHAR(20) NOT NULL,
+        address_line VARCHAR(500) NOT NULL,
+        ward VARCHAR(100) NULL,
+        district VARCHAR(100) NOT NULL,
+        province VARCHAR(100) NOT NULL,
+        postal_code VARCHAR(20) NULL,
         is_default BIT DEFAULT 0,
-        created_at DATETIME DEFAULT GETDATE(),
-        updated_at DATETIME DEFAULT GETDATE(),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT FK_user_addresses_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 END;
@@ -61,11 +61,11 @@ BEGIN
     CREATE TABLE user_security_events (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
         user_id BIGINT NOT NULL,
-        event_type NVARCHAR(50) NOT NULL, -- PASSWORD_CHANGED, EMAIL_CHANGED, etc.
-        event_description NVARCHAR(500) NULL,
-        ip_address NVARCHAR(50) NULL,
-        user_agent NVARCHAR(500) NULL,
-        created_at DATETIME DEFAULT GETDATE(),
+        event_type VARCHAR(50) NOT NULL, -- PASSWORD_CHANGED, EMAIL_CHANGED, etc.
+        event_description VARCHAR(500) NULL,
+        ip_address VARCHAR(50) NULL,
+        user_agent VARCHAR(500) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT FK_security_events_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 END;

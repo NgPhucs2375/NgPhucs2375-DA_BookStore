@@ -807,6 +807,95 @@ var ApiService = window.ApiService || (() => {
         }
     };
 
+    // ==========================================
+    // 8. CHAT APIs
+    // ==========================================
+
+    const Chat = {
+        /**
+         * Tạo chat room (hoặc trả về room cũ)
+         */
+        createRoom: async (productId, sellerId, productTitle, productImage, productPrice) => {
+            const response = await fetch(`${API_BASE}/chat/rooms`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    productId,
+                    sellerId,
+                    productTitle,
+                    productImage,
+                    productPrice
+                })
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Danh sách rooms của user
+         */
+        getRooms: async (role = 'buyer') => {
+            const response = await fetch(`${API_BASE}/chat/rooms?role=${role}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Chi tiết 1 room
+         */
+        getRoomDetail: async (chatId) => {
+            const response = await fetch(`${API_BASE}/chat/rooms/${chatId}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Lịch sử tin nhắn (pagination)
+         */
+        getMessages: async (chatId, pageSize = 30, lastDocId = null) => {
+            let url = `${API_BASE}/chat/messages/${chatId}?pageSize=${pageSize}`;
+            if (lastDocId) url += `&lastDocId=${lastDocId}`;
+            const response = await fetch(url, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Gửi tin nhắn
+         */
+        sendMessage: async (chatId, content) => {
+            const response = await fetch(`${API_BASE}/chat/messages/${chatId}`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ content })
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Đánh dấu đã đọc
+         */
+        markAsRead: async (chatId) => {
+            const response = await fetch(`${API_BASE}/chat/rooms/${chatId}/read`, {
+                method: 'PUT',
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        },
+
+        /**
+         * Số tin chưa đọc
+         */
+        getUnreadCount: async (role = 'buyer') => {
+            const response = await fetch(`${API_BASE}/chat/unread-count?role=${role}`, {
+                headers: getHeaders()
+            });
+            return handleResponse(response);
+        }
+    };
+
 
 
 
@@ -841,6 +930,7 @@ var ApiService = window.ApiService || (() => {
         Order,
         SellerShop,
         Category,
+        Chat,
         Admin,
     // ==========================================
     // 7. Recommemdation APIs

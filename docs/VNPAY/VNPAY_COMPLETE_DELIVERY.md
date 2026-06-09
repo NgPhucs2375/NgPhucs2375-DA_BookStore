@@ -107,15 +107,15 @@ CREATE TABLE payment_transactions (
     id BIGINT PRIMARY KEY,
     order_id BIGINT FOREIGN KEY,
     amount BIGINT,
-    method NVARCHAR(30),
-    status NVARCHAR(30),
-    transaction_code NVARCHAR(100) UNIQUE,
-    payment_url NVARCHAR(1000),
-    response_code NVARCHAR(1000),
-    created_at DATETIME2,
-    paid_at DATETIME2,
-    expired_at DATETIME2,
-    failure_reason NVARCHAR(500)
+    method VARCHAR(30),
+    status VARCHAR(30),
+    transaction_code VARCHAR(100) UNIQUE,
+    payment_url VARCHAR(1000),
+    response_code VARCHAR(1000),
+    created_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    expired_at TIMESTAMP,
+    failure_reason VARCHAR(500)
 );
 ```
 

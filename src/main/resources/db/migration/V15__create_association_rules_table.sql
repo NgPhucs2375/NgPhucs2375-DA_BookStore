@@ -16,7 +16,7 @@ CREATE TABLE association_rules (
     support DECIMAL(5, 4) NOT NULL,        -- 0.0000 to 1.0000 (0% to 100%)
     confidence DECIMAL(5, 4) NOT NULL,     -- 0.0000 to 1.0000 (0% to 100%)
     lift DECIMAL(10, 4) NOT NULL,          -- 0.0000 to 9999.9999
-    updated_at DATETIME2 DEFAULT GETDATE(),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     -- Constraints
     CONSTRAINT FK_AssociationRules_BookA FOREIGN KEY (book_id_a) REFERENCES books(id),

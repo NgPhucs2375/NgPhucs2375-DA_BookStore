@@ -50,6 +50,54 @@
     </div>
 </div>
 <script th:src="@{/js/panel-data.js}"></script>
-<script>BookomPanelData.initAdminUsers();</script>
+<script th:src="@{/js/api-service.js}"></script>
+<script>
+(function() {
+    'use strict';
+    const API_ROOT = '/api';
+
+    function loadMLData() {
+        fetch(API_ROOT + '/admin/customers', {
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var customers = Array.isArray(data) ? data : [];
+            if (customers.length > 0) {
+                console.log('%c🧠 ML Customer Analysis Data (Admin Users Page)', 'font-size:16px; font-weight:bold; color:#ea580c;');
+                console.table(customers.map(function(c) {
+                    return {
+                        ID: c.id,
+                        Name: c.name || c.username || 'N/A',
+                        Cluster: c.predictedClass,
+                        Risk: c.riskLevel,
+                        ChurnProb: c.churnProbability ? (c.churnProbability * 100).toFixed(1) + '%' : '--',
+                        Orders: c.totalOrders || 0,
+                        AvgOrder: c.avgOrderValue ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(c.avgOrderValue) : '--',
+                        Engagement: c.engagementScore,
+                        LastAnalyzed: c.lastAnalyzedAt || '--'
+                    };
+                }));
+            }
+        })
+        .catch(function(err) {
+            console.log('%c⚠ ML data not available: ' + err.message, 'color:orange');
+        });
+    }
+
+    // Load ML data after page init
+    if (typeof BookomPanelData !== 'undefined') {
+        var origInit = BookomPanelData.initAdminUsers;
+        BookomPanelData.initAdminUsers = function() {
+            var result = origInit.apply(this, arguments);
+            setTimeout(loadMLData, 1000);
+            return result;
+        };
+    }
+
+    BookomPanelData.initAdminUsers();
+})();
+</script>
 </body>
+REPLACE
 </html>

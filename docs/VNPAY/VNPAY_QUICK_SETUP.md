@@ -97,16 +97,16 @@ payment_transactions (
   id BIGINT (PK),
   order_id BIGINT (FK),
   amount BIGINT,
-  method NVARCHAR(30),     -- 'VNPAY', 'COD', etc.
-  status NVARCHAR(30),     -- 'PENDING', 'COMPLETED', 'FAILED', etc.
-  transaction_code NVARCHAR(100),  -- Unique: 'ORD123456789'
-  payment_url NVARCHAR(1000),      -- VNPay redirect URL
-  response_code NVARCHAR(1000),    -- VNPay response: '00', '01', etc.
-  response_message NVARCHAR(1000), -- VNPay message
-  created_at DATETIME2,
-  paid_at DATETIME2,
-  expired_at DATETIME2,
-  failure_reason NVARCHAR(500)
+  method VARCHAR(30),     -- 'VNPAY', 'COD', etc.
+  status VARCHAR(30),     -- 'PENDING', 'COMPLETED', 'FAILED', etc.
+  transaction_code VARCHAR(100),  -- Unique: 'ORD123456789'
+  payment_url VARCHAR(1000),      -- VNPay redirect URL
+  response_code VARCHAR(1000),    -- VNPay response: '00', '01', etc.
+  response_message VARCHAR(1000), -- VNPay message
+  created_at TIMESTAMP,
+  paid_at TIMESTAMP,
+  expired_at TIMESTAMP,
+  failure_reason VARCHAR(500)
 )
 ```
 

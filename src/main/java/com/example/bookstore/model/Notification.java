@@ -37,18 +37,18 @@ public class Notification {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50, columnDefinition = "NVARCHAR(50)")
+    @Column(nullable = false, length = 50, columnDefinition = "VARCHAR(50)")
     private NotificationType type;
 
     @Column(nullable = false, length = 255)
     private String title;
 
     @Lob
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(columnDefinition = "TEXT")
     private String message;
 
     @Lob
-    @Column(name = "payload_json", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "payload_json", columnDefinition = "TEXT")
     private String payloadJson;
 
     @Column(name = "is_read", nullable = false)
@@ -56,7 +56,7 @@ public class Notification {
     private Boolean isRead = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
+    @Column(nullable = false, length = 20, columnDefinition = "VARCHAR(20)")
     @Builder.Default
     private NotificationPriority priority = NotificationPriority.NORMAL;
 

@@ -33,14 +33,14 @@ public class BookReview {
     @Column(nullable = false)
     private Integer rating;
 
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(columnDefinition = "TEXT")
     private String comment;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "is_hidden", nullable = false)
-    @ColumnDefault("0")
+    @ColumnDefault("false")
     private boolean isHidden = false;
 
     @PrePersist

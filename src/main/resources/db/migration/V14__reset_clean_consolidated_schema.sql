@@ -3,15 +3,15 @@
 -- ============================================================================
 -- This migration provides a clean, consolidated schema by:
 -- 1. Dropping all existing tables and their constraints
--- 2. Redefining schema from scratch with correct data types (NVARCHAR for enums)
+-- 2. Redefining schema from scratch with correct data types (VARCHAR for enums)
 -- 3. Including all fields from V1-V13 upfront (no piecemeal ALTER TABLEs)
 -- 4. Adding strategic indexes for query performance (hot paths identified)
 -- 5. Documenting nullable field strategy and known constraints
 --
 -- KEY CHANGES FROM V1-V13:
--- - publish_year: NVARCHAR(50) → INT (normalized for numeric range queries)
--- - publish_year_note: NEW, NVARCHAR(100) (flexible format reference: "circa 2020", "Q1 2023")
--- - All enum columns: NVARCHAR from start (no V4/V5 fixes needed)
+-- - publish_year: VARCHAR(50) → INT (normalized for numeric range queries)
+-- - publish_year_note: NEW, VARCHAR(100) (flexible format reference: "circa 2020", "Q1 2023")
+-- - All enum columns: VARCHAR from start (no V4/V5 fixes needed)
 -- - Comprehensive index strategy for recommendation hot paths
 -- - Explicit nullable field rationale (see SECTION 3)
 --
@@ -57,25 +57,25 @@ CREATE TABLE users (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     
     -- Authentication (required)
-    username NVARCHAR(255) NOT NULL UNIQUE,
-    password_hash NVARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
     
-    -- Role (using NVARCHAR for enum from start to avoid V4 migration pain)
-    role NVARCHAR(20) NOT NULL CONSTRAINT DF_users_role DEFAULT 'BUYER',
+    -- Role (using VARCHAR for enum from start to avoid V4 migration pain)
+    role VARCHAR(20) NOT NULL CONSTRAINT DF_users_role DEFAULT 'BUYER',
     
     -- Seller shop info (nullable for buyers)
-    shop_name NVARCHAR(255) NULL,
-    shop_address NVARCHAR(500) NULL,
-    avatar_url NVARCHAR(MAX) NULL,
+    shop_name VARCHAR(255) NULL,
+    shop_address VARCHAR(500) NULL,
+    avatar_url TEXT NULL,
     
     -- User profile fields (from V13)
-    first_name NVARCHAR(100) NULL,
-    last_name NVARCHAR(100) NULL,
-    email NVARCHAR(255) NULL,
-    phone NVARCHAR(20) NULL,
+    first_name VARCHAR(100) NULL,
+    last_name VARCHAR(100) NULL,
+    email VARCHAR(255) NULL,
+    phone VARCHAR(20) NULL,
     date_of_birth DATE NULL,
-    bio NVARCHAR(500) NULL,
-    gender NVARCHAR(20) NULL
+    bio VARCHAR(500) NULL,
+    gender VARCHAR(20) NULL
 );
 CREATE INDEX IX_users_username ON users(username);
 CREATE INDEX IX_users_email ON users(email) WHERE email IS NOT NULL;
@@ -84,8 +84,8 @@ CREATE INDEX IX_users_role ON users(role);
 -- 2. CATEGORY TABLE
 CREATE TABLE category (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    name NVARCHAR(255) NOT NULL UNIQUE,
-    description NVARCHAR(MAX) NULL
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT NULL
 );
 CREATE INDEX IX_category_name ON category(name);
 
@@ -106,28 +106,28 @@ CREATE TABLE user_favorite_categories (
 --   - image_url: NULL → optional; UI layer provides default placeholder
 --   - publisher: NULL → not all books have publisher info; optional metadata
 --   - publish_year: INT NULL → now numeric, supports NULL for unknown/ancient books
---   - publish_year_note: NVARCHAR(100) NULL → flexible format for reference ("circa 2020", "Q1 2023", etc.)
+--   - publish_year_note: VARCHAR(100) NULL → flexible format for reference ("circa 2020", "Q1 2023", etc.)
 --   - category_id: NULL → some books don't fit category; recommendation fallback MUST null-check
 CREATE TABLE books (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    title NVARCHAR(500) NOT NULL,
-    author NVARCHAR(255) NOT NULL,
-    description NVARCHAR(MAX) NULL,
+    title VARCHAR(500) NOT NULL,
+    author VARCHAR(255) NOT NULL,
+    description TEXT NULL,
     price FLOAT NULL,
     stock_quantity INT NULL,
-    image_url NVARCHAR(500) NULL,
-    publisher NVARCHAR(255) NULL,
+    image_url VARCHAR(500) NULL,
+    publisher VARCHAR(255) NULL,
     
-    -- Publish year (NORMALIZED: INT instead of NVARCHAR for proper range filtering)
+    -- Publish year (NORMALIZED: INT instead of VARCHAR for proper range filtering)
     publish_year INT NULL,           -- Numeric year (e.g., 2023); NULL for unknown
-    publish_year_note NVARCHAR(100) NULL,  -- Reference format (e.g., "circa 2020", "Q1 2023")
+    publish_year_note VARCHAR(100) NULL,  -- Reference format (e.g., "circa 2020", "Q1 2023")
     
     -- Foreign keys
     category_id BIGINT NULL,         -- Nullable: fallback logic must null-check category
     seller_id BIGINT NOT NULL,
     
-    -- Approval status (using NVARCHAR for enum from start to avoid V4 migration pain)
-    approval_status NVARCHAR(20) NOT NULL CONSTRAINT DF_books_approval_status DEFAULT 'PENDING',
+    -- Approval status (using VARCHAR for enum from start to avoid V4 migration pain)
+    approval_status VARCHAR(20) NOT NULL CONSTRAINT DF_books_approval_status DEFAULT 'PENDING',
     
     CONSTRAINT FK_books_seller_id FOREIGN KEY (seller_id) REFERENCES users(id),
     CONSTRAINT FK_books_category_id FOREIGN KEY (category_id) REFERENCES category(id)
@@ -182,8 +182,8 @@ CREATE TABLE orders_master (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     buyer_id BIGINT NOT NULL,
     total_amount FLOAT NOT NULL,
-    shipping_address NVARCHAR(500) NOT NULL,
-    created_at DATETIME2 NOT NULL,
+    shipping_address VARCHAR(500) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
     CONSTRAINT FK_orders_master_buyer FOREIGN KEY (buyer_id) REFERENCES users(id)
 );
 CREATE INDEX IX_orders_master_buyer ON orders_master(buyer_id);
@@ -191,7 +191,7 @@ CREATE INDEX IX_orders_master_created_at ON orders_master(created_at);
 
 -- 8. SUB_ORDERS TABLE
 -- NULLABLE FIELDS: none (all required for financial tracking)
--- Status uses NVARCHAR for enum from start to avoid V5 migration pain
+-- Status uses VARCHAR for enum from start to avoid V5 migration pain
 -- Values: PENDING_PAYMENT, CONFIRMED, SHIPPED, DELIVERED, CANCELLED, REFUNDED
 -- INDEXES: Optimized for order status queries and recommendation mining
 CREATE TABLE sub_orders (
@@ -199,8 +199,8 @@ CREATE TABLE sub_orders (
     order_id BIGINT NOT NULL,
     seller_id BIGINT NOT NULL,
     
-    -- Status (using NVARCHAR for enum from start to avoid V5 migration pain)
-    status NVARCHAR(30) NOT NULL CONSTRAINT DF_sub_orders_status DEFAULT 'PENDING_PAYMENT',
+    -- Status (using VARCHAR for enum from start to avoid V5 migration pain)
+    status VARCHAR(30) NOT NULL CONSTRAINT DF_sub_orders_status DEFAULT 'PENDING_PAYMENT',
     
     sub_total FLOAT NOT NULL,
     
@@ -253,22 +253,22 @@ CREATE INDEX IX_order_items_order_book ON order_items(sub_order_id, book_id);
 CREATE TABLE seller_shops (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     seller_id BIGINT NOT NULL UNIQUE,
-    slug NVARCHAR(255) NOT NULL UNIQUE,
-    shop_name NVARCHAR(255) NOT NULL,
-    description NVARCHAR(MAX) NULL,
-    logo_url NVARCHAR(500) NULL,
-    banner_url NVARCHAR(500) NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    shop_name VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    logo_url VARCHAR(500) NULL,
+    banner_url VARCHAR(500) NULL,
     
     -- Contact info
-    address NVARCHAR(500) NOT NULL,
-    city NVARCHAR(100) NOT NULL,
-    province NVARCHAR(100) NULL,
-    phone_contact NVARCHAR(20) NULL,
+    address VARCHAR(500) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    province VARCHAR(100) NULL,
+    phone_contact VARCHAR(20) NULL,
     
     -- Status
-    approval_status NVARCHAR(50) DEFAULT 'PENDING',
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE(),
+    approval_status VARCHAR(50) DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT FK_seller_shops_seller FOREIGN KEY (seller_id) REFERENCES users(id)
 );
@@ -283,14 +283,14 @@ CREATE INDEX IX_seller_shops_approval_status ON seller_shops(approval_status);
 CREATE TABLE notifications (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    type NVARCHAR(50) NOT NULL,
-    title NVARCHAR(255) NOT NULL,
-    message NVARCHAR(MAX) NULL,
-    payload_json NVARCHAR(MAX) NULL,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NULL,
+    payload_json TEXT NULL,
     
-    priority NVARCHAR(20) NOT NULL CONSTRAINT DF_notifications_priority DEFAULT 'NORMAL',
-    created_at DATETIME2 NOT NULL CONSTRAINT DF_notifications_created_at DEFAULT SYSUTCDATETIME(),
-    read_at DATETIME2 NULL,
+    priority VARCHAR(20) NOT NULL CONSTRAINT DF_notifications_priority DEFAULT 'NORMAL',
+    created_at TIMESTAMP NOT NULL CONSTRAINT DF_notifications_created_at DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP NULL,
     
     CONSTRAINT FK_notifications_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
@@ -303,10 +303,10 @@ CREATE INDEX IX_notifications_created_at ON notifications(created_at);
 CREATE TABLE notification_delivery (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     notification_id BIGINT NOT NULL,
-    delivery_channel NVARCHAR(50) NOT NULL,  -- EMAIL, PUSH, IN_APP
-    sent_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-    status NVARCHAR(50) NOT NULL DEFAULT 'PENDING',  -- PENDING, SENT, FAILED
-    error_message NVARCHAR(MAX) NULL,
+    delivery_channel VARCHAR(50) NOT NULL,  -- EMAIL, PUSH, IN_APP
+    sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',  -- PENDING, SENT, FAILED
+    error_message TEXT NULL,
     
     CONSTRAINT FK_notif_delivery_notif FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
     CONSTRAINT UQ_notif_delivery_channel UNIQUE (notification_id, delivery_channel)
@@ -318,7 +318,7 @@ Create INDEX IX_notification_delivery_status ON notification_delivery(status, se
 CREATE TABLE user_wishlist_books (
     user_id BIGINT NOT NULL,
     book_id BIGINT NOT NULL,
-    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT PK_user_wishlist_books PRIMARY KEY (user_id, book_id),
     CONSTRAINT FK_user_wishlist_books_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -334,18 +334,18 @@ CREATE TABLE user_addresses (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     user_id BIGINT NOT NULL,
     
-    address_type NVARCHAR(50) NOT NULL,  -- HOME, WORK, OTHER
-    recipient_name NVARCHAR(100) NOT NULL,
-    recipient_phone NVARCHAR(20) NOT NULL,
-    address_line NVARCHAR(500) NOT NULL,
-    ward NVARCHAR(100) NULL,
-    district NVARCHAR(100) NOT NULL,
-    province NVARCHAR(100) NULL,
-    postal_code NVARCHAR(20) NULL,
+    address_type VARCHAR(50) NOT NULL,  -- HOME, WORK, OTHER
+    recipient_name VARCHAR(100) NOT NULL,
+    recipient_phone VARCHAR(20) NOT NULL,
+    address_line VARCHAR(500) NOT NULL,
+    ward VARCHAR(100) NULL,
+    district VARCHAR(100) NOT NULL,
+    province VARCHAR(100) NULL,
+    postal_code VARCHAR(20) NULL,
     
     is_default BIT DEFAULT 0,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE(),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT FK_user_addresses_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -360,12 +360,12 @@ CREATE TABLE user_security_events (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     user_id BIGINT NOT NULL,
     
-    event_type NVARCHAR(50) NOT NULL,  -- PASSWORD_CHANGED, EMAIL_CHANGED, LOGIN_FAILED, etc.
-    event_description NVARCHAR(500) NULL,
-    ip_address NVARCHAR(50) NULL,
-    user_agent NVARCHAR(500) NULL,
+    event_type VARCHAR(50) NOT NULL,  -- PASSWORD_CHANGED, EMAIL_CHANGED, LOGIN_FAILED, etc.
+    event_description VARCHAR(500) NULL,
+    ip_address VARCHAR(50) NULL,
+    user_agent VARCHAR(500) NULL,
     
-    created_at DATETIME2 DEFAULT GETDATE(),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT FK_user_security_events_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -374,11 +374,11 @@ CREATE INDEX IX_user_security_events_user_created ON user_security_events(user_i
 -- 16. DISTRIBUTED_LOCK TABLE
 -- NULLABLE FIELDS: none (all required for distributed coordination)
 CREATE TABLE distributed_lock (
-    lock_name NVARCHAR(100) PRIMARY KEY,
-    instance_id NVARCHAR(255) NOT NULL,
-    acquired_at DATETIME2 NOT NULL,
-    expires_at DATETIME2 NOT NULL,
-    heartbeat_at DATETIME2 NOT NULL
+    lock_name VARCHAR(100) PRIMARY KEY,
+    instance_id VARCHAR(255) NOT NULL,
+    acquired_at TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    heartbeat_at TIMESTAMP NOT NULL
 );
 CREATE INDEX IX_distributed_lock_expires ON distributed_lock(expires_at);
 
@@ -388,21 +388,21 @@ CREATE INDEX IX_distributed_lock_expires ON distributed_lock(expires_at);
 
 /*
 ENUM COLUMNS (Hibernate SQL Server compatibility):
-   All enum fields use NVARCHAR from creation (not VARCHAR) to prevent V4-type fixes.
-   - users.role: NVARCHAR(20), default 'BUYER'
-   - books.approval_status: NVARCHAR(20), default 'PENDING'
-   - sub_orders.status: NVARCHAR(30), default 'PENDING_PAYMENT'
-   - notifications.priority: NVARCHAR(20), default 'NORMAL'
+   All enum fields use VARCHAR from creation (not VARCHAR) to prevent V4-type fixes.
+   - users.role: VARCHAR(20), default 'BUYER'
+   - books.approval_status: VARCHAR(20), default 'PENDING'
+   - sub_orders.status: VARCHAR(30), default 'PENDING_PAYMENT'
+   - notifications.priority: VARCHAR(20), default 'NORMAL'
    
 PUBLISH_YEAR NORMALIZATION (KEY CHANGE):
-   V1-V13: NVARCHAR(50) → breaks numeric filtering (string comparison on year ranges)
+   V1-V13: VARCHAR(50) → breaks numeric filtering (string comparison on year ranges)
    V14: INT NULL → proper range queries (BETWEEN, >=, <=) now work correctly
    
    Numeric ranges now work:
      WHERE publish_year BETWEEN 2020 AND 2025  ✓ Efficient
      WHERE publish_year >= 2020                ✓ Efficient
    
-   For flexible reference formats (e.g., "circa 2020"), use publish_year_note NVARCHAR(100).
+   For flexible reference formats (e.g., "circa 2020"), use publish_year_note VARCHAR(100).
 
 NULLABLE FIELD AUDIT:
    Every NULL field documented with reason. Developers must update this comment

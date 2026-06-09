@@ -379,13 +379,10 @@
                 class="w-full aspect-square bg-brand-brown/10 rounded-lg border border-brand-brown/20 flex items-center justify-center overflow-hidden mb-4 img-zoom-container relative cursor-pointer"
               >
                 <img
-                  th:src="${book.imageUrl}"
-                  onerror="
-                    this.src =
-                      'https://via.placeholder.com/400x500?text=No+Cover'
-                  "
-                  class="w-3/4 h-[85%] object-cover border-8 border-white shadow-xl"
-                  alt="Book Cover"
+                        th:src="${book.largeimageUrl != null ? book.largeimageUrl : book.imageUrl}"
+                        onerror="this.src='https://via.placeholder.com/400x500?text=No+Cover'"
+                        class="w-3/4 h-[85%] object-cover border-8 border-white shadow-xl"
+                        alt="Book Cover"
                 />
 
                 <div

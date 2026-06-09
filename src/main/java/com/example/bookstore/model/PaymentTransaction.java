@@ -30,11 +30,11 @@ public class PaymentTransaction {
     private Long amount; // Amount in VND (e.g., 1,000,000)
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
+    @Column(nullable = false, length = 30, columnDefinition = "VARCHAR(30)")
     private PaymentMethod method;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30, columnDefinition = "NVARCHAR(30)")
+    @Column(nullable = false, length = 30, columnDefinition = "VARCHAR(30)")
     private PaymentStatus status;
 
     @Column(length = 100)

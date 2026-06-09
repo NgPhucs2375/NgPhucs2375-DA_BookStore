@@ -23,10 +23,10 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, columnDefinition = "NVARCHAR(255)")
+    @Column(nullable = false, unique = true, columnDefinition = "VARCHAR(255)")
     private String name;
 
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     // Quan hệ 1-Nhiều: 1 Thể loại có nhiều Cuốn sách

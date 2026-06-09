@@ -16,7 +16,7 @@
 IF COL_LENGTH('dbo.distributed_lock', 'lock_holder_id') IS NULL
 BEGIN
 ALTER TABLE distributed_lock
-    ADD lock_holder_id NVARCHAR(255) NULL;
+    ADD lock_holder_id VARCHAR(255) NULL;
 END
 GO
 
@@ -24,7 +24,7 @@ GO
 IF COL_LENGTH('dbo.distributed_lock', 'instance_id') IS NULL
 BEGIN
 ALTER TABLE distributed_lock
-    ADD instance_id NVARCHAR(255) NULL;
+    ADD instance_id VARCHAR(255) NULL;
 END
 GO
 
@@ -44,7 +44,7 @@ IF EXISTS (
 )
 BEGIN
 ALTER TABLE distributed_lock
-ALTER COLUMN instance_id NVARCHAR(255) NOT NULL;
+ALTER COLUMN instance_id VARCHAR(255) NOT NULL;
 END
 GO
 

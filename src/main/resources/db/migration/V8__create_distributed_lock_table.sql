@@ -20,21 +20,21 @@
 
 CREATE TABLE distributed_lock (
     -- Lock identifier (only 1 row: 'NOTIFICATION_QUEUE_WORKER')
-    lock_name NVARCHAR(100) PRIMARY KEY,
+    lock_name VARCHAR(100) PRIMARY KEY,
     
     -- Hostname or instance UUID of current lock holder
     -- Example: 'bookom-app-1' or UUID
-    lock_holder_id NVARCHAR(255) NOT NULL,
+    lock_holder_id VARCHAR(255) NOT NULL,
     
     -- When the lock was acquired
-    acquired_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    acquired_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- When the lock expires (if holder crashes)
     -- Refresh before this time to keep lock
-    lock_expires_at DATETIME2 NOT NULL,
+    lock_expires_at TIMESTAMP NOT NULL,
     
     -- Last heartbeat from lock holder (for monitoring)
-    last_heartbeat_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+    last_heartbeat_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================================================
@@ -61,9 +61,9 @@ BEGIN
     VALUES (
         'NOTIFICATION_QUEUE_WORKER',
         'UNOWNED',
-        SYSUTCDATETIME(),
-        SYSUTCDATETIME(),
-        SYSUTCDATETIME()
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     );
 END;
 

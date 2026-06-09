@@ -1,20 +1,49 @@
 package com.example.bookstore.controller;
 
+import com.example.bookstore.model.Book;
+import com.example.bookstore.model.Category;
+import com.example.bookstore.model.Coupon;
+import com.example.bookstore.model.SellerShop;
 import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.repository.BookRepository;
+import com.example.bookstore.repository.CategoryRepository;
+import com.example.bookstore.repository.SellerShopRepository;
+import com.example.bookstore.service.CouponService;
+import com.example.bookstore.service.SellerShopService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort; // Thêm import Sort để sắp xếp
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Controller
 public class MainPageController {
 
     @Autowired
     private BookRepository bookRepository;
+
+    @Autowired
+    private SellerShopService sellerShopService;
+
+    @Autowired
+    private SellerShopRepository sellerShopRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private CouponService couponService;
 
     @GetMapping("/")
     public String home(Model model) {

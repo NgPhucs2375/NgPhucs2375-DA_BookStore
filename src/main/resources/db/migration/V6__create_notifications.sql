@@ -3,14 +3,14 @@ BEGIN
 CREATE TABLE notifications (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    type NVARCHAR(50) NOT NULL,
-    title NVARCHAR(255) NOT NULL,
-    message NVARCHAR(MAX) NULL,
-    payload_json NVARCHAR(MAX) NULL,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NULL,
+    payload_json TEXT NULL,
     is_read BIT NOT NULL CONSTRAINT DF_notifications_is_read DEFAULT 0,
-    priority NVARCHAR(20) NOT NULL CONSTRAINT DF_notifications_priority DEFAULT 'NORMAL',
-    created_at DATETIME2 NOT NULL CONSTRAINT DF_notifications_created_at DEFAULT SYSUTCDATETIME(),
-    read_at DATETIME2 NULL,
+    priority VARCHAR(20) NOT NULL CONSTRAINT DF_notifications_priority DEFAULT 'NORMAL',
+    created_at TIMESTAMP NOT NULL CONSTRAINT DF_notifications_created_at DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP NULL,
 
     CONSTRAINT FK_notifications_users FOREIGN KEY (user_id) REFERENCES users(id)
         ON DELETE CASCADE

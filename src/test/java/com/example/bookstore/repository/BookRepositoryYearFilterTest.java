@@ -30,7 +30,10 @@ class BookRepositoryYearFilterTest {
     private TestEntityManager entityManager;
 
     @Autowired
-    private BookRepository bookRepository;
+    private com.example.bookstore.service.BookService bookService; // Tiêm BookService vào để test
+
+    @Autowired
+    private BookRepository bookRepository; // Giữ lại nếu các đoạn test khác dưới vẫn cần dùng
 
     @Test
     void searchApprovedBooks_shouldFilterPublishYearNumerically() {
@@ -47,7 +50,7 @@ class BookRepositoryYearFilterTest {
         entityManager.persistAndFlush(buildBook("Middle", 2005, category, seller));
         entityManager.persistAndFlush(buildBook("New", 2020, category, seller));
 
-        Page<Book> result = bookRepository.searchApprovedBooks(
+        Page<Book> result = bookService.searchApprovedBooks(
             null,
             null, // categoryIds
             null, // sellerId

@@ -1,13 +1,131 @@
 // PanelPageController : dùng để điều hướng các trang admin và seller, mỗi phương thức sẽ trả về một view tương ứng với trang đó, đồng thời truyền vào model các thuộc tính như pageTitle, pageSubtitle và activeMenu để hiển thị thông tin trên giao diện và đánh dấu menu đang hoạt động.
 package com.example.bookstore.controller;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.example.bookstore.config.JwtUtil;
+import com.example.bookstore.model.Book;
+import com.example.bookstore.model.Category;
+import com.example.bookstore.model.Coupon;
+import com.example.bookstore.model.SellerShop;
+import com.example.bookstore.model.User;
+import com.example.bookstore.model.enums.ApprovalStatus;
+import com.example.bookstore.repository.BookRepository;
+import com.example.bookstore.repository.CategoryRepository;
+import com.example.bookstore.repository.CouponRepository;
+import com.example.bookstore.repository.SellerShopRepository;
+import com.example.bookstore.repository.UserRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
 @Controller
 public class PanelPageController {
+
+    private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
+    private final SellerShopRepository sellerShopRepository;
+    private final BookRepository bookRepository;
+    private final CategoryRepository categoryRepository;
+    private final CouponRepository couponRepository;
+
+    public PanelPageController(JwtUtil jwtUtil, UserRepository userRepository,
+                               SellerShopRepository sellerShopRepository,
+                               BookRepository bookRepository,
+                               CategoryRepository categoryRepository,
+                               CouponRepository couponRepository) {
+        this.jwtUtil = jwtUtil;
+        this.userRepository = userRepository;
+        this.sellerShopRepository = sellerShopRepository;
+        this.bookRepository = bookRepository;
+        this.categoryRepository = categoryRepository;
+        this.couponRepository = couponRepository;
+    }
+    @GetMapping("/seller/shop")
+    public String sellerShop(Model model, Authentication authentication) {
+        model.addAttribute("pageTitle", "Ho so gian hang");
+        model.addAttribute("pageSubtitle", "Cap nhat thong tin shop va trang thai hoat dong");
+        model.addAttribute("activeMenu", "seller-shop");
+
+        // Load shop data for the current seller
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+            Long userId = null;
+            String role = null;
+            String accessToken = null;
+
+            if (principal instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal jwtPrincipal) {
+                userId = jwtPrincipal.userId();
+                role = jwtPrincipal.roles() != null && !jwtPrincipal.roles().isEmpty()
+                    ? jwtPrincipal.roles().get(0) : null;
+            } else if (principal instanceof User user) {
+                userId = user.getId();
+                role = user.getRole() != null ? user.getRole().name() : null;
+            }
+
+            if (userId != null) {
+                // Generate JWT token for the authenticated user (for JS to use)
+                if (role != null) {
+                    try {
+                        User user = userRepository.findById(userId).orElse(null);
+                        if (user != null) {
+                            accessToken = jwtUtil.generateToken(user);
+                        }
+                    } catch (Exception e) {
+                        // Token generation failed silently - frontend will use X-User-Id fallback
+                    }
+                }
+
+                // Inject auth data into model for JS to use
+                model.addAttribute("authUserId", userId);
+                model.addAttribute("authUserRole", role != null ? role : "BUYER");
+                model.addAttribute("authAccessToken", accessToken);
+
+                // Find seller's shop
+                SellerShop shop = sellerShopRepository.findBySellerId(userId).orElse(null);
+                model.addAttribute("shop", shop);
+
+                if (shop != null) {
+                    // Load books for this shop
+                    List<Book> books = bookRepository.findBySeller(shop.getSeller());
+                    model.addAttribute("books", books);
+                    model.addAttribute("bookCount", books.size());
+
+                    // Calculate join duration
+                    String joinDuration = "Mới";
+                    if (shop.getCreatedAt() != null) {
+                        long years = ChronoUnit.YEARS.between(shop.getCreatedAt(), LocalDateTime.now());
+                        if (years > 0) {
+                            joinDuration = years + " năm";
+                        } else {
+                            long months = ChronoUnit.MONTHS.between(shop.getCreatedAt(), LocalDateTime.now());
+                            joinDuration = (months > 0 ? months + " tháng" : "Mới");
+                        }
+                    }
+                    model.addAttribute("joinDuration", joinDuration);
+
+                    // Load vouchers for this seller's shop
+                    List<Coupon> vouchers = couponRepository.findAllValidVouchersForSeller(shop.getSeller().getId());
+                    model.addAttribute("vouchers", vouchers);
+                } else {
+                    model.addAttribute("books", List.of());
+                    model.addAttribute("bookCount", 0);
+                    model.addAttribute("joinDuration", "Mới");
+                    model.addAttribute("vouchers", List.of());
+                }
+
+                // Load categories
+                List<Category> categories = categoryRepository.findAll();
+                model.addAttribute("categories", categories);
+            }
+        }
+
+        return "seller/Shop_Seller";
+    }
+
 
     @GetMapping("/admin")
     public String adminDashboard(Model model) {
@@ -65,6 +183,14 @@ public class PanelPageController {
         return "admin/Admin_Coupons";
     }
 
+    @GetMapping("/admin/customers")
+    public String adminCustomers(Model model) {
+        model.addAttribute("pageTitle", "Phân tích khách hàng");
+        model.addAttribute("pageSubtitle", "Gom cụm khách hàng & dự đoán rời bỏ bằng AI");
+        model.addAttribute("activeMenu", "admin-customers");
+        return "admin/Admin_Customers";
+    }
+
     @GetMapping("/admin/seller-applications")
     public String adminSellerApplications(Model model) {
         model.addAttribute("pageTitle", "Duyệt người bán");
@@ -113,18 +239,71 @@ public class PanelPageController {
         return "seller/Seller_Vouchers";
     }
 
-    @GetMapping("/seller/shop")
+    /*@GetMapping("/seller/shop")
     public String sellerShop(Model model) {
         model.addAttribute("pageTitle", "Ho so gian hang");
         model.addAttribute("pageSubtitle", "Cap nhat thong tin shop va trang thai hoat dong");
         model.addAttribute("activeMenu", "seller-shop");
         return "seller/Shop_Seller";
-    }
+    }*/
 
 
     @GetMapping("/seller/product-detail")
     public String sellerProductDetail() {
         return "seller/Seller_Product_Detail";
+    }
+
+    @GetMapping("/seller/customers")
+    public String sellerCustomers(Model model) {
+        model.addAttribute("pageTitle", "Khách hàng của tôi");
+        model.addAttribute("pageSubtitle", "Phân tích khách hàng & đề xuất giữ chân");
+        model.addAttribute("activeMenu", "seller-customers");
+        return "seller/Seller_Customers";
+    }
+
+    @GetMapping("/seller/chat")
+    public String sellerChat(Model model, Authentication authentication) {
+        model.addAttribute("pageTitle", "Tin nhan");
+        model.addAttribute("pageSubtitle", "Quan ly tin nhan voi khach hang");
+        model.addAttribute("activeMenu", "seller-chat");
+
+        // Inject authentication data for seed users (dev mode)
+        // This ensures the Chat page can call APIs without requiring OTP login
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+            Long userId = null;
+            String role = null;
+            String accessToken = null;
+
+            if (principal instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal jwtPrincipal) {
+                userId = jwtPrincipal.userId();
+                role = jwtPrincipal.roles() != null && !jwtPrincipal.roles().isEmpty()
+                    ? jwtPrincipal.roles().get(0) : null;
+            } else if (principal instanceof User user) {
+                userId = user.getId();
+                role = user.getRole() != null ? user.getRole().name() : null;
+            }
+
+            // Generate JWT token for the authenticated user
+            if (userId != null && role != null) {
+                try {
+                    User user = userRepository.findById(userId).orElse(null);
+                    if (user != null) {
+                        accessToken = jwtUtil.generateToken(user);
+                    }
+                } catch (Exception e) {
+                    // Token generation failed silently - frontend will use X-User-Id fallback
+                }
+            }
+
+            if (userId != null) {
+                model.addAttribute("authUserId", userId);
+                model.addAttribute("authUserRole", role != null ? role : "BUYER");
+                model.addAttribute("authAccessToken", accessToken);
+            }
+        }
+
+        return "seller/Chat_Page";
     }
 
     @GetMapping("/become-seller")

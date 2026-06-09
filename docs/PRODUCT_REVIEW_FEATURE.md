@@ -22,8 +22,8 @@ CREATE TABLE book_reviews (
     book_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
-    comment NVARCHAR(MAX) NULL,
-    created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    comment TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_hidden BIT NOT NULL DEFAULT 0,
     
     CONSTRAINT FK_book_reviews_book FOREIGN KEY (book_id) REFERENCES books(id),

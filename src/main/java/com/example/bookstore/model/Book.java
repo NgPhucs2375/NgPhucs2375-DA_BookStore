@@ -27,12 +27,17 @@ public class Book {
     private String title;
     @Column(nullable = false)
     private String author;
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(columnDefinition = "TEXT")
     private String description;
     private Double price;
     private Integer stockQuantity; //
     @Column(length = 500)
     private String imageUrl; // link ảnh lấy từ CSV
+    @Column(name = "medium_image_url")
+    private String mediumImageUrl;
+    @Column(name = "largeimage_url")
+    private String largeimageUrl;
+    @Column(name = "publisher")
     private String publisher;  // Nhà xuất bản
     private Integer publishYear; // Năm xuất bản
     @Column(name = "average_rating")
@@ -67,7 +72,7 @@ public class Book {
     private User seller;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
+    @Column(nullable = false, length = 20, columnDefinition = "VARCHAR(20)")
     private ApprovalStatus approvalStatus;
 
     @Column(name = "is_active", nullable = false)

@@ -5,12 +5,12 @@ IF OBJECT_ID('users', 'U') IS NULL
 BEGIN
 CREATE TABLE users (
                        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-                       username NVARCHAR(255) NOT NULL UNIQUE,
-                       password_hash NVARCHAR(255) NOT NULL,
+                       username VARCHAR(255) NOT NULL UNIQUE,
+                       password_hash VARCHAR(255) NOT NULL,
                        role VARCHAR(20) NOT NULL CONSTRAINT DF_users_role DEFAULT 'BUYER',
-                       shop_name NVARCHAR(255) NULL,
-                       shop_address NVARCHAR(500) NULL,
-                       avatar_url NVARCHAR(MAX) NULL
+                       shop_name VARCHAR(255) NULL,
+                       shop_address VARCHAR(500) NULL,
+                       avatar_url TEXT NULL
 );
 END;
 
@@ -19,8 +19,8 @@ IF OBJECT_ID('category', 'U') IS NULL
 BEGIN
 CREATE TABLE category (
                           id BIGINT IDENTITY(1,1) PRIMARY KEY,
-                          name NVARCHAR(255) NOT NULL UNIQUE,
-                          description NVARCHAR(MAX) NULL -- <-- BẠN THÊM DÒNG NÀY VÀO ĐÂY
+                          name VARCHAR(255) NOT NULL UNIQUE,
+                          description TEXT NULL -- <-- BẠN THÊM DÒNG NÀY VÀO ĐÂY
 );
 END;
 
@@ -40,14 +40,14 @@ IF OBJECT_ID('books', 'U') IS NULL
 BEGIN
 CREATE TABLE books (
                        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-                       title NVARCHAR(500) NOT NULL,
-                       author NVARCHAR(255) NOT NULL,
-                       description NVARCHAR(MAX) NULL,
+                       title VARCHAR(500) NOT NULL,
+                       author VARCHAR(255) NOT NULL,
+                       description TEXT NULL,
                        price FLOAT NULL,
                        stock_quantity INT NULL,
-                       image_url NVARCHAR(500) NULL,
-                       publisher NVARCHAR(255) NULL,
-                       publish_year NVARCHAR(50) NULL,
+                       image_url VARCHAR(500) NULL,
+                       publisher VARCHAR(255) NULL,
+                       publish_year VARCHAR(50) NULL,
                        category_id BIGINT NULL,
                        seller_id BIGINT NOT NULL,
                        approval_status VARCHAR(20) NOT NULL CONSTRAINT DF_books_approval_status DEFAULT 'PENDING',
@@ -89,8 +89,8 @@ CREATE TABLE orders_master (
                                id BIGINT IDENTITY(1,1) PRIMARY KEY,
                                buyer_id BIGINT NOT NULL,
                                total_amount FLOAT NOT NULL,
-                               shipping_address NVARCHAR(500) NOT NULL,
-                               created_at DATETIME2 NOT NULL,
+                               shipping_address VARCHAR(500) NOT NULL,
+                               created_at TIMESTAMP NOT NULL,
                                CONSTRAINT FK_orders_master_buyer FOREIGN KEY (buyer_id) REFERENCES users(id)
 );
 END;

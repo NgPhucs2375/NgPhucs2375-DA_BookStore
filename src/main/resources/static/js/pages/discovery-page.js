@@ -228,6 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
         categoryName: button.getAttribute('data-book-category') || 'Sach'
     });
 
+
     const setGridBusy = (isBusy) => {
         bookGrid.setAttribute('aria-busy', isBusy ? 'true' : 'false');
     };

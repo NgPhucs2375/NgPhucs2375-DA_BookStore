@@ -728,7 +728,7 @@ TO DISK = '/backups/bookstore_daily.bak'
 WITH FORMAT, INIT, STATS=10, NAME = 'Full Backup'
 
 -- Keep 30 days
-DELETE FROM backups WHERE backup_date < GETDATE()-30
+DELETE FROM backups WHERE backup_date < CURRENT_TIMESTAMP-30
 ```
 
 **Backup Verification**:

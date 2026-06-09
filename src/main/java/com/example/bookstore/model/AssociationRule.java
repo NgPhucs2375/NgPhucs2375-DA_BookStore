@@ -74,7 +74,7 @@ public class AssociationRule {
      * When this rule was last computed/updated
      * Used for tracking staleness and cleanup
      */
-    @Column(nullable = false, columnDefinition = "DATETIME2")
+    @Column(nullable = false, columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;
 
 }

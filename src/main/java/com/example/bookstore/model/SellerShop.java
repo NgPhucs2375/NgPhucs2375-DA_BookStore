@@ -31,7 +31,7 @@ public class SellerShop {
     @Column(nullable = false, name = "shop_name")
     private String shopName;
 
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "logo_url")
@@ -52,13 +52,25 @@ public class SellerShop {
     @Column(name = "province", nullable = true)
     private String province;
 
-    @Column(name = "rejection_reason", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(length = 50, columnDefinition = "NVARCHAR(50)")
+    @Column(length = 50, columnDefinition = "VARCHAR(50)")
     private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
+
+    @Builder.Default
+    @Column(name = "follower_count")
+    private Integer followerCount = 0;
+
+    @Builder.Default
+    @Column(name = "rating")
+    private Double rating = 0.0;
+
+    @Builder.Default
+    @Column(name = "rating_count")
+    private Integer ratingCount = 0;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

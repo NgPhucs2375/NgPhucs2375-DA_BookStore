@@ -13,16 +13,16 @@
 -- ============================================================================
 
 CREATE PROCEDURE sp_refresh_queue_lock
-    @lock_name NVARCHAR(100),
-    @instance_id NVARCHAR(255),
+    @lock_name VARCHAR(100),
+    @instance_id VARCHAR(255),
     @ttl_seconds INT,
     @refreshed BIT OUT
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    DECLARE @now DATETIME2 = SYSUTCDATETIME();
-    DECLARE @new_expires DATETIME2 = DATEADD(SECOND, @ttl_seconds, @now);
+    DECLARE @now TIMESTAMP = CURRENT_TIMESTAMP;
+    DECLARE @new_expires TIMESTAMP = DATEADD(SECOND, @ttl_seconds, @now);
     
     -- Only refresh if we still own the lock
     UPDATE distributed_lock

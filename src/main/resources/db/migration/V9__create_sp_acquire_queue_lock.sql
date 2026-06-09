@@ -12,8 +12,8 @@
 -- ============================================================================
 
 CREATE PROCEDURE sp_acquire_queue_lock
-    @lock_name NVARCHAR(100),
-    @instance_id NVARCHAR(255),
+    @lock_name VARCHAR(100),
+    @instance_id VARCHAR(255),
     @ttl_seconds INT,
     @acquired BIT OUT
 AS
@@ -23,9 +23,9 @@ BEGIN
     
     BEGIN TRANSACTION;
     
-    DECLARE @current_expires DATETIME2;
-    DECLARE @now DATETIME2 = SYSUTCDATETIME();
-    DECLARE @new_expires DATETIME2 = DATEADD(SECOND, @ttl_seconds, @now);
+    DECLARE @current_expires TIMESTAMP;
+    DECLARE @now TIMESTAMP = CURRENT_TIMESTAMP;
+    DECLARE @new_expires TIMESTAMP = DATEADD(SECOND, @ttl_seconds, @now);
     
     -- Check if lock is available (expired or unowned)
     SELECT @current_expires = lock_expires_at FROM distributed_lock WITH (UPDLOCK)

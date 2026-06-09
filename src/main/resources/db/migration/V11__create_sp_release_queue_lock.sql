@@ -10,15 +10,15 @@
 -- ============================================================================
 
 CREATE PROCEDURE sp_release_queue_lock
-    @lock_name NVARCHAR(100),
-    @instance_id NVARCHAR(255)
+    @lock_name VARCHAR(100),
+    @instance_id VARCHAR(255)
 AS
 BEGIN
     SET NOCOUNT ON;
     
     UPDATE distributed_lock
     SET lock_holder_id = 'UNOWNED',
-        lock_expires_at = SYSUTCDATETIME()
+        lock_expires_at = CURRENT_TIMESTAMP
     WHERE lock_name = @lock_name
       AND lock_holder_id = @instance_id;
 END;

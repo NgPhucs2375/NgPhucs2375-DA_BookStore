@@ -1,7 +1,7 @@
 -- Add voucher fields to sub_orders table
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('sub_orders') AND name = 'voucher_code')
 BEGIN
-    ALTER TABLE sub_orders ADD voucher_code NVARCHAR(50) NULL;
+    ALTER TABLE sub_orders ADD voucher_code VARCHAR(50) NULL;
 END;
 
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('sub_orders') AND name = 'voucher_discount')

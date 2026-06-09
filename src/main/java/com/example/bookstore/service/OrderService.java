@@ -27,7 +27,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import com.example.bookstore.dto.OrderCompletedEvent;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -46,7 +48,13 @@ public class OrderService {
     private final SubOrderRepository subOrderRepository;
     private final CouponService couponService;
     private final com.example.bookstore.service.NotificationService notificationService;
+    private final RabbitTemplate rabbitTemplate;
 
+    @Value("${app.rabbitmq.recommendation.exchange:recommendation_exchange}")
+    private String recommendationExchange;
+
+    @Value("${app.rabbitmq.recommendation.routing-key:recommendation_routing_key}")
+    private String recommendationRoutingKey;
     @Transactional
     public CheckoutResponse checkoutFromCart(CheckoutRequest request) {
         return checkoutInternal(request.getBuyerId(), request.getShippingAddress(), request.getCouponCode());
@@ -167,7 +175,21 @@ public class OrderService {
         order.setSubOrders(subOrders);
 
         Order saved = orderRepository.save(order);
-
+        // BẮN EVENT REAL-TIME GỢI Ý
+        try {
+            List<Long> purchasedBookIds = new ArrayList<>();
+            for (CartItem item : cart.getItems()) {
+                purchasedBookIds.add(item.getBook().getId());
+            }
+            // Chỉ gửi nếu giỏ hàng có từ 2 sản phẩm trở lên (mới tạo thành cặp được)
+            if (purchasedBookIds.size() > 1) {
+                OrderCompletedEvent event = new OrderCompletedEvent(saved.getId(), purchasedBookIds);
+                rabbitTemplate.convertAndSend(recommendationExchange, recommendationRoutingKey, event);
+                log.info("Đã gửi event đơn hàng {} lên RabbitMQ để tính toán gợi ý Real-time", saved.getId());
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi RabbitMQ event, nhưng đơn hàng vẫn thành công: {}", e.getMessage());
+        }
         cart.getItems().clear();
         cartRepository.save(cart);
 

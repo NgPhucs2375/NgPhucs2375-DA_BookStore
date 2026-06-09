@@ -8,7 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
 
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <script>
     tailwind.config = {
       theme: {
@@ -45,6 +49,8 @@
   </script>
 
   <style>
+    [x-cloak] { display: none !important; }
+
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #FAF5E8; }
@@ -52,7 +58,6 @@
     ::-webkit-scrollbar-thumb:hover { background: #b88560; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
     /* Product Card Interactions */
     .product-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px -10px rgba(93, 64, 55, 0.15); z-index: 10; }
@@ -250,7 +255,7 @@
         </div>
 
         <div class="flex gap-4 mb-8">
-          <button id="detail-buy-now-btn" type="button" class="bg-brand-peach text-brand-dark text-lg font-black px-10 py-4 rounded hover:bg-white transition-colors shadow-glow uppercase">Mua Ngay - Giảm 40%</button>
+          <button data-add-to-cart="true" data-book-id="999" type="button" class="bg-brand-peach text-brand-dark text-lg font-black px-10 py-4 rounded hover:bg-white transition-colors shadow-glow uppercase">Mua Ngay - Giảm 40%</button>
         </div>
       </div>
     </div>

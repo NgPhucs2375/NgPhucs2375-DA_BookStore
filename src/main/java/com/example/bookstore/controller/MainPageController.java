@@ -5,6 +5,7 @@ import com.example.bookstore.repository.BookRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort; // Thêm import Sort để sắp xếp
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,9 +18,9 @@ public class MainPageController {
 
     @GetMapping("/")
     public String home(Model model) {
-        // Load approved books for display (limit to 20)
-        Pageable pageable = PageRequest.of(0, 20);
-        model.addAttribute("books", bookRepository.findByApprovalStatus(ApprovalStatus.APPROVED, pageable).getContent());
+        // Cập nhật: Lấy 20 cuốn đã duyệt, đang bán (active) và sắp xếp theo ID mới nhất
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("id").descending());
+        model.addAttribute("books", bookRepository.findByApprovalStatusAndIsActiveTrue(ApprovalStatus.APPROVED, pageable).getContent());
         return "main/index";
     }
 
@@ -30,9 +31,9 @@ public class MainPageController {
 
     @GetMapping("/main/discovery")
     public String discovery(Model model) {
-        // Load approved books for discovery page
-        Pageable pageable = PageRequest.of(0, 20);
-        model.addAttribute("books", bookRepository.findByApprovalStatus(ApprovalStatus.APPROVED, pageable).getContent());
+        // Tương tự trang chủ, Trang khám phá cũng chỉ nên hiển thị sách hợp lệ
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("id").descending());
+        model.addAttribute("books", bookRepository.findByApprovalStatusAndIsActiveTrue(ApprovalStatus.APPROVED, pageable).getContent());
         return "main/Discovery_Page";
     }
 

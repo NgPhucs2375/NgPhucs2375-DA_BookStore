@@ -330,7 +330,7 @@ public class AuthController {
     }
 
     @PostMapping("/become-seller")
-    @PreAuthorize("hasRole('BUYER')")
+    @PreAuthorize("hasAuthority('BUYER')")
     public ResponseEntity<?> becomeSeller(
             @AuthenticationPrincipal org.springframework.security.core.userdetails.User principalUser,
             @RequestBody Map<String, String> body

@@ -89,7 +89,7 @@ public class BookReviewController {
      * Kiểm tra xem người dùng đã đánh giá sách hay chưa (Yêu cầu đăng nhập)
      */
     @GetMapping("/book/{bookId}/user-review")
-    @PreAuthorize("hasRole('BUYER')")
+    @PreAuthorize("hasAuthority('BUYER')")
     public ResponseEntity<?> getUserReviewStatus(
             @PathVariable Long bookId,
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
@@ -118,7 +118,7 @@ public class BookReviewController {
      * Lấy tất cả đánh giá của người dùng hiện tại (Yêu cầu đăng nhập)
      */
     @GetMapping("/my-reviews")
-    @PreAuthorize("hasRole('BUYER')")
+    @PreAuthorize("hasAuthority('BUYER')")
     public ResponseEntity<?> getUserReviews(
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
             @RequestParam(defaultValue = "0") int page,
@@ -141,7 +141,7 @@ public class BookReviewController {
      * Thêm đánh giá mới (Yêu cầu đăng nhập và đã mua hàng)
      */
     @PostMapping
-    @PreAuthorize("hasRole('BUYER')")
+    @PreAuthorize("hasAuthority('BUYER')")
     public ResponseEntity<?> addReview(
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
             @Valid @RequestBody ReviewRequest request
@@ -176,7 +176,7 @@ public class BookReviewController {
      * Cập nhật đánh giá (Yêu cầu quyền sở hữu)
      */
     @PutMapping("/{reviewId}")
-    @PreAuthorize("hasRole('BUYER')")
+    @PreAuthorize("hasAuthority('BUYER')")
     public ResponseEntity<?> updateReview(
             @PathVariable Long reviewId,
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
@@ -212,7 +212,7 @@ public class BookReviewController {
      * Xóa đánh giá (Yêu cầu quyền sở hữu)
      */
     @DeleteMapping("/{reviewId}")
-    @PreAuthorize("hasRole('BUYER')")
+    @PreAuthorize("hasAuthority('BUYER')")
     public ResponseEntity<?> deleteReview(
             @PathVariable Long reviewId,
             @AuthenticationPrincipal JwtAuthenticatedPrincipal principal

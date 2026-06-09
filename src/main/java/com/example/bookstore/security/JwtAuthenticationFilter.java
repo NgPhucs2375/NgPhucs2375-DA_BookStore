@@ -97,8 +97,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (roles == null) return authorities;
         for (String role : roles) {
             if (role != null && !role.isBlank()) {
-                String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-                authorities.add(new SimpleGrantedAuthority(authority));
+                authorities.add(new SimpleGrantedAuthority(role));
             }
         }
         return authorities;

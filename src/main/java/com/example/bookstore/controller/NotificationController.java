@@ -75,7 +75,7 @@ public class NotificationController {
 
     // Admin/System endpoint to create notification (single user or broadcast)
     @PostMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public NotificationItemResponse createByAdmin(@AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
                                                                             @RequestBody NotificationCreateRequest req) {
         Long creatorUserId = resolveCurrentUserId(principal);

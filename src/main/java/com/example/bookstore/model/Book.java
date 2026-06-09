@@ -37,6 +37,8 @@ public class Book {
     private Integer publishYear; // Năm xuất bản
     @Column(name = "average_rating")
     private Double averageRating;
+    @Column(name = "discount_amount")
+    private Integer discountAmount = 0;
 
     @ManyToOne
     @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS

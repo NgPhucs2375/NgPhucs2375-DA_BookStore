@@ -37,7 +37,7 @@ public class OrderController {
     }
 
     @PostMapping("/me/checkout")
-        @PreAuthorize("hasRole('BUYER')")
+        @PreAuthorize("hasAuthority('BUYER')")
     public CheckoutResponse checkoutForCurrentBuyer(
             @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @Valid @RequestBody CheckoutMeRequest request,
@@ -55,7 +55,7 @@ public class OrderController {
     }
 
     @GetMapping("/me")
-    @PreAuthorize("hasRole('BUYER')")
+    @PreAuthorize("hasAuthority('BUYER')")
     public List<Order> getCurrentBuyerOrders(
             @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             org.springframework.security.core.Authentication auth
@@ -65,7 +65,7 @@ public class OrderController {
     }
 
     @PostMapping("/me/filter/summary")
-    @PreAuthorize("hasRole('BUYER')")
+    @PreAuthorize("hasAuthority('BUYER')")
     public List<OrderSummaryResponse> getCurrentBuyerOrderSummaries(
             @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             org.springframework.security.core.Authentication auth
@@ -94,7 +94,7 @@ public class OrderController {
     }
 
     @GetMapping("/seller/me/sub-orders")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public List<SubOrderSummaryResponse> getCurrentSellerSubOrders(
             @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             org.springframework.security.core.Authentication auth
@@ -152,7 +152,7 @@ public class OrderController {
      * Example: GET /api/orders/me/filter?page=0&pageSize=10&sortBy=createdAt&sortDirection=DESC
      */
     @PostMapping("/me/filter")
-        @PreAuthorize("hasRole('BUYER')")
+        @PreAuthorize("hasAuthority('BUYER')")
     public OrderFilterResponse filterMyOrders(
             @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @RequestBody(required = false) OrderFilterRequest filter,
@@ -171,7 +171,7 @@ public class OrderController {
      * Example: GET /api/orders/me/status/COMPLETED
      */
     @GetMapping("/me/status/{status}")
-        @PreAuthorize("hasRole('BUYER')")
+        @PreAuthorize("hasAuthority('BUYER')")
     public List<OrderSummaryResponse> getMyOrdersByStatus(
             @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @PathVariable OrderStatus status,
@@ -187,7 +187,7 @@ public class OrderController {
      * Example: POST /api/orders/seller/me/filter
      */
     @PostMapping("/seller/me/filter")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public SubOrderFilterResponse filterMySubOrders(
             @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @RequestBody(required = false) SubOrderFilterRequest filter,
@@ -206,7 +206,7 @@ public class OrderController {
      * Example: GET /api/orders/seller/me/status/CONFIRMED
      */
     @GetMapping("/seller/me/status/{status}")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public List<SubOrderSummaryResponse> getMySubOrdersByStatus(
             @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @PathVariable OrderStatus status,
@@ -222,7 +222,7 @@ public class OrderController {
      * Example: GET /api/orders/seller/me/search?buyerName=john
      */
     @GetMapping("/seller/me/search")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAuthority('SELLER')")
     public List<SubOrderSummaryResponse> searchMySubOrdersByBuyer(
             @AuthenticationPrincipal com.example.bookstore.security.JwtAuthenticatedPrincipal principal,
             @RequestParam(required = true) String buyerName,

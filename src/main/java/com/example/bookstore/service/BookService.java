@@ -164,60 +164,76 @@ public class BookService {
             Boolean inStock, Integer publishYearFrom, Integer publishYearTo,
             ApprovalStatus status, Pageable pageable
     ) {
-        Specification<Book> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
+        // Giữ nguyên chuỗi từ khóa thuần túy do người dùng gõ từ giao diện
+        String keyword = (q == null || q.trim().isEmpty()) ? null : q.trim();
+        String authorKeyword = (author == null || author.trim().isEmpty()) ? null : author.trim();
 
-            // 1. Điều kiện bắt buộc: Đã duyệt và Đang bán
-            predicates.add(cb.equal(root.get("approvalStatus"), status));
-            predicates.add(cb.isTrue(root.get("isActive")));
-
-            // 2. Tìm kiếm theo từ khóa (Khớp Tiêu đề, Tác giả, NXB)
-            if (q != null && !q.trim().isEmpty()) {
-                String keyword = "%" + q.trim() + "%";
-                predicates.add(cb.or(
-                        cb.like(root.get("title"), keyword),
-                        cb.like(root.get("author"), keyword),
-                        cb.like(root.get("publisher"), keyword)
-                ));
-            }
-
-            // 3. Lọc theo Danh mục
-            if (categoryIds != null && !categoryIds.isEmpty()) {
-                predicates.add(root.get("category").get("id").in(categoryIds));
-            }
-
-            // 4. Lọc theo Người bán
-            if (sellerIds != null && !sellerIds.isEmpty()) {
-                predicates.add(root.get("seller").get("id").in(sellerIds));
-            }
-
-            // 5. Lọc theo Nhà xuất bản
-            if (publishers != null && !publishers.isEmpty()) {
-                predicates.add(root.get("publisher").in(publishers));
-            }
-
-            // 6. Lọc riêng theo Tác giả
-            if (author != null && !author.trim().isEmpty()) {
-                predicates.add(cb.like(root.get("author"), "%" + author.trim() + "%"));
-            }
-
-            // 7. Lọc theo khoảng giá
-            if (minPrice != null) predicates.add(cb.greaterThanOrEqualTo(root.get("price"), minPrice));
-            if (maxPrice != null) predicates.add(cb.lessThanOrEqualTo(root.get("price"), maxPrice));
-
-            // 8. Lọc Rating, Tồn kho, Năm xuất bản
-            if (minRating != null) predicates.add(cb.greaterThanOrEqualTo(root.get("averageRating"), minRating));
-            if (inStock != null && inStock) predicates.add(cb.greaterThan(root.get("stockQuantity"), 0));
-            if (publishYearFrom != null) predicates.add(cb.greaterThanOrEqualTo(root.get("publishYear"), publishYearFrom));
-            if (publishYearTo != null) predicates.add(cb.lessThanOrEqualTo(root.get("publishYear"), publishYearTo));
-
-            // Gom tất cả điều kiện lại và đẩy xuống SQL Server
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-        // Gọi truy vấn (Đã được bảo kê N+1 bởi cấu hình batch_fetch_size)
-        return bookRepository.findAll(spec, pageable);
+        return bookRepository.searchApprovedBooksNative(
+                keyword, categoryIds, sellerIds, publishers, authorKeyword,
+                minPrice, maxPrice, minRating, inStock, publishYearFrom, publishYearTo,
+                status.name(), pageable
+        );
     }
+//    public Page<Book> searchApprovedBooks(
+//            String q, List<Long> categoryIds, List<Long> sellerIds, List<String> publishers,
+//            String author, Double minPrice, Double maxPrice, Double minRating,
+//            Boolean inStock, Integer publishYearFrom, Integer publishYearTo,
+//            ApprovalStatus status, Pageable pageable
+//    ) {
+//        Specification<Book> spec = (root, query, cb) -> {
+//            List<Predicate> predicates = new ArrayList<>();
+//
+//            // 1. Điều kiện bắt buộc: Đã duyệt và Đang bán
+//            predicates.add(cb.equal(root.get("approvalStatus"), status));
+//            predicates.add(cb.isTrue(root.get("isActive")));
+//
+//            // 2. Tìm kiếm theo từ khóa (Khớp Tiêu đề, Tác giả, NXB)
+//            if (q != null && !q.trim().isEmpty()) {
+//                String keyword = "%" + q.trim() + "%";
+//                predicates.add(cb.or(
+//                        cb.like(root.get("title"), keyword),
+//                        cb.like(root.get("author"), keyword),
+//                        cb.like(root.get("publisher"), keyword)
+//                ));
+//            }
+//
+//            // 3. Lọc theo Danh mục
+//            if (categoryIds != null && !categoryIds.isEmpty()) {
+//                predicates.add(root.get("category").get("id").in(categoryIds));
+//            }
+//
+//            // 4. Lọc theo Người bán
+//            if (sellerIds != null && !sellerIds.isEmpty()) {
+//                predicates.add(root.get("seller").get("id").in(sellerIds));
+//            }
+//
+//            // 5. Lọc theo Nhà xuất bản
+//            if (publishers != null && !publishers.isEmpty()) {
+//                predicates.add(root.get("publisher").in(publishers));
+//            }
+//
+//            // 6. Lọc riêng theo Tác giả
+//            if (author != null && !author.trim().isEmpty()) {
+//                predicates.add(cb.like(root.get("author"), "%" + author.trim() + "%"));
+//            }
+//
+//            // 7. Lọc theo khoảng giá
+//            if (minPrice != null) predicates.add(cb.greaterThanOrEqualTo(root.get("price"), minPrice));
+//            if (maxPrice != null) predicates.add(cb.lessThanOrEqualTo(root.get("price"), maxPrice));
+//
+//            // 8. Lọc Rating, Tồn kho, Năm xuất bản
+//            if (minRating != null) predicates.add(cb.greaterThanOrEqualTo(root.get("averageRating"), minRating));
+//            if (inStock != null && inStock) predicates.add(cb.greaterThan(root.get("stockQuantity"), 0));
+//            if (publishYearFrom != null) predicates.add(cb.greaterThanOrEqualTo(root.get("publishYear"), publishYearFrom));
+//            if (publishYearTo != null) predicates.add(cb.lessThanOrEqualTo(root.get("publishYear"), publishYearTo));
+//
+//            // Gom tất cả điều kiện lại và đẩy xuống SQL Server
+//            return cb.and(predicates.toArray(new Predicate[0]));
+//        };
+//
+//        // Gọi truy vấn (Đã được bảo kê N+1 bởi cấu hình batch_fetch_size)
+//        return bookRepository.findAll(spec, pageable);
+//    }
 
     // --- BỔ SUNG CÁC HÀM BẢO MẬT DÀNH RIÊNG CHO SELLER (S03) ---
 

@@ -134,4 +134,61 @@ public interface BookRepository extends JpaRepository<Book, Long>,JpaSpecificati
             @Param("q") String keyword,
             @Param("categoryId") Long categoryId,
             Pageable pageable);
+
+
+    @Query(value = """
+        SELECT b.* FROM books b
+        LEFT JOIN category c ON b.category_id = c.id
+        WHERE b.id IN (
+            -- Luồng chạy siêu tốc: Tìm ID dựa trên Index RAM, gỡ bỏ hàm LOWER gây chậm
+            SELECT id FROM books 
+            WHERE approval_status = :status 
+              AND is_active = 1
+              AND (:q IS NULL OR :q = '' OR title LIKE CONCAT('%', :q, '%') OR author LIKE CONCAT('%', :q, '%') OR publisher LIKE CONCAT('%', :q, '%'))
+        )
+        AND (:categoryIds IS NULL OR c.id IN (:categoryIds))
+        AND (:sellerIds IS NULL OR b.seller_id IN (:sellerIds))
+        AND (:publishers IS NULL OR b.publisher IN (:publishers))
+        AND (:author IS NULL OR b.author LIKE CONCAT('%', :author, '%'))
+        AND (:minPrice IS NULL OR b.price >= :minPrice)
+        AND (:maxPrice IS NULL OR b.price <= :maxPrice)
+        AND (:minRating IS NULL OR b.average_rating >= :minRating)
+        AND (:inStock IS NULL OR :inStock = 0 OR b.stock_quantity > 0)
+        AND (:publishYearFrom IS NULL OR b.publish_year >= :publishYearFrom)
+        AND (:publishYearTo IS NULL OR b.publish_year <= :publishYearTo)
+        """,
+            countQuery = """
+        SELECT COUNT(*) FROM books b
+        LEFT JOIN category c ON b.category_id = c.id
+        WHERE b.approval_status = :status
+          AND b.is_active = 1
+          AND (:q IS NULL OR :q = '' OR b.title LIKE CONCAT('%', :q, '%') OR b.author LIKE CONCAT('%', :q, '%') OR b.publisher LIKE CONCAT('%', :q, '%'))
+          AND (:categoryIds IS NULL OR c.id IN (:categoryIds))
+          AND (:sellerIds IS NULL OR b.seller_id IN (:sellerIds))
+          AND (:publishers IS NULL OR b.publisher IN (:publishers))
+          AND (:author IS NULL OR b.author LIKE CONCAT('%', :author, '%'))
+          AND (:minPrice IS NULL OR b.price >= :minPrice)
+          AND (:maxPrice IS NULL OR b.price <= :maxPrice)
+          AND (:minRating IS NULL OR b.average_rating >= :minRating)
+          AND (:inStock IS NULL OR :inStock = 0 OR b.stock_quantity > 0)
+          AND (:publishYearFrom IS NULL OR b.publish_year >= :publishYearFrom)
+          AND (:publishYearTo IS NULL OR b.publish_year <= :publishYearTo)
+        """,
+            nativeQuery = true)
+    Page<Book> searchApprovedBooksNative(
+            @Param("q") String q,
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("sellerIds") List<Long> sellerIds,
+            @Param("publishers") List<String> publishers,
+            @Param("author") String author,
+            @Param("minPrice") Double minPrice,
+            @Param("maxPrice") Double maxPrice,
+            @Param("minRating") Double minRating,
+            @Param("inStock") Boolean inStock,
+            @Param("publishYearFrom") Integer publishYearFrom,
+            @Param("publishYearTo") Integer publishYearTo,
+            @Param("status") String status,
+            Pageable pageable
+    );
+
 }

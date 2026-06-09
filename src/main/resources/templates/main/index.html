@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOOKOM - Thế Giới Sách Của Bạn (Full Layout)</title>
+    <title>BOOKOM - Thế Giới Sách Của Bạn </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -527,6 +528,7 @@
         </div>
     </div>
 </footer>
+<div th:replace="~{fragments/_QuickViewModal :: quickViewModal}"></div>
 
 <script src="/js/api-service.js"></script>
 <script src="/js/pages/index-page.js"></script>

@@ -378,29 +378,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
 
     // Tạo Modal Quick View
-    let modal = document.getElementById('quick-view-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'quick-view-modal';
-        modal.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm transition-all duration-300 opacity-0 hidden';
-        modal.innerHTML = `
-            <div class="bg-white rounded-2xl shadow-2xl w-[95%] max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row relative transform scale-95 transition-transform duration-300">
-                <button type="button" id="close-quick-view" class="absolute top-4 right-4 z-10 bg-gray-100 text-gray-600 hover:bg-red-500 hover:text-white rounded-full p-2.5 transition-colors shadow-sm">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-                <div id="quick-view-content" class="w-full flex flex-col md:flex-row h-full overflow-y-auto"></div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        const hideModal = () => {
-            modal.classList.add('opacity-0'); modal.children[0].classList.add('scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        };
-        document.getElementById('close-quick-view').addEventListener('click', hideModal);
-        modal.addEventListener('click', (ev) => { if (ev.target === modal) hideModal(); });
-        document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !modal.classList.contains('hidden')) hideModal(); });
-    }
+    // let modal = document.getElementById('quick-view-modal');
+    // if (!modal) {
+    //     modal = document.createElement('div');
+    //     modal.id = 'quick-view-modal';
+    //     modal.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm transition-all duration-300 opacity-0 hidden';
+    //     modal.innerHTML = `
+    //         <div class="bg-white rounded-2xl shadow-2xl w-[95%] max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row relative transform scale-95 transition-transform duration-300">
+    //             <button type="button" id="close-quick-view" class="absolute top-4 right-4 z-10 bg-gray-100 text-gray-600 hover:bg-red-500 hover:text-white rounded-full p-2.5 transition-colors shadow-sm">
+    //                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    //             </button>
+    //             <div id="quick-view-content" class="w-full flex flex-col md:flex-row h-full overflow-y-auto"></div>
+    //         </div>
+    //     `;
+    //     document.body.appendChild(modal);
+    //
+    //     const hideModal = () => {
+    //         modal.classList.add('opacity-0'); modal.children[0].classList.add('scale-95');
+    //         setTimeout(() => modal.classList.add('hidden'), 300);
+    //     };
+    //     document.getElementById('close-quick-view').addEventListener('click', hideModal);
+    //     modal.addEventListener('click', (ev) => { if (ev.target === modal) hideModal(); });
+    //     document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !modal.classList.contains('hidden')) hideModal(); });
+    // }
 
     // Đổ dữ liệu vào Modal
     window.addEventListener('open-quick-view', async (e) => {
@@ -446,7 +446,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (quickViewBtn) {
             event.preventDefault(); event.stopImmediatePropagation();
             const bookId = quickViewBtn.getAttribute('data-book-id');
-            if (bookId) window.dispatchEvent(new CustomEvent('open-quick-view', { detail: { bookId: Number(bookId) } }));
+            if (bookId) {
+                window.dispatchEvent(new CustomEvent('open-quick-view', { detail: { bookId: Number(bookId) } }));
+            }
             return;
         }
 

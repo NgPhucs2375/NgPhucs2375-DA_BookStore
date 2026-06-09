@@ -22,7 +22,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 @RequestMapping("/buyer/profile")
 @PreAuthorize("hasAuthority('BUYER')")
 @RequiredArgsConstructor
-public class BuyerProfileController {
+public class  BuyerProfileController {
 
     private final BuyerProfileService buyerProfileService;
 

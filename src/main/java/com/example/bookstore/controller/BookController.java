@@ -6,6 +6,7 @@ import com.example.bookstore.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.bookstore.repository.BookRepository;
 
+
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,6 +36,7 @@ public class BookController {
 
     @Autowired
     private SecurityUtils securityUtils;
+
 
     @GetMapping // Bao hieu rang ham getAllBooks se duoc chay khi co ai do truy cap vao dia chi goc bang phuong thuc Get nhu khi go link tren trinh duyet
     public Page<Book> getBooks(
@@ -136,8 +138,7 @@ public class BookController {
         if (sellerId == null) return Page.empty();
 
         String keyword = (q == null || q.trim().isEmpty()) ? null : q.trim();
-        Pageable pageable = PageRequest.of(page, size);
-
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "isPinned").and(Sort.by(Sort.Direction.DESC, "id")));
         return bookRepository.findBySellerIdAndKeywordAndCategory(sellerId, keyword, categoryId, pageable);
     }
 
@@ -173,7 +174,7 @@ public class BookController {
 
         try {
             Book book = bookService.getBookbyId(id);
-            
+
             if (book == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(java.util.Map.of("error", "Sách không tồn tại"));
@@ -186,7 +187,7 @@ public class BookController {
             }
 
             return ResponseEntity.ok(book);
-            
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(java.util.Map.of("error", e.getMessage()));
@@ -212,7 +213,7 @@ public class BookController {
         }
 
         if (book.getDescription() != null) {
-            book.setDescription(securityUtils.sanitizeHtml(book.getDescription()));
+            book.setDescription(securityUtils.sanitize(book.getDescription()));
         }
 
         try {
@@ -241,7 +242,7 @@ public class BookController {
         }
 
         if (bookDetails.getDescription() != null) {
-            bookDetails.setDescription(securityUtils.sanitizeHtml(bookDetails.getDescription()));
+            bookDetails.setDescription(securityUtils.sanitize(bookDetails.getDescription()));
         }
 
         try {
@@ -296,6 +297,29 @@ public class BookController {
             // SỬA DÒNG NÀY: Bọc cái lỗi vào JSON luôn
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", e.getMessage()));
 
+        }
+    }
+
+
+    @PatchMapping({"/seller/{id}/pin"})
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<?> togglePinBook(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
+    ) {
+        Long sellerId = currentSellerId(principal);
+        if (sellerId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        try {
+            Book book = bookService.getBookbyId(id);
+            if (book == null || book.getSeller() == null || !book.getSeller().getId().equals(sellerId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", "Không có quyền"));
+            }
+            book.setPinned(!book.isPinned());
+            bookRepository.save(book);
+            return ResponseEntity.ok(java.util.Map.of("message", "Đã cập nhật ghim", "isPinned", book.isPinned()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
         }
     }
 

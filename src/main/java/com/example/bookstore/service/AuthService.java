@@ -10,6 +10,9 @@ import com.example.bookstore.model.enums.ApprovalStatus;
 import com.example.bookstore.repository.CategoryRepository;
 import com.example.bookstore.repository.UserRepository;
 import com.example.bookstore.repository.SellerShopRepository;
+import com.example.bookstore.service.cluster.CustomerAnalysisService;
+import com.example.bookstore.service.cluster.CustomerService;
+import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service // BẮT BUỘC PHẢI CÓ để Lễ tân AuthController gọi được
 public class AuthService {
 
@@ -38,6 +42,12 @@ public class AuthService {
 
     @Autowired
     private SellerShopService sellerShopService;
+
+    @Autowired
+    private CustomerAnalysisService customerAnalysisService;
+
+    @Autowired
+    private CustomerService customerService;
 
     /**
      * Submit a seller application: create a SellerShop record with PENDING approval.
@@ -113,6 +123,16 @@ public class AuthService {
                     .approvalStatus(ApprovalStatus.PENDING)
                     .build();
             sellerShopRepository.save(newSellerShop);
+        }
+
+        // Tự động phân tích churn cho user mới (gọi Python ML API)
+        try {
+            // analyzeCustomer() tự tạo Customer record nếu chưa tồn tại,
+            // tính features từ dữ liệu thực tế, gọi ML API và lưu kết quả
+            customerAnalysisService.analyzeCustomer(savedUser.getId());
+            log.info("Đã phân tích churn cho user mới: {}", savedUser.getId());
+        } catch (Exception e) {
+            log.error("Không thể phân tích churn cho user {}: {}", savedUser.getId(), e.getMessage());
         }
 
         System.out.println("Đăng ký thành công");

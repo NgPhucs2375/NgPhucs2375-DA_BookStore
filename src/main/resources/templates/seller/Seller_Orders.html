@@ -46,6 +46,47 @@ if (typeof loadSellerOrders === 'function') {
 } else {
     BookomPanelData.initSellerOrders();
 }
+
+// Load ML customer data for DevTools
+(function() {
+    'use strict';
+    const API_ROOT = '/api';
+
+    function loadMLData() {
+        var userId = localStorage.getItem('userId');
+        if (!userId) return;
+
+        fetch(API_ROOT + '/seller/customers', {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-Id': userId
+            }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var customers = Array.isArray(data) ? data : [];
+            if (customers.length > 0) {
+                console.log('%c🧠 ML Customer Analysis (Seller Orders)', 'font-size:16px; font-weight:bold; color:#ea580c;');
+                console.table(customers.map(function(c) {
+                    return {
+                        Name: c.username || 'N/A',
+                        Email: c.email || 'N/A',
+                        Cluster: c.predictedClass,
+                        Risk: c.riskLevel,
+                        ChurnProb: c.churnProbability ? (c.churnProbability * 100).toFixed(1) + '%' : '--',
+                        LastAnalyzed: c.lastAnalyzedAt || '--'
+                    };
+                }));
+            }
+        })
+        .catch(function(err) {
+            console.log('%c⚠ ML data not available: ' + err.message, 'color:orange');
+        });
+    }
+
+    setTimeout(loadMLData, 2000);
+})();
 </script>
 </body>
+REPLACE
 </html>

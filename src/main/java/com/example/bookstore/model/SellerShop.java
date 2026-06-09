@@ -60,6 +60,18 @@ public class SellerShop {
     @Column(length = 50, columnDefinition = "NVARCHAR(50)")
     private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
 
+    @Builder.Default
+    @Column(name = "follower_count")
+    private Integer followerCount = 0;
+
+    @Builder.Default
+    @Column(name = "rating")
+    private Double rating = 0.0;
+
+    @Builder.Default
+    @Column(name = "rating_count")
+    private Integer ratingCount = 0;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

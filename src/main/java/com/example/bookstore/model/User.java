@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -135,10 +136,17 @@ public class User {
     @Builder.Default
     private boolean isActive = true;  // true = hoạt động, false = khóa
 
+    @Column(nullable = false, updatable = false)
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
+
     @PrePersist
     public void onCreate() {
         if (role == null) {
             role = UserRole.BUYER;
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
         }
     }
 }

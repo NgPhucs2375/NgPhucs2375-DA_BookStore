@@ -47,6 +47,7 @@ public class Book {
 
     @ManyToOne
     @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS
+    @JsonIgnore
     private Category category;
 
     // Transient field để hỗ trợ JSON deserialization từ categoryId
@@ -76,6 +77,9 @@ public class Book {
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
+
+    @Column(name = "is_pinned", nullable = false)
+    private boolean isPinned = false;
 
     @PrePersist
     public void onCreate() {

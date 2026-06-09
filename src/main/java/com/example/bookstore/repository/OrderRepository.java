@@ -75,4 +75,37 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         ORDER BY o.createdAt DESC
     """)
     Page<Order> searchOrders(@Param("keyword") String keyword, Pageable pageable);
+
+    // ========================
+    // ML Feature Computation Queries
+    // ========================
+
+    /**
+     * Đếm tổng số đơn hàng của một buyer.
+     */
+    long countByBuyer(User buyer);
+
+    /**
+     * Tính tổng chi tiêu của một buyer (chỉ tính đơn đã hoàn thành).
+     */
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.buyer = :buyer")
+    Double sumTotalAmountByBuyer(@Param("buyer") User buyer);
+
+    /**
+     * Lấy ngày đặt hàng gần nhất của buyer.
+     */
+    @Query("SELECT MAX(o.createdAt) FROM Order o WHERE o.buyer = :buyer")
+    LocalDateTime findLastOrderDateByBuyer(@Param("buyer") User buyer);
+
+    /**
+     * Đếm số đơn hàng có sử dụng mã giảm giá (couponCode IS NOT NULL) của buyer.
+     */
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.buyer = :buyer AND o.couponCode IS NOT NULL")
+    long countDiscountedOrdersByBuyer(@Param("buyer") User buyer);
+
+    /**
+     * Tính tổng số tiền giảm giá của buyer.
+     */
+    @Query("SELECT COALESCE(SUM(o.discountAmount), 0) FROM Order o WHERE o.buyer = :buyer")
+    Double sumDiscountAmountByBuyer(@Param("buyer") User buyer);
 }

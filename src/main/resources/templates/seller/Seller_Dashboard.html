@@ -158,5 +158,68 @@
 <!-- Scripts -->
 <script th:src="@{/js/api-service.js}"></script>
 <script th:src="@{/js/seller-dashboard-charts.js}"></script>
+<script>
+(function() {
+    'use strict';
+    const API_ROOT = '/api';
+
+    function loadMLData() {
+        var userId = localStorage.getItem('userId');
+        if (!userId) return;
+
+        fetch(API_ROOT + '/seller/customers', {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-Id': userId
+            }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var customers = Array.isArray(data) ? data : [];
+            if (customers.length > 0) {
+                var churnRisk = customers.filter(function(c) { return c.riskLevel === 'HIGH' || c.riskLevel === 'CRITICAL'; }).length;
+                var safe = customers.filter(function(c) { return c.riskLevel === 'LOW'; }).length;
+                var analyzed = customers.filter(function(c) { return c.predictedClass !== null && c.predictedClass !== undefined; }).length;
+
+                console.log('%c🧠 ML Customer Analysis (Seller Dashboard)', 'font-size:16px; font-weight:bold; color:#ea580c;');
+                console.log('📊 Tổng KH: ' + customers.length + ' | Đã phân tích: ' + analyzed + ' | Nguy cơ rời bỏ: ' + churnRisk + ' | An toàn: ' + safe);
+                console.table(customers.map(function(c) {
+                    return {
+                        Name: c.username || 'N/A',
+                        Cluster: c.predictedClass,
+                        Risk: c.riskLevel,
+                        ChurnProb: c.churnProbability ? (c.churnProbability * 100).toFixed(1) + '%' : '--',
+                        Strategy: getStrategy(c.predictedClass, c.riskLevel)
+                    };
+                }));
+            }
+        })
+        .catch(function(err) {
+            console.log('%c⚠ ML data not available: ' + err.message, 'color:orange');
+        });
+    }
+
+    function getStrategy(clusterId, riskLevel) {
+        var s = {
+            '0_LOW': '🎁 Voucher tri ân',
+            '0_HIGH': '🔥 Giảm giá đặc biệt',
+            '0_CRITICAL': '📞 Can thiệp ngay',
+            '1_LOW': '🎁 Voucher tri ân',
+            '1_HIGH': '🔥 Giảm giá đặc biệt',
+            '1_CRITICAL': '📞 Can thiệp ngay',
+            '2_LOW': '⭐ KH thân thiết',
+            '2_HIGH': '🔥 Giảm giá đặc biệt',
+            '2_CRITICAL': '📞 Can thiệp ngay',
+            '3_LOW': '⭐ KH thân thiết',
+            '3_HIGH': '🔥 Giảm giá đặc biệt',
+            '3_CRITICAL': '📞 Can thiệp ngay'
+        };
+        return s[clusterId + '_' + riskLevel] || '📊 Theo dõi';
+    }
+
+    setTimeout(loadMLData, 2000);
+})();
+</script>
 </body>
+REPLACE
 </html>

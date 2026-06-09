@@ -233,6 +233,9 @@ public class SellerShopService {
                 .city(shop.getCity())
                 .province(shop.getProvince())
                 .approvalStatus(shop.getApprovalStatus())
+                .followerCount(shop.getFollowerCount())
+                .rating(shop.getRating())
+                .ratingCount(shop.getRatingCount())
                 .createdAt(shop.getCreatedAt())
                 .updatedAt(shop.getUpdatedAt())
                 .build();

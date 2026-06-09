@@ -33,6 +33,11 @@ public class Book {
     private Integer stockQuantity; //
     @Column(length = 500)
     private String imageUrl; // link ảnh lấy từ CSV
+    @Column(name = "medium_image_url")
+    private String mediumImageUrl;
+    @Column(name = "largeimage_url")
+    private String largeimageUrl;
+    @Column(name = "publisher")
     private String publisher;  // Nhà xuất bản
     private Integer publishYear; // Năm xuất bản
     @Column(name = "average_rating")

@@ -407,7 +407,7 @@
                 </div>
                 <th:block th:each="book, iterStat : ${books}">
                     <div data-aos="fade-up" th:attr="data-aos-delay=${iterStat.index % 4 * 100}">
-                        <div th:replace="~{fragments/book_card :: card(id=${book.id}, title=${book.title}, author=${book.author}, imgUrl=${book.imageUrl}, price=${book.price}, discount=${book.discountAmount}, href=@{/books/{id}(id=${book.id})})}"></div>
+                        <div th:replace="~{fragments/book_card :: card(id=${book.id}, title=${book.title}, author=${book.author}, imgUrl=${book.mediumImageUrl != null ? book.mediumImageUrl : book.imageUrl}, price=${book.price}, discount=${book.discountAmount}, href=@{/books/{id}(id=${book.id})})}"></div>
                     </div>
                 </th:block>
             </div>

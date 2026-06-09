@@ -295,6 +295,8 @@ public class BookService {
         // Lưu URL thật vào DB
         String realFileUrl = "/images/covers/" + safeFileName;
         existingBook.setImageUrl(realFileUrl);
+        existingBook.setMediumImageUrl(realFileUrl); // gán tạm cở trung
+        existingBook.setLargeimageUrl(realFileUrl); // gán tạm cở lớn
         bookRepository.save(existingBook);
 
         return realFileUrl;

@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = escapeHtml(book.title || 'Chưa có tên sách');
         const author = escapeHtml(book.author || 'Chưa có tác giả');
         const categoryName = escapeHtml(book.category?.name || 'Sách');
-        const safeImg = getSafeImage(book.imageUrl);
+        const safeImg = getSafeImage(book.mediumImageUrl || book.imageUrl);
         const detailUrl = `/book/${book.id}`;
 
         const discountAmount = book.discountAmount || 0;
@@ -545,4 +545,35 @@ document.addEventListener('DOMContentLoaded', () => {
         scriptAOS.onload = () => AOS.init({ duration: 600, once: true, offset: 50 });
         document.body.appendChild(scriptAOS);
     }
+
+
+    // ============================================================
+    // CẬP NHẬT GIAO DIỆN HEADER DỰA TRÊN TRẠNG THÁI ĐĂNG NHẬP
+    // ============================================================
+    const setupHeaderAccountLink = () => {
+        const accountLink = document.getElementById('header-account-link');
+        const accountText = document.getElementById('header-account-text');
+
+        // Dùng ApiService để kiểm tra xem có ai đang đăng nhập không
+        if (accountLink && window.ApiService.isAuthenticated()) {
+            const role = window.ApiService.getAuth().role;
+
+            // Bẻ lái đường link tùy theo Role
+            if (role === 'BUYER') {
+                accountLink.href = '/buyer/dashboard'; // Trỏ về trang Profile tĩnh
+                if (accountText) accountText.innerText = 'Hồ sơ';
+            }
+            else if (role === 'SELLER') {
+                accountLink.href = '/seller/dashboard';
+                if (accountText) accountText.innerText = 'Kênh người bán';
+            }
+            else if (role === 'ADMIN') {
+                accountLink.href = '/admin';
+                if (accountText) accountText.innerText = 'Quản trị';
+            }
+        }
+    };
+
+    // Chạy hàm này
+    setupHeaderAccountLink();
 });

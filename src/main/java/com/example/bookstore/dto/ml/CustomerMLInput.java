@@ -7,8 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO gửi lên Python ML API để dự đoán hành vi khách hàng (mô hình gau-gbt6000).
- * Gồm 14 raw features bắt buộc, Python sẽ tự động engineering thêm 4 derived features.
+ * DTO gửi lên Python ML API để dự đoán hành vi khách hàng (mô hình final-gauss-lightgbm).
+ * Gồm 10 raw features bắt buộc, Python sẽ tự động engineering thêm features.
  * Các field dùng @JsonProperty để map camelCase Java sang snake_case Python.
  */
 @Data
@@ -25,15 +25,6 @@ public class CustomerMLInput {
     @JsonProperty("total_orders")
     private Double totalOrders;
 
-    @JsonProperty("days_since_last_purchase")
-    private Double daysSinceLastPurchase;
-
-    @JsonProperty("discount_usage_rate")
-    private Double discountUsageRate;
-
-    @JsonProperty("return_rate")
-    private Double returnRate;
-
     @JsonProperty("customer_support_tickets")
     private Double customerSupportTickets;
 
@@ -48,9 +39,6 @@ public class CustomerMLInput {
 
     @JsonProperty("product_review_score_avg")
     private Double productReviewScoreAvg;
-
-    @JsonProperty("engagement_score")
-    private Double engagementScore;
 
     @JsonProperty("satisfaction_score")
     private Double satisfactionScore;

@@ -71,7 +71,7 @@ if (typeof loadSellerOrders === 'function') {
                     return {
                         Name: c.username || 'N/A',
                         Email: c.email || 'N/A',
-                        Cluster: c.predictedClass,
+                        Label: c.predictedLabel,
                         Risk: c.riskLevel,
                         ChurnProb: c.churnProbability ? (c.churnProbability * 100).toFixed(1) + '%' : '--',
                         LastAnalyzed: c.lastAnalyzedAt || '--'

@@ -71,24 +71,21 @@ public class CustomerService {
     }
 
     /**
-     * Chuẩn hoá riskLevel từ Python API (VD: "CRITICAL (Nguy cấp)" → "CRITICAL")
+     * Chuẩn hoá riskLevel từ Python API (VD: "LOW" hoặc "HIGH")
      * để đồng bộ với giao diện frontend.
      */
     public String normalizeRiskLevel(String rawRiskLevel) {
         if (rawRiskLevel == null || rawRiskLevel.isBlank()) {
             return null;
         }
-        // Nếu đã là dạng thuần (LOW/MEDIUM/HIGH/CRITICAL) thì giữ nguyên
-        String trimmed = rawRiskLevel.trim();
-        if (trimmed.equals("LOW") || trimmed.equals("MEDIUM") ||
-                trimmed.equals("HIGH") || trimmed.equals("CRITICAL")) {
+        String trimmed = rawRiskLevel.trim().toUpperCase();
+        // Nếu đã là dạng thuần (LOW/HIGH) thì giữ nguyên
+        if (trimmed.equals("LOW") || trimmed.equals("HIGH")) {
             return trimmed;
         }
-        // Nếu có dạng "CODE (Tiếng Việt)" → lấy phần CODE
+        // Nếu có dạng "LOW (Tiếng Việt)" → lấy phần CODE
         if (trimmed.startsWith("LOW")) return "LOW";
-        if (trimmed.startsWith("MEDIUM")) return "MEDIUM";
         if (trimmed.startsWith("HIGH")) return "HIGH";
-        if (trimmed.startsWith("CRITICAL")) return "CRITICAL";
         // Fallback: giữ nguyên
         return trimmed;
     }
@@ -97,22 +94,18 @@ public class CustomerService {
      * Map dữ liệu từ entity Customer sang DTO gửi lên ML API.
      *
      * @param customer entity Customer từ database
-     * @return CustomerMLInput DTO (14 raw features)
+     * @return CustomerMLInput DTO (10 raw features)
      */
     public CustomerMLInput toMlInput(Customer customer) {
         return CustomerMLInput.builder()
                 .accountAgeMonths(customer.getAccountAgeMonths())
                 .avgOrderValue(customer.getAvgOrderValue())
                 .totalOrders(customer.getTotalOrders())
-                .daysSinceLastPurchase(customer.getDaysSinceLastPurchase())
-                .discountUsageRate(customer.getDiscountUsageRate())
-                .returnRate(customer.getReturnRate())
                 .customerSupportTickets(customer.getCustomerSupportTickets())
                 .loyaltyMember(customer.getLoyaltyMember())
                 .browsingFrequencyPerWeek(customer.getBrowsingFrequencyPerWeek())
                 .cartAbandonmentRate(customer.getCartAbandonmentRate())
                 .productReviewScoreAvg(customer.getProductReviewScoreAvg())
-                .engagementScore(customer.getEngagementScore())
                 .satisfactionScore(customer.getSatisfactionScore())
                 .priceSensitivityIndex(customer.getPriceSensitivityIndex())
                 .build();
@@ -123,13 +116,13 @@ public class CustomerService {
      * Tự động chuẩn hoá riskLevel để đồng bộ với giao diện frontend.
      *
      * @param customer         entity cần cập nhật
-     * @param predictedClass   lớp dự đoán (0 = An toàn, 1 = Trung bình, 2 = Cao)
+     * @param predictedLabel   nhãn dự đoán (0 = Stay, 1 = Churn)
      * @param churnProbability xác suất rời bỏ
-     * @param riskLevel        mức độ rủi ro (LOW/MEDIUM/HIGH/CRITICAL)
+     * @param riskLevel        mức độ rủi ro (LOW/HIGH)
      */
-    public void updateMlResult(Customer customer, Integer predictedClass,
+    public void updateMlResult(Customer customer, Integer predictedLabel,
                                Double churnProbability, String riskLevel) {
-        customer.setPredictedClass(predictedClass);
+        customer.setPredictedLabel(predictedLabel);
         customer.setChurnProbability(churnProbability);
         customer.setRiskLevel(normalizeRiskLevel(riskLevel));
         customer.setLastAnalyzedAt(java.time.LocalDateTime.now());
@@ -145,15 +138,11 @@ public class CustomerService {
                 .accountAgeMonths(0.0)
                 .avgOrderValue(0.0)
                 .totalOrders(0.0)
-                .daysSinceLastPurchase(0.0)
-                .discountUsageRate(0.0)
-                .returnRate(0.0)
                 .customerSupportTickets(0.0)
                 .loyaltyMember("No")
                 .browsingFrequencyPerWeek(0.0)
                 .cartAbandonmentRate(0.0)
                 .productReviewScoreAvg(0.0)
-                .engagementScore(0.0)
                 .satisfactionScore(0.0)
                 .priceSensitivityIndex(0.0)
                 .build();
@@ -161,7 +150,7 @@ public class CustomerService {
     }
 
     /**
-     * Tính toán các ML features từ dữ liệu thực tế của user (orders, reviews, cart, support_tickets, activity_log).
+     * Tính toán các ML features từ dữ liệu thực tế của user (orders, reviews, cart).
      * Dùng khi lần đầu phân tích hoặc khi cần refresh dữ liệu.
      *
      * @param user User cần tính features
@@ -176,11 +165,6 @@ public class CustomerService {
         if (totalSpent == null) totalSpent = 0.0;
         Double avgOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0.0;
 
-        LocalDateTime lastOrderDate = orderRepository.findLastOrderDateByBuyer(user);
-        long daysSinceLastPurchase = lastOrderDate != null
-                ? ChronoUnit.DAYS.between(lastOrderDate, LocalDateTime.now())
-                : 999L; // rất lâu không mua
-
         // ====================================================================
         // 2. Account age (THẬT từ User.createdAt)
         // ====================================================================
@@ -194,7 +178,6 @@ public class CustomerService {
         // ====================================================================
         Double avgRating = bookReviewRepository.findAverageRatingByUser(user);
         if (avgRating == null) avgRating = 0.0;
-        long reviewCount = bookReviewRepository.countByUser(user);
 
         // ====================================================================
         // 4. Cart abandonment (THẬT)
@@ -216,43 +199,17 @@ public class CustomerService {
         String loyaltyMember = (totalOrders >= 5 || totalSpent >= 1_000_000) ? "Yes" : "No";
 
         // ====================================================================
-        // 6. Engagement score (THẬT)
-        // ====================================================================
-        double engagementScore = 0.0;
-        if (totalOrders > 0 || reviewCount > 0) {
-            double orderFactor = Math.min(100.0, totalOrders * 10.0);
-            double reviewFactor = Math.min(100.0, reviewCount * 20.0);
-            double recencyFactor = daysSinceLastPurchase < 30 ? 100.0
-                    : daysSinceLastPurchase < 90 ? 60.0
-                    : daysSinceLastPurchase < 180 ? 30.0 : 10.0;
-            engagementScore = (orderFactor * 0.4 + reviewFactor * 0.3 + recencyFactor * 0.3);
-        }
-
-        // ====================================================================
-        // 7. Satisfaction score (THẬT từ rating)
+        // 6. Satisfaction score (THẬT từ rating)
         // ====================================================================
         double satisfactionScore = avgRating > 0 ? (avgRating / 5.0) * 100.0 : 0.0;
 
         // ====================================================================
-        // 8. Product review score avg (THẬT)
+        // 7. Product review score avg (THẬT)
         // ====================================================================
         double productReviewScoreAvg = avgRating;
 
         // ====================================================================
-        // 9. Return rate (THẬT từ sub_orders CANCELLED)
-        // ====================================================================
-        long totalSubOrders = subOrderRepository.countByBuyer(user);
-        long cancelledSubOrders = subOrderRepository.countCancelledByBuyer(user);
-        double returnRate = totalSubOrders > 0 ? (double) cancelledSubOrders / totalSubOrders : 0.0;
-
-        // ====================================================================
-        // 10. Discount usage rate (THẬT từ orders có couponCode)
-        // ====================================================================
-        long discountedOrders = orderRepository.countDiscountedOrdersByBuyer(user);
-        double discountUsageRate = totalOrders > 0 ? (double) discountedOrders / totalOrders : 0.0;
-
-        // ====================================================================
-        // 11. Customer support tickets (THẬT từ bảng support_tickets)
+        // 8. Customer support tickets (THẬT từ bảng support_tickets)
         // ====================================================================
         // Lưu ý: Cần inject SupportTicketRepository. Tạm thời dùng 0.0 nếu chưa có.
         // Khi có SupportTicketRepository, thay bằng:
@@ -260,16 +217,17 @@ public class CustomerService {
         double customerSupportTickets = 0.0;
 
         // ====================================================================
-        // 12. Browsing frequency per week (THẬT từ user_activity_log)
+        // 9. Browsing frequency per week (THẬT từ user_activity_log)
         // ====================================================================
         // Lưu ý: Cần inject UserActivityLogRepository. Tạm thời ước lượng từ orders + reviews.
         // Khi có UserActivityLogRepository, thay bằng:
         // long activityCount = userActivityLogRepository.countByUserIdInLastWeek(user.getId());
         // double browsingFrequencyPerWeek = Math.min(7.0, activityCount / 7.0);
+        long reviewCount = bookReviewRepository.countByUser(user);
         double browsingFrequencyPerWeek = Math.min(7.0, (totalOrders + reviewCount) / 4.0);
 
         // ====================================================================
-        // 13. Price sensitivity index (THẬT từ discount behavior)
+        // 10. Price sensitivity index (THẬT từ discount behavior)
         // ====================================================================
         // Công thức: dựa trên tỷ lệ đơn có giảm giá và mức giảm trung bình
         // Nếu user hay mua khi giảm giá → priceSensitivityIndex cao (nhạy cảm giá)
@@ -290,25 +248,19 @@ public class CustomerService {
                 .accountAgeMonths(accountAgeMonths)
                 .avgOrderValue(avgOrderValue)
                 .totalOrders((double) totalOrders)
-                .daysSinceLastPurchase((double) daysSinceLastPurchase)
-                .discountUsageRate(discountUsageRate)
-                .returnRate(returnRate)
                 .customerSupportTickets(customerSupportTickets)
                 .loyaltyMember(loyaltyMember)
                 .browsingFrequencyPerWeek(browsingFrequencyPerWeek)
                 .cartAbandonmentRate(cartAbandonmentRate)
                 .productReviewScoreAvg(productReviewScoreAvg)
-                .engagementScore(engagementScore)
                 .satisfactionScore(satisfactionScore)
                 .priceSensitivityIndex(priceSensitivityIndex)
                 .build();
 
         log.info("Computed ML features for user {}: totalOrders={}, totalSpent={}, avgOrderValue={}, " +
-                        "daysSinceLastPurchase={}, avgRating={}, engagementScore={}, loyaltyMember={}, " +
-                        "returnRate={}, discountUsageRate={}, priceSensitivityIndex={}, accountAgeMonths={}",
+                        "avgRating={}, loyaltyMember={}, accountAgeMonths={}, priceSensitivityIndex={}",
                 user.getId(), totalOrders, totalSpent, avgOrderValue,
-                daysSinceLastPurchase, avgRating, engagementScore, loyaltyMember,
-                returnRate, discountUsageRate, priceSensitivityIndex, accountAgeMonths);
+                avgRating, loyaltyMember, accountAgeMonths, priceSensitivityIndex);
 
         return customer;
     }

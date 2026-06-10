@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/seller/customers")
-@PreAuthorize("hasRole('SELLER')")
+@PreAuthorize("hasAuthority('SELLER')")
 @RequiredArgsConstructor
 public class SellerCustomerController {
 
@@ -38,10 +38,9 @@ public class SellerCustomerController {
      */
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getMyCustomers(
-            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal,
-            @RequestHeader(value = "X-User-Id", required = false) String xUserId
+            @AuthenticationPrincipal JwtAuthenticatedPrincipal principal
     ) {
-        Long sellerId = resolveSellerId(principal, xUserId);
+        Long sellerId = resolveSellerId(principal);
         if (sellerId == null) {
             return ResponseEntity.badRequest().build();
         }
@@ -71,14 +70,14 @@ public class SellerCustomerController {
                     customerService.findByUserId(buyerId).ifPresentOrElse(
                             customer -> {
                                 entry.put("customerId", customer.getId());
-                                entry.put("predictedClass", customer.getPredictedClass());
+                                entry.put("predictedLabel", customer.getPredictedLabel());
                                 entry.put("churnProbability", customer.getChurnProbability());
                                 entry.put("riskLevel", customer.getRiskLevel());
                                 entry.put("lastAnalyzedAt", customer.getLastAnalyzedAt());
                             },
                             () -> {
                                 entry.put("customerId", null);
-                                entry.put("predictedClass", null);
+                                entry.put("predictedLabel", null);
                                 entry.put("churnProbability", null);
                                 entry.put("riskLevel", "Not analyzed");
                                 entry.put("lastAnalyzedAt", null);
@@ -122,6 +121,13 @@ public class SellerCustomerController {
 
         Customer result = customerAnalysisService.analyzeCustomer(buyerId);
         return ResponseEntity.ok(result);
+    }
+
+    private Long resolveSellerId(JwtAuthenticatedPrincipal principal) {
+        if (principal != null) {
+            return principal.sellerId() != null ? principal.sellerId() : principal.userId();
+        }
+        return null;
     }
 
     private Long resolveSellerId(JwtAuthenticatedPrincipal principal, String xUserId) {

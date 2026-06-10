@@ -9,8 +9,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * Entity lưu thông tin khách hàng phục vụ ML churn prediction (mô hình gau-gbt6000).
+ * Entity lưu thông tin khách hàng phục vụ ML churn prediction (mô hình final-gauss-lightgbm).
  * Quan hệ 1-1 với User, tách biệt để không ảnh hưởng bảng users.
+ * Input: 10 raw features
+ * Output: predicted_label (0/1), churn_probability, risk_level (LOW/HIGH)
  */
 @Entity
 @Table(name = "customer_ml")
@@ -29,7 +31,7 @@ public class Customer {
     private User user;
 
     // ========================
-    // ML Input Features (14 raw features)
+    // ML Input Features (10 raw features)
     // ========================
 
     @Column(nullable = false)
@@ -40,15 +42,6 @@ public class Customer {
 
     @Column(nullable = false)
     private Double totalOrders;
-
-    @Column(nullable = false)
-    private Double daysSinceLastPurchase;
-
-    @Column
-    private Double discountUsageRate;
-
-    @Column(nullable = false)
-    private Double returnRate;
 
     @Column(nullable = false)
     private Double customerSupportTickets;
@@ -66,9 +59,6 @@ public class Customer {
     private Double productReviewScoreAvg;
 
     @Column(nullable = false)
-    private Double engagementScore;
-
-    @Column(nullable = false)
     private Double satisfactionScore;
 
     @Column(nullable = false)
@@ -79,13 +69,13 @@ public class Customer {
     // ========================
 
     @Column
-    private Integer predictedClass; // 0 = An toàn, 1 = Trung bình, 2 = Cao
+    private Integer predictedLabel; // 0 = Stay (Ở lại), 1 = Churn (Rời bỏ)
 
     @Column
     private Double churnProbability;
 
-    @Column(length = 30)
-    private String riskLevel; // "LOW (An toàn)" / "MEDIUM (Trung bình)" / "HIGH (Nguy cơ cao)"
+    @Column(length = 10)
+    private String riskLevel; // "LOW" hoặc "HIGH"
 
     @Column
     private LocalDateTime lastAnalyzedAt;

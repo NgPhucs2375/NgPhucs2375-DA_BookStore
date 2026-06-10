@@ -49,15 +49,11 @@ public class CustomerAnalysisService {
             customer.setAccountAgeMonths(freshFeatures.getAccountAgeMonths());
             customer.setAvgOrderValue(freshFeatures.getAvgOrderValue());
             customer.setTotalOrders(freshFeatures.getTotalOrders());
-            customer.setDaysSinceLastPurchase(freshFeatures.getDaysSinceLastPurchase());
-            customer.setDiscountUsageRate(freshFeatures.getDiscountUsageRate());
-            customer.setReturnRate(freshFeatures.getReturnRate());
             customer.setCustomerSupportTickets(freshFeatures.getCustomerSupportTickets());
             customer.setLoyaltyMember(freshFeatures.getLoyaltyMember());
             customer.setBrowsingFrequencyPerWeek(freshFeatures.getBrowsingFrequencyPerWeek());
             customer.setCartAbandonmentRate(freshFeatures.getCartAbandonmentRate());
             customer.setProductReviewScoreAvg(freshFeatures.getProductReviewScoreAvg());
-            customer.setEngagementScore(freshFeatures.getEngagementScore());
             customer.setSatisfactionScore(freshFeatures.getSatisfactionScore());
             customer.setPriceSensitivityIndex(freshFeatures.getPriceSensitivityIndex());
             log.info("Refreshed ML features for existing Customer record of user {}", userId);
@@ -70,10 +66,10 @@ public class CustomerAnalysisService {
         PredictionResult result = mlApiService.predictCustomer(input);
 
         // 4. Cập nhật kết quả vào entity
-        // Python API trả về: cluster_id (0-3), churn_probability, is_churn_predicted, risk_level
+        // Python API trả về: predicted_label (0/1), churn_probability, risk_level (LOW/HIGH)
         customerService.updateMlResult(
                 customer,
-                result.getPredictedClass(),   // cluster_id từ Python → predictedClass
+                result.getPredictedLabel(),   // predicted_label từ Python
                 result.getChurnProbability(),
                 result.getRiskLevel()
         );
@@ -99,15 +95,11 @@ public class CustomerAnalysisService {
                     customer.setAccountAgeMonths(freshFeatures.getAccountAgeMonths());
                     customer.setAvgOrderValue(freshFeatures.getAvgOrderValue());
                     customer.setTotalOrders(freshFeatures.getTotalOrders());
-                    customer.setDaysSinceLastPurchase(freshFeatures.getDaysSinceLastPurchase());
-                    customer.setDiscountUsageRate(freshFeatures.getDiscountUsageRate());
-                    customer.setReturnRate(freshFeatures.getReturnRate());
                     customer.setCustomerSupportTickets(freshFeatures.getCustomerSupportTickets());
                     customer.setLoyaltyMember(freshFeatures.getLoyaltyMember());
                     customer.setBrowsingFrequencyPerWeek(freshFeatures.getBrowsingFrequencyPerWeek());
                     customer.setCartAbandonmentRate(freshFeatures.getCartAbandonmentRate());
                     customer.setProductReviewScoreAvg(freshFeatures.getProductReviewScoreAvg());
-                    customer.setEngagementScore(freshFeatures.getEngagementScore());
                     customer.setSatisfactionScore(freshFeatures.getSatisfactionScore());
                     customer.setPriceSensitivityIndex(freshFeatures.getPriceSensitivityIndex());
                 }
@@ -116,7 +108,7 @@ public class CustomerAnalysisService {
                 PredictionResult result = mlApiService.predictCustomer(input);
                 customerService.updateMlResult(
                         customer,
-                        result.getPredictedClass(),
+                        result.getPredictedLabel(),
                         result.getChurnProbability(),
                         result.getRiskLevel()
                 );

@@ -177,19 +177,19 @@
         .then(function(data) {
             var customers = Array.isArray(data) ? data : [];
             if (customers.length > 0) {
-                var churnRisk = customers.filter(function(c) { return c.riskLevel === 'HIGH' || c.riskLevel === 'CRITICAL'; }).length;
+                var churnRisk = customers.filter(function(c) { return c.riskLevel === 'HIGH'; }).length;
                 var safe = customers.filter(function(c) { return c.riskLevel === 'LOW'; }).length;
-                var analyzed = customers.filter(function(c) { return c.predictedClass !== null && c.predictedClass !== undefined; }).length;
+                var analyzed = customers.filter(function(c) { return c.predictedLabel !== null && c.predictedLabel !== undefined; }).length;
 
                 console.log('%c🧠 ML Customer Analysis (Seller Dashboard)', 'font-size:16px; font-weight:bold; color:#ea580c;');
                 console.log('📊 Tổng KH: ' + customers.length + ' | Đã phân tích: ' + analyzed + ' | Nguy cơ rời bỏ: ' + churnRisk + ' | An toàn: ' + safe);
                 console.table(customers.map(function(c) {
                     return {
                         Name: c.username || 'N/A',
-                        Cluster: c.predictedClass,
+                        Label: c.predictedLabel,
                         Risk: c.riskLevel,
                         ChurnProb: c.churnProbability ? (c.churnProbability * 100).toFixed(1) + '%' : '--',
-                        Strategy: getStrategy(c.predictedClass, c.riskLevel)
+                        Strategy: getStrategy(c.predictedLabel, c.riskLevel)
                     };
                 }));
             }
@@ -199,22 +199,14 @@
         });
     }
 
-    function getStrategy(clusterId, riskLevel) {
+    function getStrategy(predictedLabel, riskLevel) {
         var s = {
             '0_LOW': '🎁 Voucher tri ân',
-            '0_HIGH': '🔥 Giảm giá đặc biệt',
-            '0_CRITICAL': '📞 Can thiệp ngay',
-            '1_LOW': '🎁 Voucher tri ân',
-            '1_HIGH': '🔥 Giảm giá đặc biệt',
-            '1_CRITICAL': '📞 Can thiệp ngay',
-            '2_LOW': '⭐ KH thân thiết',
-            '2_HIGH': '🔥 Giảm giá đặc biệt',
-            '2_CRITICAL': '📞 Can thiệp ngay',
-            '3_LOW': '⭐ KH thân thiết',
-            '3_HIGH': '🔥 Giảm giá đặc biệt',
-            '3_CRITICAL': '📞 Can thiệp ngay'
+            '0_HIGH': '📧 Gửi email khuyến mãi',
+            '1_LOW': '🔥 Giảm giá đặc biệt',
+            '1_HIGH': '📞 Can thiệp ngay'
         };
-        return s[clusterId + '_' + riskLevel] || '📊 Theo dõi';
+        return s[predictedLabel + '_' + riskLevel] || '📊 Theo dõi';
     }
 
     setTimeout(loadMLData, 2000);

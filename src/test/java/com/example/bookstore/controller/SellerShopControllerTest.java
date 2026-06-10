@@ -3,6 +3,7 @@ package com.example.bookstore.controller;
 import com.example.bookstore.dto.SellerShopResponse;
 import com.example.bookstore.dto.SellerShopUpsertRequest;
 import com.example.bookstore.model.enums.ApprovalStatus;
+import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.service.SellerShopService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,18 +26,23 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+
 @ExtendWith(MockitoExtension.class)
 class SellerShopControllerTest {
 
     @Mock
     private SellerShopService sellerShopService;
 
+    @Mock
+    private BookRepository bookRepository;
+
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        SellerShopController controller = new SellerShopController(sellerShopService);
+        SellerShopController controller = new SellerShopController(sellerShopService, bookRepository);
+
         mockMvc = MockMvcBuilders
             .standaloneSetup(controller)
             .setControllerAdvice(new GlobalValidationExceptionHandler())

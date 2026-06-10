@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/flowbite@1.7.0/dist/flowbite.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@1.7.0/dist/flowbite.bundle.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -22,12 +22,16 @@
                         'brand-bg': '#fbfaf8',
                         'brand-orange': '#d96a4a',
                         'brand-border': '#eaddcf',
+                        'brand-white': '#ffffff',
                     },
                     fontFamily: {
                         sans: ['Quicksand', 'sans-serif'],
                     },
                     boxShadow: {
                         'premium': '0 4px 20px -2px rgba(74, 59, 50, 0.08)',
+                        'premium-hover': '0 15px 35px -5px rgba(74, 59, 50, 0.15)',
+                        'float': '0 10px 30px 0 rgba(0, 0, 0, 0.05)',
+                        'inner-light': 'inset 0 2px 4px 0 rgba(255, 255, 255, 0.3)',
                     }
                 }
             }
@@ -38,156 +42,232 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #fbfaf8; }
         ::-webkit-scrollbar-thumb { background: #cda27a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b58d67; }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .product-card-inner {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .product-card:hover .product-card-inner {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px -5px rgba(74, 59, 50, 0.12);
+            border-color: #cda27a;
+        }
         .book-cover { transition: transform 0.6s ease; }
-        .product-card:hover .book-cover { transform: scale(1.05) rotate(-1deg); }
-        .shop-banner-mask { background: linear-gradient(to top, rgba(74, 59, 50, 0.9) 0%, rgba(74, 59, 50, 0.4) 50%, rgba(74, 59, 50, 0.1) 100%); }
+        .product-card:hover .book-cover { transform: scale(1.08) rotate(-1deg); }
+        .quick-action-group {
+            opacity: 0;
+            transform: translateY(15px);
+            transition: all 0.3s ease-in-out;
+        }
+        .product-card:hover .quick-action-group {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        input[type="checkbox"].custom-cb {
+            appearance: none; background-color: #fff; margin: 0;
+            width: 1.2em; height: 1.2em;
+            border: 1.5px solid #eaddcf; border-radius: 4px;
+            display: grid; place-content: center; cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        input[type="checkbox"].custom-cb:hover { border-color: #cda27a; }
+        input[type="checkbox"].custom-cb::before {
+            content: ""; width: 0.7em; height: 0.7em;
+            transform: scale(0); transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em #ffffff; background-color: #ffffff;
+            transform-origin: center; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+        input[type="checkbox"].custom-cb:checked { background-color: #cda27a; border-color: #cda27a; }
+        input[type="checkbox"].custom-cb:checked::before { transform: scale(1); }
+        .shop-banner-mask {
+            background: linear-gradient(to top, rgba(74, 59, 50, 0.9) 0%, rgba(74, 59, 50, 0.4) 50%, rgba(74, 59, 50, 0.1) 100%);
+        }
+        .voucher-ticket {
+            position: relative;
+            background: #ffffff;
+            border: 1px solid #eaddcf;
+        }
+        .voucher-ticket::before, .voucher-ticket::after {
+            content: ''; position: absolute; top: 50%; transform: translateY(-50%);
+            width: 16px; height: 16px; background-color: #fbfaf8; border-radius: 50%;
+            border: 1px solid #eaddcf;
+        }
+        .voucher-ticket::before { left: -9px; border-right-color: transparent; border-top-color: transparent; transform: translateY(-50%) rotate(45deg); }
+        .voucher-ticket::after { right: -9px; border-left-color: transparent; border-bottom-color: transparent; transform: translateY(-50%) rotate(45deg); }
     </style>
 </head>
-<body class="bg-brand-bg font-sans text-brand-dark flex flex-col min-h-screen">
+<body class="bg-brand-bg font-sans text-brand-dark flex flex-col min-h-screen selection:bg-brand-brown selection:text-white">
 
 <div id="shop-host" th:attr="data-slug=${shopSlug}" style="display:none"></div>
 
-<header class="bg-white sticky top-0 z-50 shadow-sm border-b border-brand-border">
-    <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-8">
-        <a th:href="@{/}" class="text-3xl font-extrabold tracking-tighter text-brand-dark hover:opacity-90 transition flex items-center gap-2">
-            <div class="bg-brand-brown text-white p-1.5 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-            </div>
-            BOOKOM
-        </a>
-        <div class="flex items-center gap-6 text-brand-dark">
-            <a th:href="@{/main/cart}" class="hover:text-brand-brown font-bold text-sm">Giỏ hàng</a>
-            <a th:href="@{/main/auth}" class="hover:text-brand-brown font-bold text-sm">Đăng nhập</a>
-        </div>
-    </div>
-</header>
+<!-- Inject auth data from server into localStorage for JS to use -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+(function() {
+    var authUserId = /*[[${authUserId}]]*/ null;
+    var authUserRole = /*[[${authUserRole}]]*/ null;
+    var authAccessToken = /*[[${authAccessToken}]]*/ null;
+    
+    if (authUserId) {
+        localStorage.setItem('userId', String(authUserId));
+    }
+    if (authUserRole) {
+        localStorage.setItem('userRole', authUserRole);
+    }
+    if (authAccessToken) {
+        localStorage.setItem('accessToken', authAccessToken);
+    }
+})();
+/*]]>*/
+</script>
+
+<!--shop_header-->
+<div th:replace="~{seller/shop_seller/shop_header :: shop_header}"></div>
 
 <main class="flex-grow">
-    <section class="bg-white border-b border-brand-border relative">
-        <div id="shop-banner-host" class="w-full h-48 md:h-64 relative overflow-hidden bg-brand-dark">
-            <div class="absolute inset-0 bg-brand-brown opacity-20"></div>
-            <div class="absolute inset-0 shop-banner-mask"></div>
-        </div>
+    <!--shop_info-->
+    <div th:replace="~{seller/shop_seller/shop_info :: shop_info}"></div>
 
-        <div class="max-w-[1400px] mx-auto px-6 relative">
-            <div class="flex flex-col md:flex-row items-end md:items-center gap-6 md:gap-10 -mt-16 md:-mt-20 pb-8 relative z-10">
-                <div class="bg-white p-4 md:p-6 rounded-xl shadow-premium flex flex-col sm:flex-row items-center sm:items-start gap-6 w-full md:w-auto border border-brand-border">
-                    <div class="w-28 h-28 rounded-full bg-brand-hero border-4 border-white shadow-md flex-shrink-0 flex items-center justify-center overflow-hidden">
-                        <img id="shop-display-logo" src="" alt="Shop Logo" class="w-full h-full object-cover hidden" />
-                        <div id="shop-display-initials" class="text-brand-brown font-extrabold text-3xl">...</div>
-                    </div>
+    <!--shop_tag-->
+    <div th:replace="~{seller/shop_seller/shop_tag :: shop_tag}"></div>
 
-                    <div class="flex flex-col justify-center items-center sm:items-start text-center sm:text-left pt-2">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="bg-brand-orange text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Gian hàng chính hãng</span>
-                            <h1 id="shop-display-name" class="text-2xl md:text-3xl font-bold text-brand-dark">Đang tải...</h1>
-                        </div>
-                        <p id="shop-display-desc" class="text-sm text-gray-500 font-medium mb-4 max-w-md line-clamp-2">...</p>
+    <!--shop_voucher-->
+    <div th:replace="~{seller/shop_seller/shop_voucher}"></div>
 
-                        <button class="bg-brand-brown text-white text-sm font-bold px-8 py-2 rounded-lg hover:bg-brand-brown-dark transition-colors shadow-sm uppercase">
-                            + Theo dõi
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!--shop_category-->
+    <div th:replace="~{seller/shop_seller/shop_categoty :: shop_categoty}"></div>
 
-    <section class="bg-white py-10 border-y border-brand-border mt-6">
-        <div class="max-w-[1400px] mx-auto px-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-brand-dark tracking-wide uppercase">Sản Phẩm Của Shop</h2>
-            </div>
+    <!--shop_footer-->
+    <div th:replace="~{seller/shop_seller/shop_footer :: shop_footer}"></div>
 
-            <div id="public-books-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                <p class="text-gray-500 font-bold col-span-full">Đang tải sản phẩm...</p>
-            </div>
-        </div>
-    </section>
+    <!--shop_panel - Chỉ hiển thị cho SELLER -->
+
 </main>
 
-<footer class="bg-white border-t-4 border-brand-brown pt-8 pb-8 mt-12">
-    <div class="max-w-[1400px] mx-auto px-6 text-center text-sm font-bold text-gray-500">
-        <div>© 2026 BOOKOM. All rights reserved.</div>
-    </div>
-</footer>
-
 <script>
-    (async function() {
-        const host = document.getElementById('shop-host');
-        if (!host) return;
-        const slug = host.dataset.slug;
-        if (!slug) {
-            document.getElementById('shop-display-name').textContent = 'Cửa hàng không tồn tại';
-            return;
+(() => {
+    const API_BASE = '/api';
+    const host = document.getElementById('shop-host');
+    const slug = host ? host.dataset.slug : null;
+
+    // ==========================================
+    // DOM ELEMENTS
+    // ==========================================
+    const displayName = document.getElementById('shop-display-name');
+    const displayStatus = document.getElementById('shop-display-status');
+    const displayInitials = document.getElementById('shop-display-initials');
+    const displayLogo = document.getElementById('shop-display-logo');
+    const bannerHost = document.getElementById('shop-banner-host');
+    const productCountEl = document.getElementById('shop-product-count');
+
+    // ==========================================
+    // HELPERS
+    // ==========================================
+    function getAuthHeaders() {
+        const token = localStorage.getItem('token') || localStorage.getItem('jwt') || localStorage.getItem('accessToken');
+        const userId = localStorage.getItem('userId');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (userId) headers['X-User-Id'] = userId;
+        return headers;
+    }
+
+    function getInitials(name) {
+        const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return 'NN';
+        return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join('');
+    }
+
+    function syncHero(shop) {
+        if (!shop) return;
+        displayName.textContent = shop.shopName || 'Cửa hàng';
+        displayInitials.textContent = getInitials(shop.shopName);
+
+        if (shop.logoUrl && displayLogo) {
+            displayLogo.src = shop.logoUrl;
+            displayLogo.classList.remove('hidden');
+            displayInitials.classList.add('hidden');
+        } else {
+            if (displayLogo) displayLogo.classList.add('hidden');
+            displayInitials.classList.remove('hidden');
         }
+
+        // Status
+        const status = (shop.approvalStatus || 'APPROVED').toUpperCase();
+        if (status === 'APPROVED') {
+            displayStatus.innerHTML = '<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Gian hàng chính hãng';
+        } else if (status === 'REJECTED') {
+            displayStatus.innerHTML = '<svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> Gian hàng bị từ chối';
+        } else {
+            displayStatus.innerHTML = '<svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Đang chờ duyệt';
+        }
+
+        if (shop.bannerUrl) {
+            bannerHost.style.backgroundImage = `url('${shop.bannerUrl}')`;
+            bannerHost.style.backgroundSize = 'cover';
+            bannerHost.style.backgroundPosition = 'center';
+        } else {
+            bannerHost.style.backgroundImage = '';
+            bannerHost.style.backgroundSize = '';
+            bannerHost.style.backgroundPosition = '';
+        }
+    }
+
+    // ==========================================
+    // LOAD SHOP INFO
+    // ==========================================
+    async function loadShopInfo() {
+        const userRole = localStorage.getItem('userRole');
+        const isSeller = userRole === 'SELLER';
 
         try {
-            // 1. Tải thông tin Shop
-            const res = await fetch('/api/shops/' + encodeURIComponent(slug));
-            if (!res.ok) throw new Error('Không tải được cửa hàng');
-            const shop = await res.json();
-
-            document.getElementById('shop-display-name').textContent = shop.shopName || 'Cửa hàng';
-            document.getElementById('shop-display-desc').textContent = shop.description || 'Cửa hàng uy tín trên Bookom';
-
-            // Hiển thị logo (ưu tiên ảnh, fallback về chữ cái đầu)
-            const logoImg = document.getElementById('shop-display-logo');
-            const initialsEl = document.getElementById('shop-display-initials');
-            const initials = (shop.shopName || 'NN').trim().split(/\s+/).slice(0, 2).map(p => p[0].toUpperCase()).join('');
-            initialsEl.textContent = initials;
-
-            if (shop.logoUrl) {
-                logoImg.src = shop.logoUrl;
-                logoImg.classList.remove('hidden');
-                initialsEl.classList.add('hidden');
+            let shop;
+            if (isSeller) {
+                // Seller: dùng API có auth để lấy đầy đủ thông tin
+                const res = await fetch('/api/seller/me/shop', { headers: getAuthHeaders() });
+                if (!res.ok) throw new Error('Không tải được shop');
+                shop = await res.json();
             } else {
-                logoImg.classList.add('hidden');
-                initialsEl.classList.remove('hidden');
+                // Public: dùng API public
+                if (!slug) throw new Error('Không có slug');
+                const res = await fetch('/api/shops/' + encodeURIComponent(slug));
+                if (!res.ok) throw new Error('Không tải được cửa hàng');
+                shop = await res.json();
             }
 
-            if (shop.bannerUrl) {
-                const banner = document.getElementById('shop-banner-host');
-                banner.style.backgroundImage = `url('${shop.bannerUrl}')`;
-                banner.style.backgroundSize = 'cover';
-                banner.style.backgroundPosition = 'center';
-            }
+            syncHero(shop);
 
-            // 2. Tải Sách của Shop (Gọi qua API Search Public)
+            // Update product count
             const sellerId = shop.sellerId || (shop.seller && shop.seller.id) || shop.id;
-            const bookRes = await fetch(`/api/books/search?sellerIds=${sellerId}&size=50`);
-            const booksContainer = document.getElementById('public-books-container');
-
-            if(bookRes.ok) {
-                const bookData = await bookRes.json();
-                const books = bookData.content || bookData || [];
-
-                if(books.length === 0) {
-                    booksContainer.innerHTML = '<p class="text-gray-500 font-bold col-span-full">Shop này chưa đăng bán sản phẩm nào.</p>';
-                } else {
-                    booksContainer.innerHTML = books.map(book => {
-                        const coverUrl = book.imageUrl || book.coverImageUrl || '/images/covers/default.jpg';
-                        const price = book.price ? book.price.toLocaleString('vi-VN') + 'đ' : '0đ';
-                        return `
-                        <a href="/books/${book.id}" class="product-card group p-3 border border-brand-border rounded-xl hover:shadow-md transition-shadow bg-white flex flex-col h-full cursor-pointer">
-                            <img src="${coverUrl}" class="w-full h-44 object-cover rounded-lg mb-3 book-cover">
-                            <h3 class="text-sm font-bold line-clamp-2 mb-1 flex-grow group-hover:text-brand-brown transition-colors">${book.title}</h3>
-                            <div class="text-brand-orange font-bold mt-2">${price}</div>
-                        </a>`;
-                    }).join('');
+            if (productCountEl && sellerId) {
+                try {
+                    const bookRes = await fetch(`/api/books/search?sellerIds=${sellerId}&size=1`);
+                    if (bookRes.ok) {
+                        const bookData = await bookRes.json();
+                        const total = bookData.totalElements || bookData.total || 0;
+                        productCountEl.textContent = total.toLocaleString('vi-VN');
+                    }
+                } catch (e) {
+                    console.warn('Không thể tải số lượng sản phẩm:', e);
                 }
-            } else {
-                booksContainer.innerHTML = '<p class="text-red-500 font-bold col-span-full">Không thể tải danh sách sản phẩm.</p>';
             }
 
+            return shop;
         } catch (e) {
             console.error(e);
-            document.getElementById('shop-display-name').textContent = 'Lỗi tải cửa hàng';
-            document.getElementById('public-books-container').innerHTML = '<p class="text-red-500 font-bold col-span-full">Có lỗi xảy ra khi tải dữ liệu.</p>';
+            displayName.textContent = 'Lỗi tải cửa hàng';
+            return null;
         }
-    })();
+    }
+
+    // ==========================================
+    // INIT
+    // ==========================================
+    loadShopInfo();
+})();
 </script>
+<script th:src="@{/js/api-service.js}"></script>
+<script th:src="@{/js/pages/shop-voucher-fetch.js}"></script>
+<script th:src="@{/js/pages/shop-product-fetch.js}"></script>
 </body>
 </html>

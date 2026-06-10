@@ -31,6 +31,7 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
 
+    @Transactional
     public CartResponse getBuyerCart(Long buyerId) {
         User buyer = requireBuyer(buyerId);
         Cart cart = cartRepository.findByBuyerId(buyer.getId())
@@ -59,6 +60,12 @@ public class CartService {
         CartItem item = cartItemRepository.findByCartIdAndBookId(cart.getId(), book.getId())
                 .orElseGet(() -> {
                     CartItem newItem = CartItem.builder().cart(cart).book(book).quantity(0).build();
+
+                    // ✅ VÁ LỖI CHÍ MẠNG TẠI ĐÂY: Khởi tạo mảng rỗng nếu items đang bị Null
+                    if (cart.getItems() == null) {
+                        cart.setItems(new ArrayList<>());
+                    }
+
                     // ĐỒNG BỘ CACHE: Thêm item mới vào thẳng list của Cart
                     cart.getItems().add(newItem);
                     return newItem;

@@ -872,12 +872,21 @@
                         const data = await ApiService.Auth.loginJwt(username, password);
                         const storage = rememberMe ? localStorage : sessionStorage;
 
+                        // if (data?.accessToken) storage.setItem('accessToken', data.accessToken);
+                        // if (data?.refreshToken) storage.setItem('refreshToken', data.refreshToken);
+                        // if (data?.userId) storage.setItem('userId', String(data.userId));
+                        // if (data?.role) storage.setItem('userRole', data.role);
+                        // if (data?.sellerId) storage.setItem('sellerId', data.sellerId);
+
                         if (data?.accessToken) storage.setItem('accessToken', data.accessToken);
                         if (data?.refreshToken) storage.setItem('refreshToken', data.refreshToken);
-                        if (data?.userId) storage.setItem('userId', String(data.userId));
-                        if (data?.role) storage.setItem('userRole', data.role);
-                        if (data?.sellerId) storage.setItem('sellerId', data.sellerId);
+                        const actualUserId = data?.userId || data?.id;
+                        if (actualUserId) storage.setItem('userId', String(actualUserId));
 
+                        const actualRole = data?.role || data?.userRole;
+                        if (actualRole) storage.setItem('userRole', actualRole.replace('ROLE_', '').toUpperCase());
+
+                        if (data?.sellerId) storage.setItem('sellerId', String(data.sellerId));
                         Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đăng nhập thành công!', timer: 1200, showConfirmButton: false })
                             .then(() => {
                                 if (data?.role === 'ADMIN') window.location.href = "/admin";
@@ -911,10 +920,9 @@
                         const storage = rememberMe ? localStorage : sessionStorage;
                         storage.setItem('accessToken', data.accessToken);
                         storage.setItem('refreshToken', data.refreshToken);
-                        storage.setItem('userId', String(data.userId));
-                        storage.setItem('userRole', data.role);
+                        storage.setItem('userId', String(data.userId || data.id));
+                        storage.setItem('userRole', (data.role || data.userRole || '').replace('ROLE_', '').toUpperCase());
                         storage.setItem('sellerId', data.sellerId || '');
-
                         Swal.fire({ icon: 'success', title: 'Đăng nhập Google thành công!', timer: 1200, showConfirmButton: false })
                             .then(() => {
                                 if (data.role === 'ADMIN') window.location.href = "/admin";

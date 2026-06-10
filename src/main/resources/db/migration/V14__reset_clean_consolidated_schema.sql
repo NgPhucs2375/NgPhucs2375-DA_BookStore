@@ -377,10 +377,10 @@ CREATE TABLE distributed_lock (
     lock_name NVARCHAR(100) PRIMARY KEY,
     instance_id NVARCHAR(255) NOT NULL,
     acquired_at DATETIME2 NOT NULL,
-    expires_at DATETIME2 NOT NULL,
-    heartbeat_at DATETIME2 NOT NULL
+    lock_expires_at DATETIME2 NOT NULL,
+    last_heartbeat_at DATETIME2 NOT NULL
 );
-CREATE INDEX IX_distributed_lock_expires ON distributed_lock(expires_at);
+CREATE INDEX IX_distributed_lock_expires ON distributed_lock(lock_expires_at);
 
 -- ============================================================================
 -- SECTION 3: SCHEMA DESIGN DECISIONS & CONSTRAINTS

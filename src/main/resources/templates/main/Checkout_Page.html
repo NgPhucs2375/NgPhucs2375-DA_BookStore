@@ -37,33 +37,36 @@
             }
         }
     </script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #D19C74; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #b88560; }
+        ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
 
-        /* Custom Radio Cards Logic */
+        /* Giao diện Thẻ Radio Cao cấp & Sắc nét */
         .radio-card-input { display: none; }
 
-        /* Trạng thái mặc định của Label đóng vai trò như Card */
         .radio-card-label {
             display: flex;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
-            box-shadow: 0 0 0 1px #E5CBB5;
+            border: 1px solid #E2E8F0;
+            background-color: #FFFFFF;
+            border-radius: 10px;
+            position: relative;
         }
 
         .radio-card-label:hover {
-            background-color: #FAF5E8;
+            border-color: #CBD5E1;
+            background-color: #F8FAFC;
         }
 
-        /* Vòng tròn Radio tùy chỉnh */
+        /* Vòng tròn Radio cứng cáp */
         .radio-circle {
             width: 20px;
             height: 20px;
-            border: 2px solid #cbd5e1;
+            border: 2px solid #CBD5E1;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -72,47 +75,42 @@
             transition: all 0.2s ease;
         }
 
-        .radio-circle::after {
-            content: '';
-            width: 10px;
-            height: 10px;
-            background-color: #ea580c;
-            border-radius: 50%;
-            transform: scale(0);
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Trạng thái Active khi được chọn */
+        /* Trạng thái Active nổi bật với màu thương hiệu */
         .radio-card-input:checked + .radio-card-label {
-            box-shadow: 0 0 0 2px #ea580c, 0 4px 15px -3px rgba(234, 88, 12, 0.15);
-            background-color: #fffaf0;
+            border: 2px solid #E76F51; /* Màu cam đào thương hiệu */
+            background-color: #FFF8F6;
+            box-shadow: 0 4px 12px rgba(231, 111, 81, 0.08);
         }
 
         .radio-card-input:checked + .radio-card-label .radio-circle {
-            border-color: #ea580c;
+            border-color: #E76F51;
         }
 
         .radio-card-input:checked + .radio-card-label .radio-circle::after {
-            transform: scale(1);
+            content: '';
+            width: 10px;
+            height: 10px;
+            background-color: #E76F51;
+            border-radius: 50%;
         }
 
-        /* Floating Label Input Fields */
+        /* Floating Input sắc bén & chuyên nghiệp */
         .floating-input {
             width: 100%;
             padding: 1.25rem 1rem 0.5rem 1rem;
-            border: 1px solid #E5CBB5;
-            border-radius: 0.5rem;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
             outline: none;
             background-color: white;
-            transition: border-color 0.2s ease;
+            transition: all 0.2s ease;
             font-size: 0.875rem;
             font-weight: 600;
-            color: #5D4037;
+            color: #1E293B;
         }
 
         .floating-input:focus {
-            border-color: #D19C74;
-            box-shadow: 0 0 0 3px rgba(209, 156, 116, 0.2);
+            border-color: #E76F51;
+            box-shadow: inset 0 0 0 1px #E76F51;
         }
 
         .floating-label {
@@ -120,33 +118,28 @@
             left: 1rem;
             top: 50%;
             transform: translateY(-50%);
-            color: #94a3b8;
+            color: #64748B;
             font-size: 0.875rem;
             transition: all 0.2s ease;
             pointer-events: none;
+            font-weight: 500;
         }
 
         .floating-input:focus ~ .floating-label,
         .floating-input:not(:placeholder-shown) ~ .floating-label {
             top: 0.5rem;
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             font-weight: 700;
-            color: #D19C74;
+            color: #E76F51;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        /* Ẩn hiện chi tiết form thanh toán thẻ */
-        .credit-card-form {
-            display: grid;
-            grid-template-rows: 0fr;
-            transition: grid-template-rows 0.3s ease-out;
+        /* Scrollbar cho sidebar sản phẩm */
+        .sidebar-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #E2E8F0 transparent;
         }
-        .radio-card-input:checked ~ .credit-card-form {
-            grid-template-rows: 1fr;
-        }
-        .credit-card-form > div {
-            overflow: hidden;
-        }
-
     </style>
 </head>
 <body class="text-brand-dark flex flex-col min-h-screen selection:bg-brand-biscuit selection:text-white">
@@ -189,36 +182,132 @@
         </a>
     </div>
 </header>
+<main class="flex-grow pb-24 bg-white">
 
-<main class="flex-grow pb-24">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
 
-    <div class="bg-brand-orange w-full h-1"></div>
+        /* Giao diện Thẻ Radio Cao cấp */
+        .radio-card-input { display: none; }
 
-    <section class="max-w-[1200px] mx-auto px-4 md:px-6 pt-8 pb-12 flex flex-col lg:flex-row gap-8 xl:gap-10">
+        .radio-card-label {
+            display: flex;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #E2E8F0;
+            background-color: #FFFFFF;
+            border-radius: 10px;
+        }
+
+        .radio-card-label:hover {
+            border-color: #CBD5E1;
+            background-color: #F8FAFC;
+        }
+
+        .radio-circle {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #CBD5E1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .radio-card-input:checked + .radio-card-label {
+            border: 2px solid #E76F51;
+            background-color: #FFF8F6;
+            box-shadow: 0 4px 12px rgba(231, 111, 81, 0.08);
+        }
+
+        .radio-card-input:checked + .radio-card-label .radio-circle {
+            border-color: #E76F51;
+        }
+
+        .radio-card-input:checked + .radio-card-label .radio-circle::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background-color: #E76F51;
+            border-radius: 50%;
+        }
+
+        /* Floating Input */
+        .floating-input {
+            width: 100%;
+            padding: 1.25rem 1rem 0.5rem 1rem;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            outline: none;
+            background-color: white;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1E293B;
+        }
+
+        .floating-input:focus {
+            border-color: #E76F51;
+            box-shadow: inset 0 0 0 1px #E76F51;
+        }
+
+        .floating-label {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748B;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            pointer-events: none;
+            font-weight: 500;
+        }
+
+        .floating-input:focus ~ .floating-label,
+        .floating-input:not(:placeholder-shown) ~ .floating-label {
+            top: 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #E76F51;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .sidebar-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #E2E8F0 transparent;
+        }
+    </style>
+
+    <section class="max-w-[1280px] mx-auto px-4 md:px-6 pt-8 pb-12 flex flex-col lg:flex-row gap-8 xl:gap-10 relative">
 
         <div class="w-full lg:w-7/12 xl:w-8/12 flex flex-col gap-8">
 
-            <div class="bg-white border border-brand-accent rounded-2xl shadow-sm p-6 lg:p-8">
-                <h2 class="text-xl font-bold text-brand-dark uppercase tracking-wide flex items-center gap-3 mb-6 border-b border-brand-accent pb-4">
-                    <div class="bg-brand-peach/50 p-2 rounded-lg text-brand-orange">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    </div>
-                    1. Địa Chỉ Giao Hàng
-                </h2>
+            <div class="p-1 mb-2">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-[#E76F51] text-white text-sm font-bold">1</span>
+                    <h2 class="text-xl font-bold text-slate-950 tracking-tight">Thông Tin Giao Hàng</h2>
+                </div>
 
-                <div class="flex flex-col gap-4 mb-6" id="checkout-addresses-list">
-                    <div class="rounded-xl border border-dashed border-brand-accent bg-brand-cream/30 px-4 py-6 text-sm text-gray-500 font-medium">
-                        Đang tải địa chỉ đã lưu của bạn...
+                <div class="flex flex-col gap-4 mb-8" id="checkout-addresses-list">
+                    <div class="border border-slate-200 bg-slate-50 px-6 py-10 text-sm text-slate-500 font-medium text-center rounded-xl">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Đang tải địa chỉ đã lưu của bạn...
                     </div>
                 </div>
 
-                <div class="mt-6 border-t border-brand-accent border-dashed pt-6">
-                    <div class="flex items-center gap-2 text-brand-orange font-bold text-sm mb-4 cursor-pointer hover:text-orange-700 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Thêm địa chỉ giao hàng mới
+                <div class="mt-8 pt-8 border-t border-gray-100">
+                    <div class="flex items-center gap-3 text-[#E76F51] font-bold text-sm uppercase tracking-wide mb-6">
+                        <i class="fas fa-plus-circle text-lg"></i>
+                        Hoặc sử dụng địa chỉ giao hàng mới
                     </div>
 
-                    <div class="bg-brand-cream/40 p-5 rounded-xl border border-brand-accent grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div class="relative w-full">
                             <input type="text" id="fullname" class="floating-input" placeholder=" ">
                             <label for="fullname" class="floating-label">Họ và Tên người nhận</label>
@@ -230,24 +319,24 @@
 
                         <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-5">
                             <div class="relative w-full">
-                                <select id="province" class="w-full padding-for-select border border-brand-accent rounded-lg outline-none bg-white transition-colors text-sm font-semibold text-brand-dark cursor-pointer appearance-none focus:border-brand-biscuit focus:ring-4 focus:ring-brand-biscuit/20" style="padding: 1rem 1rem;">
-                                    <option value="" disabled selected>Chọn Tỉnh / Thành Phố</option>
+                                <select id="province" class="w-full h-[52px] px-4 border border-slate-300 rounded-lg outline-none bg-white transition-colors text-sm font-semibold text-slate-950 cursor-pointer appearance-none focus:border-[#E76F51] focus:ring-1 focus:ring-[#E76F51]">
+                                    <option value="" disabled selected>Tỉnh / Thành Phố</option>
                                 </select>
-                                <svg class="w-5 h-5 absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i class="fas fa-chevron-down absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
                             </div>
 
                             <div class="relative w-full">
-                                <select id="district" class="w-full padding-for-select border border-brand-accent rounded-lg outline-none bg-white transition-colors text-sm font-semibold text-brand-dark cursor-pointer appearance-none focus:border-brand-biscuit focus:ring-4 focus:ring-brand-biscuit/20" style="padding: 1rem 1rem;">
-                                    <option value="" disabled selected>Chọn Quận / Huyện</option>
+                                <select id="district" class="w-full h-[52px] px-4 border border-slate-300 rounded-lg outline-none bg-white transition-colors text-sm font-semibold text-slate-950 cursor-pointer appearance-none focus:border-[#E76F51] focus:ring-1 focus:ring-[#E76F51]">
+                                    <option value="" disabled selected>Quận / Huyện</option>
                                 </select>
-                                <svg class="w-5 h-5 absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i class="fas fa-chevron-down absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
                             </div>
 
                             <div class="relative w-full">
-                                <select id="ward" class="w-full padding-for-select border border-brand-accent rounded-lg outline-none bg-white transition-colors text-sm font-semibold text-brand-dark cursor-pointer appearance-none focus:border-brand-biscuit focus:ring-4 focus:ring-brand-biscuit/20" style="padding: 1rem 1rem;">
-                                    <option value="" disabled selected>Chọn Phường / Xã</option>
+                                <select id="ward" class="w-full h-[52px] px-4 border border-slate-300 rounded-lg outline-none bg-white transition-colors text-sm font-semibold text-slate-950 cursor-pointer appearance-none focus:border-[#E76F51] focus:ring-1 focus:ring-[#E76F51]">
+                                    <option value="" disabled selected>Phường / Xã</option>
                                 </select>
-                                <svg class="w-5 h-5 absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <i class="fas fa-chevron-down absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
                             </div>
                         </div>
 
@@ -256,110 +345,94 @@
                             <label for="address_detail" class="floating-label">Số nhà, Tên đường, Tòa nhà...</label>
                         </div>
 
-                        <div class="md:col-span-2 flex items-center gap-4 mt-2">
-                            <span class="text-sm font-bold text-gray-500">Loại địa chỉ:</span>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" name="addr_type" class="accent-brand-orange w-4 h-4" checked>
-                                <span class="text-sm font-medium group-hover:text-brand-orange transition">Nhà riêng</span>
+                        <div class="md:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2">
+                            <label class="flex items-center gap-2.5 text-sm cursor-pointer group">
+                                <input id="save-default-checkbox" type="checkbox" class="accent-[#E76F51] w-4.5 h-4.5 rounded border-slate-300">
+                                <span class="font-semibold text-slate-800 group-hover:text-slate-950">Lưu làm địa chỉ mặc định</span>
                             </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" name="addr_type" class="accent-brand-orange w-4 h-4">
-                                <span class="text-sm font-medium group-hover:text-brand-orange transition">Văn phòng</span>
-                            </label>
-                        </div>
-
-                        <div class="md:col-span-2 flex justify-end gap-3 mt-2">
-                            <label class="flex items-center gap-2 mr-auto text-sm">
-                                <input id="save-default-checkbox" type="checkbox" class="accent-brand-orange w-4 h-4">
-                                <span class="font-medium">Lưu địa chỉ này làm mặc định</span>
-                            </label>
-                            <button type="button" class="px-6 py-2 rounded-lg font-bold text-sm text-gray-600 hover:bg-gray-100 transition border border-transparent">Hủy</button>
-                            <button type="button" class="px-6 py-2 rounded-lg font-bold text-sm bg-brand-dark text-white hover:bg-brand-biscuit transition shadow-sm" id="save-address-btn">Lưu Địa Chỉ</button>
+                            <button type="button" class="w-full sm:w-auto px-10 py-3.5 rounded-lg font-bold text-xs uppercase tracking-widest bg-slate-950 text-white hover:bg-black transition shadow-sm" id="save-address-btn">
+                                <i class="fas fa-save mr-2"></i> Lưu & Sử dụng
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white border border-brand-accent rounded-2xl shadow-sm p-6 lg:p-8">
-                <h2 class="text-xl font-bold text-brand-dark uppercase tracking-wide flex items-center gap-3 mb-6 border-b border-brand-accent pb-4">
-                    <div class="bg-blue-100 p-2 rounded-lg text-blue-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                    </div>
-                    2. Phương Thức Giao Hàng
-                </h2>
+            <div class="p-1 mb-2">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-[#E76F51] text-white text-sm font-bold">2</span>
+                    <h2 class="text-xl font-bold text-slate-950 tracking-tight">Phương Thức Vận Chuyển</h2>
+                </div>
 
-                <div class="grid grid-cols-1 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div class="relative">
                         <input type="radio" name="shipping" id="ship_standard" class="radio-card-input" checked>
-                        <label for="ship_standard" class="radio-card-label bg-white p-4 lg:p-5 rounded-xl items-center">
-                            <div class="radio-circle mr-4"></div>
-                            <div class="flex-grow flex flex-col md:flex-row md:items-center justify-between gap-2">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-bold text-brand-dark text-base">Giao Hàng Tiêu Chuẩn</h3>
-                                    </div>
-                                    <p class="text-sm text-gray-500 font-medium">Giao hàng dự kiến trong <span class="text-brand-green font-bold">2-4 ngày làm việc</span></p>
+                        <label for="ship_standard" class="radio-card-label p-5 items-start">
+                            <div class="radio-circle mt-0.5 mr-4"></div>
+                            <div class="flex-grow flex flex-col gap-1.5 pl-3 border-l border-slate-100">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-bold text-slate-950 text-sm uppercase tracking-wide">Tiêu Chuẩn</h3>
+                                    <div class="font-black text-slate-950 text-lg">35.000đ</div>
                                 </div>
-                                <div class="font-black text-brand-dark text-lg md:text-right">
-                                    35.000đ
-                                </div>
+                                <p class="text-xs text-slate-600 font-medium leading-relaxed">
+                                    Dự kiến nhận hàng trong <span class="text-slate-900 font-bold">2-4 ngày</span> làm việc. Phù hợp cho đơn hàng không gấp.
+                                </p>
                             </div>
                         </label>
                     </div>
 
                     <div class="relative">
                         <input type="radio" name="shipping" id="ship_express" class="radio-card-input">
-                        <label for="ship_express" class="radio-card-label bg-white p-4 lg:p-5 rounded-xl items-center">
-                            <div class="radio-circle mr-4"></div>
-                            <div class="flex-grow flex flex-col md:flex-row md:items-center justify-between gap-2">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-bold text-brand-dark text-base">Giao Hàng Nhanh</h3>
-                                        <span class="bg-red-100 text-red-600 text-[10px] font-black px-2 py-0.5 rounded shadow-sm border border-red-200">Gợi Ý</span>
+                        <label for="ship_express" class="radio-card-label p-5 items-start">
+                            <div class="radio-circle mt-0.5 mr-4"></div>
+                            <div class="flex-grow flex flex-col gap-1.5 pl-3 border-l border-slate-100">
+                                <div class="flex justify-between items-center gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="font-bold text-slate-950 text-sm uppercase tracking-wide">Giao Hàng Nhanh</h3>
+                                        <span class="bg-[#E76F51] text-white text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded">HOT</span>
                                     </div>
-                                    <p class="text-sm text-gray-500 font-medium">Giao nhanh trong <span class="text-brand-green font-bold">1-2 ngày làm việc</span></p>
+                                    <div class="font-black text-slate-950 text-lg">50.000đ</div>
                                 </div>
-                                <div class="font-black text-brand-dark text-lg md:text-right">
-                                    50.000đ
-                                </div>
+                                <p class="text-xs text-slate-600 font-medium leading-relaxed">
+                                    Dự kiến nhận hàng trong <span class="text-slate-900 font-bold">1-2 ngày</span>. Ưu tiên xử lý và giao hàng sớm.
+                                </p>
                             </div>
                         </label>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white border border-brand-accent rounded-2xl shadow-sm p-6 lg:p-8">
-                <h2 class="text-xl font-bold text-brand-dark uppercase tracking-wide flex items-center gap-3 mb-6 border-b border-brand-accent pb-4">
-                    <div class="bg-green-100 p-2 rounded-lg text-green-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                    </div>
-                    3. Phương Thức Thanh Toán
-                </h2>
+            <div class="p-1">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-[#E76F51] text-white text-sm font-bold">3</span>
+                    <h2 class="text-xl font-bold text-slate-950 tracking-tight">Phương Thức Thanh Toán</h2>
+                </div>
 
-                <div class="grid grid-cols-1 gap-4">
-
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div class="relative">
                         <input type="radio" name="payment" id="pay_cod" class="radio-card-input" checked>
-                        <label for="pay_cod" class="radio-card-label bg-white p-4 rounded-xl items-center">
-                            <div class="radio-circle mr-4"></div>
-                            <div class="w-12 h-12 bg-[#E1F5FE] border border-[#B3E5FC] rounded-lg flex items-center justify-center mr-4 flex-shrink-0 text-[#0288D1]">
-                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <label for="pay_cod" class="radio-card-label p-5 items-center">
+                            <div class="radio-circle mx-2"></div>
+                            <div class="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-4 flex-shrink-0 text-slate-600">
+                                <i class="fas fa-money-bill-wave text-2xl"></i>
                             </div>
-                            <div class="flex-grow">
-                                <h3 class="font-bold text-brand-dark text-base mb-1">Thanh toán tiền mặt khi nhận hàng (COD)</h3>
-                                <p class="text-sm text-gray-500 font-medium">Bạn chỉ phải thanh toán khi nhận được sách.</p>
+                            <div class="flex-grow border-l border-slate-100 pl-4">
+                                <h3 class="font-bold text-slate-950 text-sm uppercase tracking-wide mb-1">Thanh toán (COD)</h3>
+                                <p class="text-xs text-slate-600 font-medium">Thanh toán bằng tiền mặt khi nhận hàng.</p>
                             </div>
                         </label>
                     </div>
 
                     <div class="relative">
                         <input type="radio" name="payment" id="pay_vnpay" class="radio-card-input">
-                        <label for="pay_vnpay" class="radio-card-label bg-white p-4 rounded-xl items-center">
-                            <div class="radio-circle mr-4"></div>
-                            <div class="w-12 h-12 bg-red-100 border border-red-300 rounded-lg flex items-center justify-center mr-4 flex-shrink-0 text-red-600 font-bold">VNP</div>
-                            <div class="flex-grow">
-                                <h3 class="font-bold text-brand-dark text-base mb-1">Thanh toán qua VNPay</h3>
-                                <p class="text-sm text-gray-500 font-medium">Hỗ trợ thẻ ngân hàng, ví điện tử, internet banking</p>
+                        <label for="pay_vnpay" class="radio-card-label p-5 items-center">
+                            <div class="radio-circle mx-2"></div>
+                            <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center mx-4 flex-shrink-0 border border-slate-100">
+                                <img src="https://vnpay.vn/s1/statics.vnpay.vn/2023/9/06ncktiwd6dc1694418186387.png" alt="VNPay" class="h-5 object-contain">
+                            </div>
+                            <div class="flex-grow border-l border-slate-100 pl-4">
+                                <h3 class="font-bold text-slate-950 text-sm uppercase tracking-wide mb-1">Cổng VNPay</h3>
+                                <p class="text-xs text-slate-600 font-medium">Thanh toán qua QR, ATM, Thẻ Quốc tế.</p>
                             </div>
                         </label>
                     </div>
@@ -369,144 +442,131 @@
         </div>
 
         <div class="w-full lg:w-5/12 xl:w-4/12 relative">
-            <div class="bg-white border border-brand-accent rounded-2xl shadow-float sticky top-24 flex flex-col overflow-hidden">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm sticky top-24 flex flex-col overflow-hidden">
 
-                <div class="bg-brand-dark text-brand-cream px-6 py-5 flex items-center justify-between">
-                    <h2 class="text-lg font-black uppercase tracking-widest flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        Tóm Tắt Đơn Hàng
+                <div class="bg-slate-50 border-b border-slate-100 px-6 py-5 flex items-center justify-between">
+                    <h2 class="text-sm font-black uppercase tracking-widest text-slate-950 flex items-center gap-2">
+                        <i class="fas fa-shopping-basket text-[#E76F51]"></i> Đơn Hàng Của Bạn
                     </h2>
-                    <span id="checkout-items-badge" class="bg-white text-brand-dark text-xs font-bold px-2 py-1 rounded-full">0 Sản Phẩm</span>
+                    <span id="checkout-items-badge" class="bg-slate-950 text-white text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-full">0 cuốn</span>
                 </div>
 
-                <div id="checkout-cart-items" class="p-6 max-h-[35vh] overflow-y-auto border-b border-brand-accent sidebar-scroll">
+                <div id="checkout-cart-items" class="p-6 max-h-[35vh] overflow-y-auto border-b border-slate-100 sidebar-scroll bg-white">
                 </div>
 
-                <div class="p-6 border-b border-brand-accent bg-brand-bg/50">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-bold text-brand-dark text-sm">Mã Khuyến Mãi / Voucher</h3>
-                    </div>
-                    <div class="flex border border-brand-accent rounded-lg overflow-hidden shadow-inner bg-white">
-                        <input id="checkout-coupon-code" type="text" placeholder="Nhập mã BOOKOM..." class="w-full px-4 py-2 outline-none text-sm font-medium uppercase text-brand-dark">
-                        <button id="apply-coupon-btn" class="bg-gray-800 text-white px-5 font-bold text-sm hover:bg-black transition">Áp Dụng</button>
-                        <button id="clear-coupon-btn" class="hidden bg-gray-100 text-gray-700 px-4 font-bold text-sm hover:bg-gray-200 transition">Xóa</button>
+                <div class="p-6 border-b border-slate-100 bg-white">
+                    <h3 class="font-bold text-slate-950 text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="fas fa-ticket-alt text-slate-400"></i> Mã Giảm Giá
+                    </h3>
+                    <div class="flex border border-slate-300 rounded-lg overflow-hidden focus-within:border-[#E76F51] transition-colors shadow-inner">
+                        <input id="checkout-coupon-code" type="text" placeholder="Nhập mã ưu đãi tại đây" class="w-full px-4 py-3 outline-none text-xs font-bold uppercase text-slate-950 placeholder-slate-400 bg-slate-50">
+                        <button id="apply-coupon-btn" class="bg-slate-900 text-white px-5 font-bold text-xs uppercase tracking-widest hover:bg-slate-950 transition">Áp Dụng</button>
+                        <button id="clear-coupon-btn" class="hidden bg-red-50 text-red-600 border-l border-red-100 px-4 font-bold text-xs hover:bg-red-100 transition"><i class="fas fa-times"></i></button>
                     </div>
 
-                    <div id="checkout-applied-coupon" class="mt-3 hidden items-center justify-between bg-green-50 border border-green-200 px-3 py-2 rounded text-xs font-bold text-green-700">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <div id="checkout-applied-coupon" class="mt-4 hidden items-center justify-between bg-[#FFF8F6] border border-[#FADCD5] text-[#E76F51] px-4 py-3 rounded-lg text-xs font-bold shadow-sm">
+                        <div class="flex items-center gap-2.5 tracking-wide">
+                            <i class="fas fa-check-circle text-lg"></i>
                             <span id="checkout-applied-coupon-text"></span>
                         </div>
-                        <button id="remove-applied-coupon" class="text-gray-400 hover:text-red-500 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                        <button id="remove-applied-coupon" class="text-red-400 hover:text-red-600 transition p-1"><i class="fas fa-trash-alt text-sm"></i></button>
                     </div>
                 </div>
 
-                <div class="p-6 flex flex-col gap-4 text-sm text-brand-dark font-medium">
+                <div class="p-6 flex flex-col gap-4 text-sm text-slate-800 font-medium bg-slate-50">
                     <div id="checkout-seller-breakdown" class="flex flex-col gap-3 mb-2 text-sm"></div>
                     <div class="flex justify-between items-center">
-                        <span id="checkout-subtotal-label" class="text-gray-500">Tạm tính (0 sản phẩm)</span>
-                        <span id="checkout-subtotal" class="font-bold text-base">0đ</span>
+                        <span id="checkout-subtotal-label" class="text-slate-600">Tạm tính (0 cuốn)</span>
+                        <span id="checkout-subtotal" class="font-semibold text-slate-950 text-base">0đ</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-gray-500">Phí vận chuyển tiêu chuẩn</span>
-                        <span id="checkout-shipping-fee" class="font-bold text-base">0đ</span>
+                        <span class="text-slate-600">Phí vận chuyển</span>
+                        <span id="checkout-shipping-fee" class="font-semibold text-slate-950 text-base">0đ</span>
                     </div>
-                    <div id="checkout-estimated-delivery" class="text-xs text-gray-500">Thời gian giao dự kiến: --</div>
-                    <div class="flex justify-between items-center text-brand-orange">
-                        <span>Voucher BOOKOM</span>
-                        <span id="checkout-voucher-discount" class="font-bold text-base">-0đ</span>
+                    <div id="checkout-estimated-delivery" class="text-[11px] font-bold text-slate-500 uppercase tracking-widest bg-white px-3 py-1.5 rounded border border-slate-100 inline-block self-start mt-1">
+                        <i class="far fa-calendar-alt mr-1.5 text-slate-400"></i> Giao dự kiến: --
                     </div>
-
-                    <hr class="border-brand-accent my-2">
-
-                    <!-- Dòng hiển thị giá gốc trước giảm (chỉ hiện khi có coupon) -->
-                    <div id="checkout-original-before-discount" class="hidden flex justify-between items-center text-sm text-gray-400">
-                        <span class="text-gray-400">Giá trước giảm</span>
-                        <span class="original-amount line-through text-gray-400"></span>
+                    <div class="flex justify-between items-center text-[#E76F51]">
+                        <span class="font-bold">Giảm giá Voucher</span>
+                        <span id="checkout-voucher-discount" class="font-black text-lg">-0đ</span>
                     </div>
 
-                    <div class="flex flex-col gap-1">
+                    <hr class="border-slate-200 my-2 border-dashed">
+
+                    <div id="checkout-original-before-discount" class="hidden flex justify-between items-center text-sm text-slate-400">
+                        <span class="text-slate-400 uppercase text-[11px] tracking-wider font-bold">Giá gốc</span>
+                        <span class="original-amount line-through font-semibold text-base"></span>
+                    </div>
+
+                    <div class="flex flex-col gap-1 mt-2 mb-4">
                         <div class="flex justify-between items-end">
-                            <span class="text-base font-bold uppercase">Tổng thanh toán</span>
-                            <span id="checkout-total" class="text-3xl lg:text-4xl font-black text-brand-orange">0đ</span>
+                            <span class="text-sm font-black uppercase tracking-widest text-slate-950">Tổng thanh toán</span>
+                            <span id="checkout-total" class="text-3xl font-black text-slate-950 tracking-tight">0đ</span>
                         </div>
-                        <div class="text-right text-[10px] text-gray-400 font-bold">(Đã bao gồm VAT nếu có)</div>
+                        <div class="text-right text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Đã bao gồm thuế & phí</div>
                     </div>
 
-
-                    <button id="checkout-place-order-btn" type="button" class="block w-full bg-brand-orange text-white text-xl font-black py-4 lg:py-5 rounded-xl shadow-[0_10px_20px_rgba(234,88,12,0.3)] hover:bg-orange-700 transition-all transform hover:-translate-y-1 mt-4 uppercase tracking-widest text-center flex items-center justify-center gap-3 group">
-                        Đặt Hàng Ngay
-                        <svg class="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    <button id="checkout-place-order-btn" type="button" class="block w-full bg-[#E76F51] text-white text-base font-extrabold py-5 rounded-xl shadow-lg hover:bg-[#D65F43] transition-all duration-300 mt-2 uppercase tracking-widest text-center flex items-center justify-center gap-3">
+                        <i class="fas fa-check-double text-lg"></i> Hoàn Tất Đặt Hàng
                     </button>
+
+                    <div class="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4 flex justify-center items-center gap-2">
+                        <i class="fas fa-lock text-xs text-slate-400"></i> Thanh toán an toàn 256-bit
+                    </div>
                 </div>
 
             </div>
         </div>
 
     </section>
-</main>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const provinceSelect = document.getElementById('province');
+            const districtSelect = document.getElementById('district');
+            const wardSelect = document.getElementById('ward');
+
+            fetch('https://provinces.open-api.vn/api/p/')
+                .then(res => res.json())
+                .then(data => {
+                    let html = '<option value="" disabled selected>Tỉnh / Thành Phố</option>';
+                    data.forEach(province => { html += `<option value="${province.name}" data-code="${province.code}">${province.name}</option>`; });
+                    provinceSelect.innerHTML = html;
+                }).catch(err => console.error(err));
+
+            provinceSelect.addEventListener('change', function() {
+                const provinceCode = this.options[this.selectedIndex].getAttribute('data-code');
+                wardSelect.innerHTML = '<option value="" disabled selected>Phường / Xã</option>';
+                districtSelect.innerHTML = '<option value="" disabled selected>Đang tải Quận/Huyện...</option>';
+                fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`)
+                    .then(res => res.json())
+                    .then(data => {
+                        let html = '<option value="" disabled selected>Quận / Huyện</option>';
+                        data.districts.forEach(district => { html += `<option value="${district.name}" data-code="${district.code}">${district.name}</option>`; });
+                        districtSelect.innerHTML = html;
+                    }).catch(err => console.error(err));
+            });
+
+            districtSelect.addEventListener('change', function() {
+                const districtCode = this.options[this.selectedIndex].getAttribute('data-code');
+                wardSelect.innerHTML = '<option value="" disabled selected>Đang tải Phường/Xã...</option>';
+                fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`)
+                    .then(res => res.json())
+                    .then(data => {
+                        let html = '<option value="" disabled selected>Phường / Xã</option>';
+                        data.wards.forEach(ward => { html += `<option value="${ward.name}">${ward.name}</option>`; });
+                        wardSelect.innerHTML = html;
+                    }).catch(err => console.error(err));
+            });
+        });
+    </script>
+
+    <script src="/js/api-service.js"></script>
+    <script src="/js/pages/checkout-page.js"></script>
+</main>
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const provinceSelect = document.getElementById('province');
-        const districtSelect = document.getElementById('district');
-        const wardSelect = document.getElementById('ward');
 
-        // 1. Tải danh sách Tỉnh/Thành ngay khi mở trang
-        fetch('https://provinces.open-api.vn/api/p/')
-            .then(res => res.json())
-            .then(data => {
-                let html = '<option value="" disabled selected>Chọn Tỉnh / Thành Phố</option>';
-                data.forEach(province => {
-                    html += `<option value="${province.name}" data-code="${province.code}">${province.name}</option>`;
-                });
-                provinceSelect.innerHTML = html;
-            })
-            .catch(err => console.error('Lỗi tải tỉnh thành:', err));
-
-        // 2. Bắt sự kiện khi người dùng chọn Tỉnh -> Tải danh sách Quận/Huyện tương ứng
-        provinceSelect.addEventListener('change', function() {
-            const provinceCode = this.options[this.selectedIndex].getAttribute('data-code');
-
-            wardSelect.innerHTML = '<option value="" disabled selected>Chọn Phường / Xã</option>';
-            districtSelect.innerHTML = '<option value="" disabled selected>Đang tải...</option>';
-
-            fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`)
-                .then(res => res.json())
-                .then(data => {
-                    let html = '<option value="" disabled selected>Chọn Quận / Huyện</option>';
-                    data.districts.forEach(district => {
-                        html += `<option value="${district.name}" data-code="${district.code}">${district.name}</option>`;
-                    });
-                    districtSelect.innerHTML = html;
-                })
-                .catch(err => console.error('Lỗi tải quận huyện:', err));
-        });
-
-        // 3. Bắt sự kiện khi người dùng chọn Quận -> Tải danh sách Phường/Xã tương ứng
-        districtSelect.addEventListener('change', function() {
-            const districtCode = this.options[this.selectedIndex].getAttribute('data-code');
-
-            wardSelect.innerHTML = '<option value="" disabled selected>Đang tải...</option>';
-
-            fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`)
-                .then(res => res.json())
-                .then(data => {
-                    let html = '<option value="" disabled selected>Chọn Phường / Xã</option>';
-                    data.wards.forEach(ward => {
-                        html += `<option value="${ward.name}">${ward.name}</option>`;
-                    });
-                    wardSelect.innerHTML = html;
-                })
-                .catch(err => console.error('Lỗi tải phường xã:', err));
-        });
-    });
-</script>
-
-<script src="/js/api-service.js"></script>
-<script src="/js/pages/checkout-page.js"></script>
 
 </body>
 </html>

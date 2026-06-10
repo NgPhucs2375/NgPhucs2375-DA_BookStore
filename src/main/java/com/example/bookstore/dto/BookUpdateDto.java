@@ -12,4 +12,7 @@ public class BookUpdateDto {
     private String publisher;
     private String publishYear;
     private Long categoryId;
+    private String imageUrl;
+    private String mediumImageUrl;
+    private String largeimageUrl;
 }

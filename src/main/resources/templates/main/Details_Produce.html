@@ -379,13 +379,10 @@
                 class="w-full aspect-square bg-brand-brown/10 rounded-lg border border-brand-brown/20 flex items-center justify-center overflow-hidden mb-4 img-zoom-container relative cursor-pointer"
               >
                 <img
-                  th:src="${book.imageUrl}"
-                  onerror="
-                    this.src =
-                      'https://via.placeholder.com/400x500?text=No+Cover'
-                  "
-                  class="w-3/4 h-[85%] object-cover border-8 border-white shadow-xl"
-                  alt="Book Cover"
+                        th:src="${book.largeimageUrl != null ? book.largeimageUrl : book.imageUrl}"
+                        onerror="this.src='https://via.placeholder.com/400x500?text=No+Cover'"
+                        class="w-3/4 h-[85%] object-cover border-8 border-white shadow-xl"
+                        alt="Book Cover"
                 />
 
                 <div
@@ -448,7 +445,7 @@
 
               <div class="flex-grow flex flex-col justify-center">
                 <div class="flex items-center gap-2 mb-1">
-                  <h3 class="font-bold text-lg text-brand-dark" th:text="${book.seller != null ? book.seller.shopName : 'Người bán'}">
+                  <h3 class="font-bold text-lg text-brand-dark">
                     Nhã Nam Official
                   </h3>
                   <span
@@ -1462,43 +1459,48 @@
     }
     /*]]>*/
   </script>
+      <script src="/js/api-service.js"></script>
+      <script src="/js/pages/details-page.js"></script>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        // --- LOGIC 1: NÚT TĂNG/GIẢM SỐ LƯỢNG ---
-        const qtyInput = document.getElementById('detail-qty-input');
-        const btnIncrease = document.getElementById('btn-increase-qty');
-        const btnDecrease = document.getElementById('btn-decrease-qty');
-        const addToCartBtn = document.getElementById('detail-add-to-cart-btn');
-        const buyNowBtn = document.getElementById('detail-buy-now-btn');
-        
-        // Lấy kho tối đa (Dùng Thymeleaf nhúng thẳng vào JS, nếu null thì mặc định 999)
-        const maxStock = parseInt('[[${book.stockQuantity}]]', 10) || 999;
-        const currentBookId = addToCartBtn ? addToCartBtn.dataset.bookId : null;
+      <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+          // --- LOGIC 1: NÚT TĂNG/GIẢM SỐ LƯỢNG ---
+          const qtyInput = document.getElementById('detail-qty-input');
+          const btnIncrease = document.getElementById('btn-increase-qty');
+          const btnDecrease = document.getElementById('btn-decrease-qty');
+          const addToCartBtn = document.getElementById('detail-add-to-cart-btn');
+          const buyNowBtn = document.getElementById('detail-buy-now-btn');
 
-        if (btnIncrease && btnDecrease && qtyInput) {
+          // Lấy kho tối đa (Dùng Thymeleaf nhúng thẳng vào JS, nếu null thì mặc định 999)
+          const maxStock = parseInt('[[${book.stockQuantity}]]', 10) || 999;
+          const currentBookId = addToCartBtn ? addToCartBtn.dataset.bookId : null;
+
+          if (btnIncrease && btnDecrease && qtyInput) {
             btnIncrease.addEventListener('click', () => {
-                let currentVal = parseInt(qtyInput.value, 10);
-                if (currentVal < maxStock) {
-                    qtyInput.value = currentVal + 1;
-                } else {
-                    alert('Số lượng vượt quá tồn kho hiện tại!');
-                }
+              let currentVal = parseInt(qtyInput.value, 10);
+              if (currentVal < maxStock) {
+                qtyInput.value = currentVal + 1;
+              } else {
+                alert('Số lượng vượt quá tồn kho hiện tại!');
+              }
             });
 
             btnDecrease.addEventListener('click', () => {
-                let currentVal = parseInt(qtyInput.value, 10);
-                if (currentVal > 1) {
-                    qtyInput.value = currentVal - 1;
-                }
+              let currentVal = parseInt(qtyInput.value, 10);
+              if (currentVal > 1) {
+                qtyInput.value = currentVal - 1;
+              }
             });
-        }
+          }
 
-        // --- LOGIC 2: GỌI API LẤY SÁCH MUA KÈM ---
-        if (currentBookId) {
+          // --- LOGIC 2: GỌI API LẤY SÁCH MUA KÈM ---
+          if (currentBookId) {
             loadBoughtTogetherRecommendations(currentBookId);
-        }
+          }
 
+          // --- (GIỮ NGUYÊN LOGIC BẤM MUA NGAY/THÊM VÀO GIỎ CỦA BẠN Ở ĐÂY) ---
+          // Ví dụ: buyNowBtn.addEventListener('click', async () => { ... })
+        });
         // --- LOGIC 3: CHAT - KHỞI TẠO POPUP VÀ XỬ LÝ NÚT CHAT NGAY ---
         if (window.ChatUI && typeof window.ChatUI.initBuyerPopup === 'function') {
             window.ChatUI.initBuyerPopup();
@@ -1554,14 +1556,14 @@
         }
     });
 
-    // HÀM RENDER SÁCH GỢI Ý (UI CỰC PREMIUM)
-    async function loadBoughtTogetherRecommendations(bookId) {
-        const loadingEl = document.getElementById('bought-together-loading');
-        const containerEl = document.getElementById('bought-together-container');
+        // HÀM RENDER SÁCH GỢI Ý (UI CỰC PREMIUM)
+        async function loadBoughtTogetherRecommendations(bookId) {
+          const loadingEl = document.getElementById('bought-together-loading');
+          const containerEl = document.getElementById('bought-together-container');
 
-        if (!loadingEl || !containerEl) return;
+          if (!loadingEl || !containerEl) return;
 
-        try {
+          try {
             // Lấy data từ Lambda Architecture (Redis + DB)
             const books = await ApiService.Recommendation.getBoughtTogether(bookId);
 
@@ -1569,17 +1571,17 @@
             containerEl.classList.remove('hidden');
 
             if (!books || books.length === 0) {
-                containerEl.innerHTML = `<p class="text-gray-500 italic col-span-full">Chưa có gợi ý mua kèm cho sách này.</p>`;
-                return;
+              containerEl.innerHTML = `<p class="text-gray-500 italic col-span-full">Chưa có gợi ý mua kèm cho sách này.</p>`;
+              return;
             }
 
             let htmlString = '';
             books.forEach(book => {
-                // Đảm bảo không lỗi hiển thị tiền
-                const price = typeof ApiService.formatVND === 'function' ? ApiService.formatVND(book.price) : `${book.price.toLocaleString('vi-VN')} đ`;
-                const imgUrl = book.imageUrl || '/images/default-book.png';
-                
-                htmlString += `
+              // Đảm bảo không lỗi hiển thị tiền
+              const price = typeof ApiService.formatVND === 'function' ? ApiService.formatVND(book.price) : `${book.price.toLocaleString('vi-VN')} đ`;
+              const imgUrl = book.imageUrl || '/images/default-book.png';
+
+              htmlString += `
                     <div class="bg-white border-2 border-brand-accent/30 rounded-2xl overflow-hidden hover:border-brand-orange hover:shadow-xl transition-all duration-300 group flex flex-col h-full cursor-pointer" onclick="window.location.href='/book/${book.id}'">
                         <div class="relative overflow-hidden aspect-[3/4] bg-gray-50">
                             <img src="${imgUrl}" alt="${book.title}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-in-out">
@@ -1600,11 +1602,14 @@
 
             containerEl.innerHTML = htmlString;
 
-        } catch (error) {
+          } catch (error) {
             console.error("Lỗi tải gợi ý mua kèm:", error);
             loadingEl.classList.add('hidden');
+          }
         }
-    }
-</script>
+      </script>
+    </main>
+
+
   </body>
 </html>

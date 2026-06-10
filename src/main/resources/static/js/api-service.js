@@ -18,11 +18,36 @@ var ApiService = window.ApiService || (() => {
      * Lấy thông tin xác thực từ localStorage
      */
     const getAuth = () => {
-        return {
-            userId: localStorage.getItem('userId') || sessionStorage.getItem('userId'),
-            token: localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken'),
-            role: localStorage.getItem('userRole') || sessionStorage.getItem('userRole')
-        };
+        let userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+        let token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+        let role = localStorage.getItem('userRole') || sessionStorage.getItem('userRole');
+
+        // 🛡️ VÁ LỖI TOÀN HỆ THỐNG: Tự động giải mã JWT chuẩn nếu bị mất ID
+        if (token && (!userId || !role)) {
+            try {
+                let base64Url = token.split('.')[1];
+                let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+
+                // Bơm thêm dấu '=' để sửa lỗi sập hàm atob() của Javascript
+                while (base64.length % 4) {
+                    base64 += '=';
+                }
+
+                let payload = JSON.parse(window.atob(base64));
+
+                // Trích xuất dữ liệu từ Token
+                userId = payload.userId || payload.id;
+                role = payload.roles ? payload.roles[0] : (payload.role || 'BUYER');
+
+                // Tự động lưu lại vào bộ nhớ để dùng cho các luồng khác
+                if (userId) localStorage.setItem('userId', String(userId));
+                if (role) localStorage.setItem('userRole', role.replace('ROLE_', '').toUpperCase());
+            } catch (e) {
+                console.warn("Lỗi tự động bẻ khóa JWT:", e);
+            }
+        }
+
+        return { userId, token, role };
     };
 
     /**

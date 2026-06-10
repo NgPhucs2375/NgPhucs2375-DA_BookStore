@@ -47,7 +47,7 @@ public class Book {
 
     @ManyToOne
     @JoinColumn(name = "category_id") // Tên cột khóa ngoại trong SSMS
-    @JsonIgnore
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("books")
     private Category category;
 
     // Transient field để hỗ trợ JSON deserialization từ categoryId
@@ -66,7 +66,7 @@ public class Book {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false)
-    @JsonIgnore
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "books", "roles"})
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User seller;

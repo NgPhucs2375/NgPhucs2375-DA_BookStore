@@ -15,4 +15,5 @@ public class CartItemResponse {
     private Double lineTotal;
     private Long sellerId;
     private String sellerName;
+    private String imageUrl;
 }

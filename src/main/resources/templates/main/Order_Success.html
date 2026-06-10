@@ -149,7 +149,6 @@
 </head>
 <body class="text-brand-dark">
 
-<canvas id="confetti-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-[100]"></canvas>
 
 <header class="bg-white sticky top-0 z-40 shadow-sm border-b border-brand-accent">
     <div class="max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
@@ -777,12 +776,13 @@
 
         </div>
     </section>
-
+    <canvas id="confetti-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-[100]"></canvas>
+    <script src="/js/api-service.js"></script>
+    <script src="/js/pages/order-success-page.js"></script>
 </main>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 
-<script src="/js/api-service.js"></script>
-<script src="/js/pages/order-success-page.js"></script>
+
 </body>
 </html>

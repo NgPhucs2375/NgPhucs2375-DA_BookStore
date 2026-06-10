@@ -120,19 +120,16 @@
     var authUserRole = /*[[${authUserRole}]]*/ null;
     var authAccessToken = /*[[${authAccessToken}]]*/ null;
     
-    // Only set if not already present (seed users may already have it)
-    if (authUserId && !localStorage.getItem('userId')) {
+    // Luôn ghi đè auth data từ server để đảm bảo token và role mới nhất
+    // (quan trọng: sau khi admin duyệt SELLER, role và token cần được cập nhật)
+    if (authUserId) {
         localStorage.setItem('userId', String(authUserId));
     }
-    if (authUserRole && !localStorage.getItem('userRole')) {
+    if (authUserRole) {
         localStorage.setItem('userRole', authUserRole);
     }
-    if (authAccessToken && !localStorage.getItem('accessToken')) {
+    if (authAccessToken) {
         localStorage.setItem('accessToken', authAccessToken);
-    }
-    // Also ensure userId is set if we have it from server but somehow missing in localStorage
-    if (authUserId && !localStorage.getItem('userId')) {
-        localStorage.setItem('userId', String(authUserId));
     }
 })();
 /*]]>*/
@@ -148,13 +145,16 @@
     <div th:replace="~{seller/shop_seller/shop_tag :: shop_tag}"></div>
 
     <!--shop_voucher-->
-    <div th:replace="~{seller/shop_seller/shop_voucher :: shop_voucher(vouchers=${vouchers})}"></div>
+    <div th:replace="~{seller/shop_seller/shop_voucher}"></div>
 
    <!--shop_recomend-->
-    <div th:replace="~{seller/shop_seller/shop_recomend :: shop_recomend}"></div>
+   <!-- <div th:replace="~{seller/shop_seller/shop_recomend :: shop_recomend}"></div>-->
 
     <!--shop_category-->
     <div th:replace="~{seller/shop_seller/shop_categoty :: shop_categoty}"></div>
+
+
+
 
     <!--shop_footer-->
     <div th:replace="~{seller/shop_seller/shop_footer :: shop_footer}"></div>
@@ -168,20 +168,37 @@
 <script>
 (() => {
     const API_BASE = '/api/seller/me/shop';
+    const UPLOAD_API = '/api/seller/me/shop/upload-image';
     const fields = ['shopName', 'slug', 'description', 'logoUrl', 'bannerUrl', 'contactEmail', 'contactPhone', 'address', 'city', 'province'];
 
     const form = document.getElementById('shop-panel-form');
     const btnSave = document.getElementById('shop-panel-save');
-    const btnReset = document.getElementById('shop-panel-reset');
-    const btnToggle = document.getElementById('shop-panel-toggle');
+    const btnCancel = document.getElementById('shop-panel-cancel');
     const btnDelete = document.getElementById('shop-panel-delete');
-    const statusChip = document.getElementById('shop-panel-status');
     const alertBox = document.getElementById('shop-panel-alert');
+    const panel = document.getElementById('seller-shop-panel');
 
     const displayName = document.getElementById('shop-display-name');
     const displayStatus = document.getElementById('shop-display-status');
     const displayInitials = document.getElementById('shop-display-initials');
+    const displayLogo = document.getElementById('shop-display-logo');
     const bannerHost = document.getElementById('shop-banner-host');
+
+    // File upload elements
+    const logoFileInput = document.getElementById('logo-file-input');
+    const logoChooseBtn = document.getElementById('logo-choose-btn');
+    const logoClearBtn = document.getElementById('logo-clear-btn');
+    const logoPreviewImg = document.getElementById('logo-preview-img');
+    const logoPreviewPlaceholder = document.getElementById('logo-preview-placeholder');
+    const bannerFileInput = document.getElementById('banner-file-input');
+    const bannerChooseBtn = document.getElementById('banner-choose-btn');
+    const bannerClearBtn = document.getElementById('banner-clear-btn');
+    const bannerPreviewImg = document.getElementById('banner-preview-img');
+    const bannerPreviewPlaceholder = document.getElementById('banner-preview-placeholder');
+
+    // Pending files to upload (before save)
+    let pendingLogoFile = null;
+    let pendingBannerFile = null;
 
     let currentShop = null;
     let initialState = null;
@@ -232,11 +249,16 @@
         return JSON.stringify(normalized(readForm())) !== JSON.stringify(initialState);
     }
 
+    function closePanel() {
+        if (panel) {
+            panel.removeAttribute('open');
+        }
+    }
+
     function setLoading(isLoading) {
         loading = isLoading;
         btnSave.disabled = isLoading || !hasChanged() || !form.checkValidity();
-        btnReset.disabled = isLoading || !hasChanged();
-        btnToggle.disabled = isLoading || !currentShop;
+        btnCancel.disabled = isLoading;
         btnDelete.disabled = isLoading || !currentShop;
     }
 
@@ -278,6 +300,16 @@
         displayName.textContent = shop.shopName || 'Nha Nam Official';
         displayInitials.textContent = getInitials(shop.shopName);
 
+        // Show logo image if available, otherwise show initials
+        if (shop.logoUrl && displayLogo) {
+            displayLogo.src = shop.logoUrl;
+            displayLogo.classList.remove('hidden');
+            displayInitials.classList.add('hidden');
+        } else {
+            if (displayLogo) displayLogo.classList.add('hidden');
+            displayInitials.classList.remove('hidden');
+        }
+
         const status = (shop.approvalStatus || 'PENDING').toUpperCase();
         if (status === 'APPROVED') {
             displayStatus.innerHTML = '<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0"></path></svg>Gian hang da duoc duyet';
@@ -291,30 +323,10 @@
             bannerHost.style.backgroundImage = `url('${shop.bannerUrl}')`;
             bannerHost.style.backgroundSize = 'cover';
             bannerHost.style.backgroundPosition = 'center';
-        }
-    }
-
-    function updatePanelStatus(shop) {
-        if (!shop) {
-            statusChip.textContent = 'CHUA CO SHOP';
-            statusChip.className = 'text-[10px] font-bold px-2 py-1 rounded bg-brand-hero text-brand-dark';
-            btnToggle.disabled = true;
-            return;
-        }
-
-        const status = (shop.approvalStatus || 'PENDING').toUpperCase();
-        if (status === 'APPROVED') {
-            statusChip.textContent = 'APPROVED';
-            statusChip.className = 'text-[10px] font-bold px-2 py-1 rounded bg-green-100 text-green-700';
-            btnToggle.textContent = 'Chuyen ve PENDING';
-        } else if (status === 'REJECTED') {
-            statusChip.textContent = 'REJECTED';
-            statusChip.className = 'text-[10px] font-bold px-2 py-1 rounded bg-red-100 text-red-700';
-            btnToggle.textContent = 'Gui duyet lai';
         } else {
-            statusChip.textContent = 'PENDING';
-            statusChip.className = 'text-[10px] font-bold px-2 py-1 rounded bg-amber-100 text-amber-700';
-            btnToggle.textContent = 'Chuyen sang APPROVED';
+            bannerHost.style.backgroundImage = '';
+            bannerHost.style.backgroundSize = '';
+            bannerHost.style.backgroundPosition = '';
         }
     }
 
@@ -334,6 +346,144 @@
         return response.status === 204 ? null : response.json();
     }
 
+    // ==========================================
+    // FILE UPLOAD HELPERS
+    // ==========================================
+
+    /**
+     * Upload a single image file to the server
+     * @param {File} file - The image file
+     * @param {string} type - 'logo' or 'banner'
+     * @returns {Promise<string>} The URL of the uploaded image
+     */
+    async function uploadImage(file, type) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', type);
+
+        const token = localStorage.getItem('token') || localStorage.getItem('jwt') || localStorage.getItem('accessToken');
+        const userId = localStorage.getItem('userId');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (userId) headers['X-User-Id'] = userId;
+
+        const response = await fetch(UPLOAD_API, {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText || 'Upload thất bại');
+        }
+
+        return await response.text();
+    }
+
+    /**
+     * Set up file picker for logo/banner
+     */
+    function setupFilePicker(fileInput, chooseBtn, clearBtn, previewImg, previewPlaceholder, type) {
+        // Click choose button -> open file dialog
+        chooseBtn.addEventListener('click', () => fileInput.click());
+
+        // File selected -> show preview
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showAlert('error', 'Vui lòng chọn file ảnh.');
+                fileInput.value = '';
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('error', 'Ảnh không được quá 5MB.');
+                fileInput.value = '';
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('hidden');
+                previewPlaceholder.classList.add('hidden');
+                clearBtn.classList.remove('hidden');
+                chooseBtn.textContent = 'Chọn ảnh khác';
+            };
+            reader.readAsDataURL(file);
+
+            // Store pending file
+            if (type === 'logo') {
+                pendingLogoFile = file;
+            } else {
+                pendingBannerFile = file;
+            }
+        });
+
+        // Clear button -> remove file
+        clearBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            previewImg.src = '';
+            previewImg.classList.add('hidden');
+            previewPlaceholder.classList.remove('hidden');
+            clearBtn.classList.add('hidden');
+            chooseBtn.textContent = type === 'logo' ? 'Chon anh logo' : 'Chon anh banner';
+
+            if (type === 'logo') {
+                pendingLogoFile = null;
+                document.getElementById('logoUrl').value = '';
+            } else {
+                pendingBannerFile = null;
+                document.getElementById('bannerUrl').value = '';
+            }
+        });
+    }
+
+    // Initialize file pickers
+    setupFilePicker(logoFileInput, logoChooseBtn, logoClearBtn, logoPreviewImg, logoPreviewPlaceholder, 'logo');
+    setupFilePicker(bannerFileInput, bannerChooseBtn, bannerClearBtn, bannerPreviewImg, bannerPreviewPlaceholder, 'banner');
+
+    /**
+     * Update preview when form is filled with existing data
+     */
+    function updateImagePreviews(data) {
+        // Logo preview
+        if (data.logoUrl) {
+            logoPreviewImg.src = data.logoUrl;
+            logoPreviewImg.classList.remove('hidden');
+            logoPreviewPlaceholder.classList.add('hidden');
+            logoClearBtn.classList.remove('hidden');
+            logoChooseBtn.textContent = 'Chọn ảnh khác';
+        } else {
+            logoPreviewImg.src = '';
+            logoPreviewImg.classList.add('hidden');
+            logoPreviewPlaceholder.classList.remove('hidden');
+            logoClearBtn.classList.add('hidden');
+            logoChooseBtn.textContent = 'Chọn ảnh logo';
+        }
+
+        // Banner preview
+        if (data.bannerUrl) {
+            bannerPreviewImg.src = data.bannerUrl;
+            bannerPreviewImg.classList.remove('hidden');
+            bannerPreviewPlaceholder.classList.add('hidden');
+            bannerClearBtn.classList.remove('hidden');
+            bannerChooseBtn.textContent = 'Chọn ảnh khác';
+        } else {
+            bannerPreviewImg.src = '';
+            bannerPreviewImg.classList.add('hidden');
+            bannerPreviewPlaceholder.classList.remove('hidden');
+            bannerClearBtn.classList.add('hidden');
+            bannerChooseBtn.textContent = 'Chọn ảnh banner';
+        }
+    }
+
     async function loadShop() {
         clearAlert();
         setLoading(true);
@@ -341,12 +491,12 @@
             const data = await request(API_BASE, { method: 'GET' });
             currentShop = data;
             fillForm(data);
+            updateImagePreviews(data);
             syncHero(data);
-            updatePanelStatus(data);
         } catch (error) {
             currentShop = null;
             fillForm({});
-            updatePanelStatus(null);
+            updateImagePreviews({});
             showAlert('error', 'Chua co shop hoac ban chua dang nhap role SELLER.');
         } finally {
             setLoading(false);
@@ -362,41 +512,51 @@
             return;
         }
 
-        const method = currentShop ? 'PUT' : 'POST';
         setLoading(true);
+
         try {
+            // Step 1: Upload pending images first (if any)
+            let logoUrl = document.getElementById('logoUrl').value;
+            let bannerUrl = document.getElementById('bannerUrl').value;
+
+            if (pendingLogoFile) {
+                try {
+                    logoUrl = await uploadImage(pendingLogoFile, 'logo');
+                    document.getElementById('logoUrl').value = logoUrl;
+                    pendingLogoFile = null;
+                } catch (err) {
+                    showAlert('error', 'Upload logo that bai: ' + err.message);
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            if (pendingBannerFile) {
+                try {
+                    bannerUrl = await uploadImage(pendingBannerFile, 'banner');
+                    document.getElementById('bannerUrl').value = bannerUrl;
+                    pendingBannerFile = null;
+                } catch (err) {
+                    showAlert('error', 'Upload banner that bai: ' + err.message);
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            // Step 2: Save shop data
+            const method = currentShop ? 'PUT' : 'POST';
             const data = await request(API_BASE, {
                 method,
                 body: JSON.stringify(readForm())
             });
             currentShop = data;
             fillForm(data);
+            updateImagePreviews(data);
             syncHero(data);
-            updatePanelStatus(data);
             showAlert('success', method === 'POST' ? 'Da tao shop thanh cong.' : 'Da cap nhat shop thanh cong.');
+            closePanel();
         } catch (error) {
             showAlert('error', error.message || 'Khong the luu thong tin shop.');
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function toggleStatus() {
-        if (!currentShop) {
-            return;
-        }
-        const current = (currentShop.approvalStatus || 'PENDING').toUpperCase();
-        const next = current === 'APPROVED' ? 'PENDING' : 'APPROVED';
-        clearAlert();
-        setLoading(true);
-        try {
-            const data = await request(`${API_BASE}/status?status=${encodeURIComponent(next)}`, { method: 'PATCH' });
-            currentShop = data;
-            syncHero(data);
-            updatePanelStatus(data);
-            showAlert('success', `Da doi trang thai sang ${next}.`);
-        } catch (error) {
-            showAlert('error', error.message || 'Khong the doi trang thai shop.');
         } finally {
             setLoading(false);
         }
@@ -406,7 +566,7 @@
         if (!currentShop) {
             return;
         }
-        if (!window.confirm('Ban co chac chan muon xoa shop? Hanh dong nay khong the hoan tac.')) {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa cửa hàng này? Hành động này không thể hoàn tác.')) {
             return;
         }
         clearAlert();
@@ -415,8 +575,9 @@
             await request(API_BASE, { method: 'DELETE' });
             currentShop = null;
             fillForm({});
-            updatePanelStatus(null);
-            showAlert('success', 'Da xoa shop.');
+            updateImagePreviews({});
+            showAlert('success', 'Đã xóa cửa hàng.');
+            closePanel();
         } catch (error) {
             showAlert('error', error.message || 'Khong the xoa shop.');
         } finally {
@@ -425,15 +586,9 @@
     }
 
     form.addEventListener('submit', saveShop);
-    btnReset.addEventListener('click', () => {
-        if (!initialState) {
-            return;
-        }
-        fillForm(initialState);
-        clearAlert();
-        setLoading(false);
+    btnCancel.addEventListener('click', () => {
+        closePanel();
     });
-    btnToggle.addEventListener('click', toggleStatus);
     btnDelete.addEventListener('click', deleteShop);
 
     fields.forEach((field) => {
@@ -446,26 +601,24 @@
         });
     });
 
+    // ==========================================
+    // AUTO-COLLAPSE: Click outside panel -> close
+    // ==========================================
+    if (panel) {
+        document.addEventListener('click', (e) => {
+            // If panel is open and click is outside the panel
+            if (panel.hasAttribute('open') && !panel.contains(e.target)) {
+                panel.removeAttribute('open');
+            }
+        });
+    }
+
     loadShop();
 })();
 </script>
-<!-- DEBUG: Kiểm tra dữ liệu voucher -->
-<script th:inline="javascript">
-/*<![CDATA[*/
-console.log('=== DEBUG VOUCHER ===');
-console.log('vouchers:', /*[[${vouchers}]]*/ null);
-console.log('vouchers size:', /*[[${vouchers != null ? #lists.size(vouchers) : -1}]]*/ -1);
-console.log('shop:', /*[[${shop}]]*/ null);
-console.log('sellerId:', /*[[${shop != null ? shop.seller.id : 'NO_SHOP'}]]*/ 'NO_SHOP');
-
-/*[# th:if="${vouchers != null}"]*/
-    /*[# th:each="v : ${vouchers}"]*/
-        console.log('  -> coupon id=[[${v.id}]], code=[[${v.code}]], seller.id=[[${v.seller != null ? v.seller.id : 'null'}]], isActive=[[${v.active}]], expiresAt=[[${v.expiresAt}]]');
-    /*[/]*/
-/*[/]*/
-/*]]>*/
-</script>
 <script th:src="@{/js/api-service.js}"></script>
 <script th:src="@{/js/shop-seller-integration.js}"></script>
+<script th:src="@{/js/pages/shop-voucher-fetch.js}"></script>
+<script th:src="@{/js/pages/shop-product-fetch.js}"></script>
 </body>
 </html>

@@ -475,6 +475,9 @@
                 </div>
                 <div class="flex gap-2">
                   <button
+                    id="chat-now-btn"
+                    type="button"
+                    th:attr="data-product-id=${book.id}, data-seller-id=${book.seller != null ? book.seller.id : ''}, data-product-title=${book.title}, data-product-image=${book.imageUrl}, data-product-price=${book.price}"
                     class="flex-1 border border-brand-brown text-brand-brown text-[12px] font-bold py-2 px-4 rounded-full hover:bg-brand-brown/5 transition shadow-sm uppercase flex items-center justify-center gap-2"
                   >
                     <svg
@@ -884,7 +887,6 @@
                 type="button"
                 th:disabled="${book.stockQuantity <= 0}"
                 th:classappend="${book.stockQuantity <= 0 ? 'bg-gray-400 text-gray-100 cursor-not-allowed' : 'bg-brand-orange text-white hover:bg-orange-700'}"
-                th:attr="data-book-id=${book.id}"
                 class="flex-1 text-lg font-bold py-3.5 px-6 rounded-lg transition shadow-md shadow-brand-orange/30"
               >
                 Mua Ngay
@@ -1432,103 +1434,131 @@
       </section>
 
       <footer th:replace="~{fragments/footer :: footer}"></footer>
-      <script src="/js/api-service.js"></script>
-      <script src="/js/chat-service.js"></script>
-      <script src="/js/chat-ui.js"></script>
-      <script src="/js/pages/details-page.js"></script>
+    </main>
 
-      <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-          // Initialize chat popup
-          if (typeof ChatUI !== 'undefined') {
-              ChatUI.initBuyerPopup();
-          }
+    <script src="/js/api-service.js"></script>
+    <script src="/js/chat-service.js"></script>
+    <script src="/js/chat-ui.js"></script>
+    <script src="/js/pages/details-page.js"></script>
 
-          const chatBtn = document.querySelector('button:contains("Chat Ngay")') || [...document.querySelectorAll('button')].find(b => b.textContent.includes('Chat Ngay'));
-          if (chatBtn) {
-              chatBtn.addEventListener('click', async () => {
-                  const auth = typeof ApiService !== 'undefined' ? ApiService.getAuth() : null;
-                  if (!auth || !auth.userId || (auth.role !== 'BUYER' && auth.role !== 'ROLE_BUYER')) {
-                      alert('Vui lòng đăng nhập với tư cách Người Mua để chat với Shop.');
-                      window.location.href = '/main/auth';
-                      return;
-                  }
-                  
-                  const bookId = parseInt('[[${book.id}]]');
-                  const sellerId = parseInt('[[${book.seller.id}]]');
-                  const bookTitle = '[[${book.title}]]';
-                  const bookImage = '[[${book.imageUrl}]]';
-                  const bookPrice = parseFloat('[[${book.price}]]');
-                  
-                  try {
-                      chatBtn.innerHTML = 'Đang mở...';
-                      chatBtn.disabled = true;
-                      
-                      // Tạo hoặc lấy lại Chat Room với người bán
-                      const result = await ChatService.createRoom(bookId, sellerId, bookTitle, bookImage, bookPrice);
-                      
-                      // Mở cửa sổ chat Popup của UI
-                      if (result && result.data && result.data.chatId && typeof ChatUI !== 'undefined') {
-                          ChatUI.openBuyerChat(result.data.chatId);
-                      } else {
-                          alert('Lỗi: Không nhận được thông tin phòng chat.');
-                      }
-                  } catch (error) {
-                      console.error('Lỗi khởi tạo chat:', error);
-                      alert('Không thể kết nối với người bán. Vui lòng thử lại sau.');
-                  } finally {
-                      chatBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01M8 8h.01M12 8h.01M16 8h.01M6 8h.01M6 12h.01M6 16h.01M18 8h.01M18 12h.01M18 16h.01"></path></svg>Chat Ngay';
-                      chatBtn.disabled = false;
-                  }
-              });
-          }
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    // Inject authentication data from server into localStorage for chat-service.js
+    var serverAuthUserId = /*[[${authUserId}]]*/ null;
+    var serverAuthRole = /*[[${authUserRole}]]*/ null;
+    var serverAuthToken = /*[[${authAccessToken}]]*/ null;
 
-          // --- LOGIC 1: NÚT TĂNG/GIẢM SỐ LƯỢNG ---
-          const qtyInput = document.getElementById('detail-qty-input');
-          const btnIncrease = document.getElementById('btn-increase-qty');
-          const btnDecrease = document.getElementById('btn-decrease-qty');
-          const addToCartBtn = document.getElementById('detail-add-to-cart-btn');
-          const buyNowBtn = document.getElementById('detail-buy-now-btn');
+    if (serverAuthUserId && !localStorage.getItem('userId')) {
+        localStorage.setItem('userId', serverAuthUserId);
+    }
+    if (serverAuthRole && !localStorage.getItem('userRole')) {
+        localStorage.setItem('userRole', serverAuthRole);
+    }
+    if (serverAuthToken && !localStorage.getItem('accessToken')) {
+        localStorage.setItem('accessToken', serverAuthToken);
+    }
+    /*]]>*/
+    </script>
 
-          // Lấy kho tối đa (Dùng Thymeleaf nhúng thẳng vào JS, nếu null thì mặc định 999)
-          const maxStock = parseInt('[[${book.stockQuantity}]]', 10) || 999;
-          const currentBookId = addToCartBtn ? addToCartBtn.dataset.bookId : null;
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // --- LOGIC 1: NÚT TĂNG/GIẢM SỐ LƯỢNG ---
+        const qtyInput = document.getElementById('detail-qty-input');
+        const btnIncrease = document.getElementById('btn-increase-qty');
+        const btnDecrease = document.getElementById('btn-decrease-qty');
+        const addToCartBtn = document.getElementById('detail-add-to-cart-btn');
+        const buyNowBtn = document.getElementById('detail-buy-now-btn');
 
-          if (btnIncrease && btnDecrease && qtyInput) {
+        // Lấy kho tối đa (Dùng Thymeleaf nhúng thẳng vào JS, nếu null thì mặc định 999)
+        const maxStock = parseInt('[[${book.stockQuantity}]]', 10) || 999;
+        const currentBookId = addToCartBtn ? addToCartBtn.dataset.bookId : null;
+
+        if (btnIncrease && btnDecrease && qtyInput) {
             btnIncrease.addEventListener('click', () => {
-              let currentVal = parseInt(qtyInput.value, 10);
-              if (currentVal < maxStock) {
-                qtyInput.value = currentVal + 1;
-              } else {
-                alert('Số lượng vượt quá tồn kho hiện tại!');
-              }
+                let currentVal = parseInt(qtyInput.value, 10);
+                if (currentVal < maxStock) {
+                    qtyInput.value = currentVal + 1;
+                } else {
+                    alert('Số lượng vượt quá tồn kho hiện tại!');
+                }
             });
 
             btnDecrease.addEventListener('click', () => {
-              let currentVal = parseInt(qtyInput.value, 10);
-              if (currentVal > 1) {
-                qtyInput.value = currentVal - 1;
-              }
+                let currentVal = parseInt(qtyInput.value, 10);
+                if (currentVal > 1) {
+                    qtyInput.value = currentVal - 1;
+                }
             });
-          }
+        }
 
-          // --- LOGIC 2: GỌI API LẤY SÁCH MUA KÈM ---
-          if (currentBookId) {
+        // --- LOGIC 2: GỌI API LẤY SÁCH MUA KÈM ---
+        if (currentBookId) {
             loadBoughtTogetherRecommendations(currentBookId);
-          }
+        }
 
-          // --- (GIỮ NGUYÊN LOGIC BẤM MUA NGAY/THÊM VÀO GIỎ CỦA BẠN Ở ĐÂY) ---
-          // Ví dụ: buyNowBtn.addEventListener('click', async () => { ... })
-        });
+        // --- LOGIC 3: CHAT - KHỞI TẠO POPUP VÀ XỬ LÝ NÚT CHAT NGAY ---
+        if (window.ChatUI && typeof window.ChatUI.initBuyerPopup === 'function') {
+            window.ChatUI.initBuyerPopup();
+        }
 
-        // HÀM RENDER SÁCH GỢI Ý (UI CỰC PREMIUM)
-        async function loadBoughtTogetherRecommendations(bookId) {
-          const loadingEl = document.getElementById('bought-together-loading');
-          const containerEl = document.getElementById('bought-together-container');
+        // Xử lý sự kiện click nút "Chat Ngay"
+        const chatNowBtn = document.getElementById('chat-now-btn');
+        if (chatNowBtn) {
+            chatNowBtn.addEventListener('click', async () => {
+                // Kiểm tra đăng nhập
+                const { userId } = window.ChatService.getAuth();
+                if (!userId) {
+                    window.location.href = '/main/auth';
+                    return;
+                }
 
-          if (!loadingEl || !containerEl) return;
+                const productId = chatNowBtn.dataset.productId;
+                const sellerId = chatNowBtn.dataset.sellerId;
+                const productTitle = chatNowBtn.dataset.productTitle;
+                const productImage = chatNowBtn.dataset.productImage;
+                const productPrice = parseFloat(chatNowBtn.dataset.productPrice || '0');
 
-          try {
+                if (!sellerId) {
+                    alert('Không tìm thấy thông tin người bán');
+                    return;
+                }
+
+                try {
+                    // Tạo hoặc lấy room chat
+                    const result = await window.ChatService.createRoom(
+                        productId, sellerId, productTitle, productImage, productPrice
+                    );
+
+                    if (result.success && result.data) {
+                        const chatId = result.data.chatId || result.data;
+                        // Mở popup chat với room này
+                        if (window.ChatUI && typeof window.ChatUI.openBuyerChat === 'function') {
+                            await window.ChatUI.openBuyerChat(chatId);
+                        }
+                    } else {
+                        alert('Không thể tạo phòng chat');
+                    }
+                } catch (err) {
+                    console.error('Chat error:', err);
+                    alert('Lỗi kết nối chat: ' + err.message);
+                }
+            });
+        }
+
+        // --- LOGIC 4: KHỞI TẠO ICON CHAT TOÀN CỤC ---
+        if (window.ChatUI && typeof window.ChatUI.initGlobalChatIcon === 'function') {
+            window.ChatUI.initGlobalChatIcon();
+        }
+    });
+
+    // HÀM RENDER SÁCH GỢI Ý (UI CỰC PREMIUM)
+    async function loadBoughtTogetherRecommendations(bookId) {
+        const loadingEl = document.getElementById('bought-together-loading');
+        const containerEl = document.getElementById('bought-together-container');
+
+        if (!loadingEl || !containerEl) return;
+
+        try {
             // Lấy data từ Lambda Architecture (Redis + DB)
             const books = await ApiService.Recommendation.getBoughtTogether(bookId);
 
@@ -1536,17 +1566,17 @@
             containerEl.classList.remove('hidden');
 
             if (!books || books.length === 0) {
-              containerEl.innerHTML = `<p class="text-gray-500 italic col-span-full">Chưa có gợi ý mua kèm cho sách này.</p>`;
-              return;
+                containerEl.innerHTML = '<p class="text-gray-500 italic col-span-full">Chưa có gợi ý mua kèm cho sách này.</p>';
+                return;
             }
 
             let htmlString = '';
             books.forEach(book => {
-              // Đảm bảo không lỗi hiển thị tiền
-              const price = typeof ApiService.formatVND === 'function' ? ApiService.formatVND(book.price) : `${book.price.toLocaleString('vi-VN')} đ`;
-              const imgUrl = book.imageUrl || '/images/default-book.png';
+                // Đảm bảo không lỗi hiển thị tiền
+                const price = typeof ApiService.formatVND === 'function' ? ApiService.formatVND(book.price) : `${book.price.toLocaleString('vi-VN')} đ`;
+                const imgUrl = book.imageUrl || '/images/default-book.png';
 
-              htmlString += `
+                htmlString += `
                     <div class="bg-white border-2 border-brand-accent/30 rounded-2xl overflow-hidden hover:border-brand-orange hover:shadow-xl transition-all duration-300 group flex flex-col h-full cursor-pointer" onclick="window.location.href='/book/${book.id}'">
                         <div class="relative overflow-hidden aspect-[3/4] bg-gray-50">
                             <img src="${imgUrl}" alt="${book.title}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-in-out">
@@ -1567,14 +1597,12 @@
 
             containerEl.innerHTML = htmlString;
 
-          } catch (error) {
+        } catch (error) {
             console.error("Lỗi tải gợi ý mua kèm:", error);
             loadingEl.classList.add('hidden');
-          }
         }
-      </script>
-    </main>
-
+    }
+    </script>
 
   </body>
 </html>

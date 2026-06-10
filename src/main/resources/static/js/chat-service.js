@@ -14,17 +14,22 @@ const ChatService = (() => {
     // 1. UTILITY
     // ==========================================
 
-    const getAuth = () => ({
-        userId: localStorage.getItem('userId'),
-        token: localStorage.getItem('accessToken'),
-        role: localStorage.getItem('userRole')
-    });
+    const getAuth = () => {
+        const userIdRaw = localStorage.getItem('userId');
+        // Ép kiểu userId thành Number để đồng nhất với backend Long
+        const userId = userIdRaw ? Number(userIdRaw) : null;
+        return {
+            userId: userId,
+            token: localStorage.getItem('accessToken'),
+            role: localStorage.getItem('userRole')
+        };
+    };
 
     const getHeaders = () => {
         const { userId, token } = getAuth();
         const headers = {
             'Content-Type': 'application/json',
-            'X-User-Id': userId || ''
+            'X-User-Id': userId !== null ? String(userId) : ''
         };
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
@@ -52,11 +57,11 @@ const ChatService = (() => {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({
-                productId,
-                sellerId,
+                productId: Number(productId),
+                sellerId: Number(sellerId),
                 productTitle,
                 productImage,
-                productPrice
+                productPrice: Number(productPrice)
             })
         });
         return handleResponse(response);
@@ -142,7 +147,61 @@ const ChatService = (() => {
     };
 
     // ==========================================
-    // 6. TIME FORMATTING
+    // 6. FIREBASE REALTIME LISTENER
+    // ==========================================
+
+    /**
+     * Lắng nghe tin nhắn mới realtime từ Firebase
+     * @param {string} chatId - ID của chat room
+     * @param {function} onMessage - Callback khi có tin nhắn mới (nhận message object)
+     * @param {function} onError - Callback khi có lỗi
+     * @returns {function|null} - Hàm unsubscribe, hoặc null nếu Firebase chưa sẵn sàng
+     */
+    const listenMessages = (chatId, onMessage, onError) => {
+        // Kiểm tra Firebase SDK đã load chưa
+        if (typeof firebase === 'undefined' || !firebase.firestore) {
+            console.warn('⚠️ Firebase SDK not loaded, falling back to polling');
+            return null;
+        }
+
+        try {
+            const db = firebase.firestore();
+            const settings = { timestampsInSnapshots: true };
+            db.settings(settings);
+
+            const unsubscribe = db.collection('chats')
+                .doc(chatId)
+                .collection('messages')
+                .orderBy('createdAt', 'asc')
+                .onSnapshot((snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            const data = change.doc.data();
+                            const msg = {
+                                messageId: change.doc.id,
+                                senderId: data.senderId,
+                                senderName: data.senderName || '',
+                                content: data.content || '',
+                                createdAt: data.createdAt || '',
+                                readAt: data.readAt || null
+                            };
+                            onMessage(msg);
+                        }
+                    });
+                }, (error) => {
+                    console.error('❌ Firebase listener error:', error);
+                    if (onError) onError(error);
+                });
+
+            return unsubscribe;
+        } catch (e) {
+            console.warn('⚠️ Firebase not available:', e.message);
+            return null;
+        }
+    };
+
+    // ==========================================
+    // 7. TIME FORMATTING
     // ==========================================
 
     /**
@@ -182,6 +241,7 @@ const ChatService = (() => {
         sendMessage,
         markAsRead,
         getUnreadCount,
+        listenMessages,
         formatTime
     };
 })();

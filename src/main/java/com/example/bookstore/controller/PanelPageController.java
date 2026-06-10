@@ -4,7 +4,6 @@ package com.example.bookstore.controller;
 import com.example.bookstore.config.JwtUtil;
 import com.example.bookstore.model.Book;
 import com.example.bookstore.model.Category;
-import com.example.bookstore.model.Coupon;
 import com.example.bookstore.model.SellerShop;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.ApprovalStatus;
@@ -89,10 +88,9 @@ public class PanelPageController {
                 model.addAttribute("shop", shop);
 
                 if (shop != null) {
-                    // Load books for this shop
-                    List<Book> books = bookRepository.findBySeller(shop.getSeller());
-                    model.addAttribute("books", books);
-                    model.addAttribute("bookCount", books.size());
+                    // Đếm tổng số sản phẩm của shop (dùng count query để tránh load toàn bộ)
+                    long bookCount = bookRepository.countBySellerId(shop.getSeller().getId());
+                    model.addAttribute("bookCount", bookCount);
 
                     // Calculate join duration
                     String joinDuration = "Mới";
@@ -107,14 +105,10 @@ public class PanelPageController {
                     }
                     model.addAttribute("joinDuration", joinDuration);
 
-                    // Load vouchers for this seller's shop
-                    List<Coupon> vouchers = couponRepository.findAllValidVouchersForSeller(shop.getSeller().getId());
-                    model.addAttribute("vouchers", vouchers);
                 } else {
                     model.addAttribute("books", List.of());
                     model.addAttribute("bookCount", 0);
                     model.addAttribute("joinDuration", "Mới");
-                    model.addAttribute("vouchers", List.of());
                 }
 
                 // Load categories

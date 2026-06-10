@@ -1431,59 +1431,57 @@
       </section>
 
       <footer th:replace="~{fragments/footer :: footer}"></footer>
-    </main>
+      <script src="/js/api-service.js"></script>
+      <script src="/js/pages/details-page.js"></script>
 
-    <script src="/js/api-service.js"></script>
-    <script src="/js/pages/details-page.js"></script>
+      <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+          // --- LOGIC 1: NÚT TĂNG/GIẢM SỐ LƯỢNG ---
+          const qtyInput = document.getElementById('detail-qty-input');
+          const btnIncrease = document.getElementById('btn-increase-qty');
+          const btnDecrease = document.getElementById('btn-decrease-qty');
+          const addToCartBtn = document.getElementById('detail-add-to-cart-btn');
+          const buyNowBtn = document.getElementById('detail-buy-now-btn');
 
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        // --- LOGIC 1: NÚT TĂNG/GIẢM SỐ LƯỢNG ---
-        const qtyInput = document.getElementById('detail-qty-input');
-        const btnIncrease = document.getElementById('btn-increase-qty');
-        const btnDecrease = document.getElementById('btn-decrease-qty');
-        const addToCartBtn = document.getElementById('detail-add-to-cart-btn');
-        const buyNowBtn = document.getElementById('detail-buy-now-btn');
-        
-        // Lấy kho tối đa (Dùng Thymeleaf nhúng thẳng vào JS, nếu null thì mặc định 999)
-        const maxStock = parseInt('[[${book.stockQuantity}]]', 10) || 999;
-        const currentBookId = addToCartBtn ? addToCartBtn.dataset.bookId : null;
+          // Lấy kho tối đa (Dùng Thymeleaf nhúng thẳng vào JS, nếu null thì mặc định 999)
+          const maxStock = parseInt('[[${book.stockQuantity}]]', 10) || 999;
+          const currentBookId = addToCartBtn ? addToCartBtn.dataset.bookId : null;
 
-        if (btnIncrease && btnDecrease && qtyInput) {
+          if (btnIncrease && btnDecrease && qtyInput) {
             btnIncrease.addEventListener('click', () => {
-                let currentVal = parseInt(qtyInput.value, 10);
-                if (currentVal < maxStock) {
-                    qtyInput.value = currentVal + 1;
-                } else {
-                    alert('Số lượng vượt quá tồn kho hiện tại!');
-                }
+              let currentVal = parseInt(qtyInput.value, 10);
+              if (currentVal < maxStock) {
+                qtyInput.value = currentVal + 1;
+              } else {
+                alert('Số lượng vượt quá tồn kho hiện tại!');
+              }
             });
 
             btnDecrease.addEventListener('click', () => {
-                let currentVal = parseInt(qtyInput.value, 10);
-                if (currentVal > 1) {
-                    qtyInput.value = currentVal - 1;
-                }
+              let currentVal = parseInt(qtyInput.value, 10);
+              if (currentVal > 1) {
+                qtyInput.value = currentVal - 1;
+              }
             });
-        }
+          }
 
-        // --- LOGIC 2: GỌI API LẤY SÁCH MUA KÈM ---
-        if (currentBookId) {
+          // --- LOGIC 2: GỌI API LẤY SÁCH MUA KÈM ---
+          if (currentBookId) {
             loadBoughtTogetherRecommendations(currentBookId);
-        }
+          }
 
-        // --- (GIỮ NGUYÊN LOGIC BẤM MUA NGAY/THÊM VÀO GIỎ CỦA BẠN Ở ĐÂY) ---
-        // Ví dụ: buyNowBtn.addEventListener('click', async () => { ... })
-    });
+          // --- (GIỮ NGUYÊN LOGIC BẤM MUA NGAY/THÊM VÀO GIỎ CỦA BẠN Ở ĐÂY) ---
+          // Ví dụ: buyNowBtn.addEventListener('click', async () => { ... })
+        });
 
-    // HÀM RENDER SÁCH GỢI Ý (UI CỰC PREMIUM)
-    async function loadBoughtTogetherRecommendations(bookId) {
-        const loadingEl = document.getElementById('bought-together-loading');
-        const containerEl = document.getElementById('bought-together-container');
+        // HÀM RENDER SÁCH GỢI Ý (UI CỰC PREMIUM)
+        async function loadBoughtTogetherRecommendations(bookId) {
+          const loadingEl = document.getElementById('bought-together-loading');
+          const containerEl = document.getElementById('bought-together-container');
 
-        if (!loadingEl || !containerEl) return;
+          if (!loadingEl || !containerEl) return;
 
-        try {
+          try {
             // Lấy data từ Lambda Architecture (Redis + DB)
             const books = await ApiService.Recommendation.getBoughtTogether(bookId);
 
@@ -1491,17 +1489,17 @@
             containerEl.classList.remove('hidden');
 
             if (!books || books.length === 0) {
-                containerEl.innerHTML = `<p class="text-gray-500 italic col-span-full">Chưa có gợi ý mua kèm cho sách này.</p>`;
-                return;
+              containerEl.innerHTML = `<p class="text-gray-500 italic col-span-full">Chưa có gợi ý mua kèm cho sách này.</p>`;
+              return;
             }
 
             let htmlString = '';
             books.forEach(book => {
-                // Đảm bảo không lỗi hiển thị tiền
-                const price = typeof ApiService.formatVND === 'function' ? ApiService.formatVND(book.price) : `${book.price.toLocaleString('vi-VN')} đ`;
-                const imgUrl = book.imageUrl || '/images/default-book.png';
-                
-                htmlString += `
+              // Đảm bảo không lỗi hiển thị tiền
+              const price = typeof ApiService.formatVND === 'function' ? ApiService.formatVND(book.price) : `${book.price.toLocaleString('vi-VN')} đ`;
+              const imgUrl = book.imageUrl || '/images/default-book.png';
+
+              htmlString += `
                     <div class="bg-white border-2 border-brand-accent/30 rounded-2xl overflow-hidden hover:border-brand-orange hover:shadow-xl transition-all duration-300 group flex flex-col h-full cursor-pointer" onclick="window.location.href='/book/${book.id}'">
                         <div class="relative overflow-hidden aspect-[3/4] bg-gray-50">
                             <img src="${imgUrl}" alt="${book.title}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-in-out">
@@ -1522,11 +1520,14 @@
 
             containerEl.innerHTML = htmlString;
 
-        } catch (error) {
+          } catch (error) {
             console.error("Lỗi tải gợi ý mua kèm:", error);
             loadingEl.classList.add('hidden');
+          }
         }
-    }
-</script>
+      </script>
+    </main>
+
+
   </body>
 </html>

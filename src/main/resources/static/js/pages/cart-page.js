@@ -36,32 +36,36 @@
         return Array.from(grouped.values());
     };
 
+// TÌM VÀ THAY THẾ TOÀN BỘ HÀM NÀY:
     const renderCart = (cart) => {
-        const items = Array.isArray(cart?.items) ? cart.items : [];
-        const grouped = buildGrouped(items);
-
-        if (fallback1) fallback1.classList.add('hidden');
-        if (fallback2) fallback2.classList.add('hidden');
-
-        if (items.length === 0) {
-            liveContainer.innerHTML = `
-                <div class="bg-white border border-brand-accent rounded-xl shadow-sm p-8 text-center text-gray-500 font-semibold">
-                    Gio hang cua ban dang trong. Hay quay lai trang san pham de mua sam.
-                </div>
-            `;
+        // 1. Xử lý trường hợp giỏ hàng trống
+        if (!cart || !cart.items || cart.items.length === 0) {
+            liveContainer.innerHTML = '';
+            const emptyState = document.getElementById('cart-empty-state');
+            if (emptyState) emptyState.classList.remove('hidden');
             return;
         }
+
+        // 2. Ẩn thông báo trống nếu có hàng
+        const emptyState = document.getElementById('cart-empty-state');
+        if (emptyState) emptyState.classList.add('hidden');
+
+        // 3. Gom nhóm sản phẩm và vẽ HTML chứa ẢNH SẢN PHẨM
+        const grouped = buildGrouped(cart.items);
 
         liveContainer.innerHTML = grouped.map((shop) => {
             const rows = shop.rows.map((item) => {
                 const currentItemId = item.id || item.itemId;
                 return `
-                    <div class="p-6 flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-0 border-b last:border-b-0 border-gray-100 hover:bg-gray-50/50 transition-colors" data-item-id="${item.itemId}">
+                    <div class="p-6 flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-0 border-b last:border-b-0 border-gray-100 hover:bg-gray-50/50 transition-colors" data-item-id="${currentItemId}">
                         <div class="flex items-start gap-4 w-full md:w-5/12">
                             <div class="mt-4"><input type="checkbox" class="cart-checkbox row-checkbox" checked></div>
-                            <div class="w-20 aspect-3/4 bg-[#2c3e50] border-2 border-white shadow-sm shrink-0 flex items-center justify-center text-white text-center font-bold text-[8px] uppercase rounded-md overflow-hidden">
-                                BOOK
-                            </div>
+                            
+                            ${item.imageUrl
+                    ? `<img src="${item.imageUrl}" alt="Cover" class="w-20 aspect-[3/4] object-cover border-2 border-white rounded-md shadow-sm shrink-0">`
+                    : `<div class="w-20 aspect-[3/4] bg-[#2c3e50] border-2 border-white shadow-sm shrink-0 flex items-center justify-center text-white text-center font-bold text-[8px] uppercase rounded-md overflow-hidden">BOOK</div>`
+                }
+                            
                             <div class="flex flex-col justify-center gap-1.5 mt-1">
                                 <a href="/book/${item.bookId}" class="font-bold text-brand-dark text-sm leading-relaxed line-clamp-2 hover:text-brand-orange transition-colors">${item.title || 'Không có tên'}</a>
                                 <span class="text-xs text-gray-500 font-medium">Tác giả: ${item.author || 'Đang cập nhật'}</span>
@@ -74,9 +78,9 @@
                         <div class="w-full md:w-2/12 flex justify-between md:justify-center items-center ml-8 md:ml-0">
                             <span class="md:hidden text-gray-500 text-sm font-medium">Số lượng:</span>
                             <div class="flex items-center border border-gray-200 rounded-md overflow-hidden shadow-sm bg-white">
-                                <button type="button" data-action="decrease" data-item-id="${item.itemId}" data-current-qty="${item.quantity}" class="w-8 h-8 text-gray-500 hover:bg-gray-100 transition-colors font-bold outline-none border-r border-gray-200 flex items-center justify-center">-</button>
-                                <input type="number" min="1" value="${item.quantity}" data-item-id="${item.itemId}" class="w-11 h-8 text-center text-sm font-bold text-brand-dark outline-none appearance-none cart-qty-input">
-                                <button type="button" data-action="increase" data-item-id="${item.itemId}" data-current-qty="${item.quantity}" class="w-8 h-8 text-gray-500 hover:bg-gray-100 transition-colors font-bold outline-none border-l border-gray-200 flex items-center justify-center">+</button>
+                                <button type="button" data-action="decrease" data-item-id="${currentItemId}" data-current-qty="${item.quantity}" class="w-8 h-8 text-gray-500 hover:bg-gray-100 transition-colors font-bold outline-none border-r border-gray-200 flex items-center justify-center">-</button>
+                                <input type="number" min="1" value="${item.quantity}" data-item-id="${currentItemId}" class="w-11 h-8 text-center text-sm font-bold text-brand-dark outline-none appearance-none cart-qty-input">
+                                <button type="button" data-action="increase" data-item-id="${currentItemId}" data-current-qty="${item.quantity}" class="w-8 h-8 text-gray-500 hover:bg-gray-100 transition-colors font-bold outline-none border-l border-gray-200 flex items-center justify-center">+</button>
                             </div>
                         </div>
                         <div class="w-full md:w-2/12 flex justify-between md:justify-center items-center ml-8 md:ml-0">
@@ -84,7 +88,7 @@
                             <div class="font-black text-brand-orange text-base">${formatVnd(item.lineTotal)}</div>
                         </div>
                         <div class="w-full md:w-1/12 flex justify-end md:justify-center items-center">
-                            <button type="button" data-action="remove" data-item-id="${item.itemId}" class="text-gray-400 hover:text-red-500 transition-colors p-2 bg-white rounded-full hover:bg-red-50" title="Xóa sản phẩm">
+                            <button type="button" data-action="remove" data-item-id="${currentItemId}" class="text-gray-400 hover:text-red-500 transition-colors p-2 bg-white rounded-full hover:bg-red-50" title="Xóa sản phẩm">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </div>
@@ -101,7 +105,8 @@
                     ${rows}
                 </div>
             `;
-        }).join('');    };
+        }).join('');
+    };
 
     const updateSummary = (cart) => {
         const totalItems = Number(cart?.totalItems || 0);

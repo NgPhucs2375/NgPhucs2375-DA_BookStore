@@ -78,11 +78,12 @@
     const renderItems = (cart) => {
         const items = Array.isArray(cart?.items) ? cart.items : [];
         if (items.length === 0) {
-            itemsEl.innerHTML = `<div class="text-center text-gray-500 font-semibold py-6">Giỏ hàng rỗng.</div>`;
+            itemsEl.innerHTML = `<div class="text-center text-slate-500 font-medium py-6">Giỏ hàng rỗng.</div>`;
             if (sellerBreakdownEl) sellerBreakdownEl.innerHTML = '';
             return;
         }
 
+        // Gom nhóm sản phẩm theo người bán
         const grouped = new Map();
         items.forEach((it) => {
             const key = it.sellerId || 'unknown';
@@ -90,30 +91,48 @@
             grouped.get(key).rows.push(it);
         });
 
+        // Vẽ tóm tắt từng shop
         if (sellerBreakdownEl) {
             sellerBreakdownEl.innerHTML = Array.from(grouped.values()).map((shop) => {
                 const subtotal = shop.rows.reduce((s, r) => s + Number(r.lineTotal || 0), 0);
-                return `<div class="border border-brand-accent/40 rounded px-3 py-2 bg-white">
-                    <div class="flex justify-between items-center text-sm font-bold mb-1"><span>${shop.sellerName}</span><span>${formatVnd(subtotal)}</span></div>
+                return `<div class="border border-slate-200 rounded-lg px-3 py-2 bg-white shadow-sm">
+                    <div class="flex justify-between items-center text-sm font-bold mb-1"><span class="text-slate-800">${shop.sellerName}</span><span class="text-[#E76F51]">${formatVnd(subtotal)}</span></div>
                     </div>`;
             }).join('');
         }
 
+        // Vẽ danh sách sản phẩm có ẢNH BÌA
         itemsEl.innerHTML = Array.from(grouped.values()).map((shop) => {
             const rows = shop.rows.map((item) => `
-                <div class="flex gap-4 mb-4">
-                    <div class="relative w-16 aspect-[3/4] bg-[#2c3e50] border border-gray-200 rounded shadow-sm shrink-0 flex items-center justify-center">
-                        <span class="text-white font-bold text-[7px] text-center px-1">BOOK</span>
-                        <span class="absolute -top-2 -right-2 bg-brand-orange text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">x${item.quantity}</span>
+                <div class="flex items-center gap-4 py-4 border-b last:border-b-0 border-slate-100 hover:bg-slate-50/50 rounded-lg px-2 -mx-2 transition">
+                    
+                    <div class="relative shrink-0">
+                        ${item.imageUrl
+                ? `<img src="${item.imageUrl}" alt="${item.title}" class="w-16 aspect-[3/4] object-cover rounded-md border border-slate-200 shadow-sm">`
+                : `<div class="w-16 aspect-[3/4] bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center text-slate-400 text-xs font-bold uppercase tracking-widest p-1 overflow-hidden shadow-sm">BOOK</div>`
+            }
+                        <span class="absolute -top-2 -right-2 bg-[#E76F51] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-md">x${item.quantity}</span>
                     </div>
-                    <div class="flex flex-col grow justify-center">
-                        <h4 class="font-bold text-brand-dark text-xs leading-snug mb-1 line-clamp-2">${item.title || 'Không rõ'}</h4>
-                        <p class="text-[10px] text-gray-500 font-medium mb-1">Tác giả: ${item.author || '-'}</p>
-                        <div class="font-bold text-brand-dark text-sm">${formatVnd(item.lineTotal)}</div>
+
+                    <div class="flex-grow flex flex-col gap-1">
+                        <h4 class="text-sm font-semibold text-slate-950 line-clamp-2 leading-relaxed hover:text-[#E76F51] transition">
+                            ${item.title || 'Sách không có tên'}
+                        </h4>
+                        <p class="text-[10px] text-slate-500 font-medium mb-1 truncate">Tác giả: ${item.author || '-'}</p>
+                        
+                        <div class="flex justify-between items-end mt-1">
+                            <span class="text-sm font-bold text-[#E76F51]">
+                                ${formatVnd(item.lineTotal)}
+                            </span>
+                        </div>
                     </div>
                 </div>
             `).join('');
-            return `<div class="mb-4"><div class="font-bold text-sm mb-2">${shop.sellerName}</div>${rows}</div>`;
+
+            return `<div class="mb-6 last:mb-0">
+                        <div class="font-bold text-xs uppercase tracking-widest text-slate-800 mb-3 border-l-2 border-[#E76F51] pl-2">${shop.sellerName}</div>
+                        ${rows}
+                    </div>`;
         }).join('');
     };
 

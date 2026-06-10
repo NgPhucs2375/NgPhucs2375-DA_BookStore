@@ -160,6 +160,7 @@ public class CartService {
                         .lineTotal(lineTotal)
                         .sellerId(book.getSeller() == null ? null : book.getSeller().getId())
                         .sellerName(sellerName)
+                        .imageUrl(book.getImageUrl())
                         .build());
             }
         }

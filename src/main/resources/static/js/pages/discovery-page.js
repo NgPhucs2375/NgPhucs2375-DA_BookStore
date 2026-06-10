@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+const initDiscoveryPage = () => {
     if (!window.ApiService) {
         console.error('ApiService not available');
         return;
@@ -486,5 +486,9 @@ document.addEventListener('DOMContentLoaded', () => {
         await ApiService.Wishlist.bootstrap().catch(() => {});
         await loadDiscoveryHighlights();
         await fetchBooks(currentPage);
-    })();
-});
+    })();};
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDiscoveryPage);
+} else {
+    initDiscoveryPage();
+}

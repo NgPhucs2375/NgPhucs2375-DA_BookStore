@@ -884,6 +884,7 @@
                 type="button"
                 th:disabled="${book.stockQuantity <= 0}"
                 th:classappend="${book.stockQuantity <= 0 ? 'bg-gray-400 text-gray-100 cursor-not-allowed' : 'bg-brand-orange text-white hover:bg-orange-700'}"
+                th:attr="data-book-id=${book.id}"
                 class="flex-1 text-lg font-bold py-3.5 px-6 rounded-lg transition shadow-md shadow-brand-orange/30"
               >
                 Mua Ngay
@@ -1432,10 +1433,56 @@
 
       <footer th:replace="~{fragments/footer :: footer}"></footer>
       <script src="/js/api-service.js"></script>
+      <script src="/js/chat-service.js"></script>
+      <script src="/js/chat-ui.js"></script>
       <script src="/js/pages/details-page.js"></script>
 
       <script>
         document.addEventListener('DOMContentLoaded', async () => {
+          // Initialize chat popup
+          if (typeof ChatUI !== 'undefined') {
+              ChatUI.initBuyerPopup();
+          }
+
+          const chatBtn = document.querySelector('button:contains("Chat Ngay")') || [...document.querySelectorAll('button')].find(b => b.textContent.includes('Chat Ngay'));
+          if (chatBtn) {
+              chatBtn.addEventListener('click', async () => {
+                  const auth = typeof ApiService !== 'undefined' ? ApiService.getAuth() : null;
+                  if (!auth || !auth.userId || (auth.role !== 'BUYER' && auth.role !== 'ROLE_BUYER')) {
+                      alert('Vui lòng đăng nhập với tư cách Người Mua để chat với Shop.');
+                      window.location.href = '/main/auth';
+                      return;
+                  }
+                  
+                  const bookId = parseInt('[[${book.id}]]');
+                  const sellerId = parseInt('[[${book.seller.id}]]');
+                  const bookTitle = '[[${book.title}]]';
+                  const bookImage = '[[${book.imageUrl}]]';
+                  const bookPrice = parseFloat('[[${book.price}]]');
+                  
+                  try {
+                      chatBtn.innerHTML = 'Đang mở...';
+                      chatBtn.disabled = true;
+                      
+                      // Tạo hoặc lấy lại Chat Room với người bán
+                      const result = await ChatService.createRoom(bookId, sellerId, bookTitle, bookImage, bookPrice);
+                      
+                      // Mở cửa sổ chat Popup của UI
+                      if (result && result.data && result.data.chatId && typeof ChatUI !== 'undefined') {
+                          ChatUI.openBuyerChat(result.data.chatId);
+                      } else {
+                          alert('Lỗi: Không nhận được thông tin phòng chat.');
+                      }
+                  } catch (error) {
+                      console.error('Lỗi khởi tạo chat:', error);
+                      alert('Không thể kết nối với người bán. Vui lòng thử lại sau.');
+                  } finally {
+                      chatBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01M8 8h.01M12 8h.01M16 8h.01M6 8h.01M6 12h.01M6 16h.01M18 8h.01M18 12h.01M18 16h.01"></path></svg>Chat Ngay';
+                      chatBtn.disabled = false;
+                  }
+              });
+          }
+
           // --- LOGIC 1: NÚT TĂNG/GIẢM SỐ LƯỢNG ---
           const qtyInput = document.getElementById('detail-qty-input');
           const btnIncrease = document.getElementById('btn-increase-qty');

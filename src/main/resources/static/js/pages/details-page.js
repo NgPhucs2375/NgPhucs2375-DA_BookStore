@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ensureBuyer = (message) => {
         const { userId, role } = ApiService.getAuth();
-        if (!userId || role !== 'BUYER') {
+        if (!userId || !role || !role.includes('BUYER')) {
             alert(message);
             window.location.href = '/main/auth';
             return null;
@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { userId, role } = ApiService.getAuth();
 
         // Only buyers may see and submit the review form
-        if (!userId || role !== 'BUYER') {
+        if (!userId || !role || !role.includes('BUYER')) {
             // Show a lightweight CTA prompting login (instead of the form)
             formContainer.classList.remove('hidden');
             formContainer.innerHTML = `

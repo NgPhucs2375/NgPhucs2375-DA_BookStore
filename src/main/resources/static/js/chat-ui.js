@@ -12,10 +12,13 @@ const ChatUI = (() => {
     let currentRoom = null;
     let messagePollingInterval = null;
     let unreadPollingInterval = null;
+    let firebaseUnsubscribe = null; // Firebase realtime listener
     let sellerLastDocId = null;
     let sellerIsLoadingMore = false;
     let sellerHasMoreMessages = true;
     let sellerScrollPosition = 0;
+    // Cache để tránh render lại tin nhắn đã có
+    let renderedMessageIds = new Set();
 
     // ==========================================
     // BUYER CHAT POPUP
@@ -157,7 +160,7 @@ const ChatUI = (() => {
             sidebar?.classList.add('hidden');
         });
 
-        // Send message
+        // Send message - FIX: loadMessages ngay sau khi gửi thành công
         inputForm?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const input = document.getElementById('chat-input');
@@ -167,6 +170,8 @@ const ChatUI = (() => {
             input.value = '';
             try {
                 await ChatService.sendMessage(activeChatId, content);
+                // FIX: Load lại tin nhắn ngay lập tức để hiển thị tin vừa gửi
+                await loadMessages(activeChatId);
                 // Tự động cuộn xuống sau khi gửi tin
                 const container = document.getElementById('chat-messages');
                 if (container) {
@@ -184,6 +189,8 @@ const ChatUI = (() => {
      */
     const openBuyerChat = async (chatId) => {
         activeChatId = chatId;
+        // Reset cache khi mở room mới
+        renderedMessageIds = new Set();
         const chatWindow = document.getElementById('chat-window');
         const popup = document.getElementById('buyer-chat-popup');
 
@@ -203,11 +210,27 @@ const ChatUI = (() => {
         }
 
         // Load messages
-        loadMessages(chatId);
+        await loadMessages(chatId);
         ChatService.markAsRead(chatId).catch(() => {});
 
-        // Start polling
-        startMessagePolling(chatId);
+        // Thử Firebase realtime trước, fallback polling
+        stopMessagePolling();
+        stopFirebaseListener();
+        const unsub = ChatService.listenMessages(chatId, (msg) => {
+            // Chỉ append tin nhắn mới nếu chưa có trong cache
+            if (!renderedMessageIds.has(msg.messageId)) {
+                appendSingleMessage(msg);
+                renderedMessageIds.add(msg.messageId);
+            }
+        }, () => {
+            // Fallback to polling nếu Firebase lỗi
+            startMessagePolling(chatId);
+        });
+        if (unsub) {
+            firebaseUnsubscribe = unsub;
+        } else {
+            startMessagePolling(chatId);
+        }
     };
 
     /**
@@ -283,7 +306,10 @@ const ChatUI = (() => {
 
         try {
             const result = await ChatService.getMessages(chatId);
-            renderMessages(result.messages || []);
+            const messages = result.messages || [];
+            // Cập nhật cache với tất cả message IDs
+            messages.forEach(m => renderedMessageIds.add(m.messageId));
+            renderMessages(messages);
         } catch (err) {
             console.error('Error loading messages:', err);
             container.innerHTML = '<div class="text-center text-red-400 text-sm py-10">Lỗi tải tin nhắn</div>';
@@ -310,6 +336,7 @@ const ChatUI = (() => {
             const isMine = msg.senderId == userId;
             const bubble = document.createElement('div');
             bubble.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
+            bubble.setAttribute('data-msg-id', msg.messageId);
             bubble.innerHTML = `
                 <div class="chat-bubble ${isMine ? 'chat-bubble-seller' : 'chat-bubble-buyer'} px-3 py-2 text-sm max-w-[80%]">
                     <div class="${isMine ? 'text-white' : 'text-gray-800'}">${escapeHtml(msg.content)}</div>
@@ -320,6 +347,37 @@ const ChatUI = (() => {
         });
 
         // Nếu đang ở dưới cùng hoặc là tin nhắn đầu, tự động cuộn xuống đáy
+        if (isAtBottom) {
+            container.scrollTop = container.scrollHeight;
+        }
+    };
+
+    /**
+     * Append 1 tin nhắn mới vào cuối khung chat (không render lại toàn bộ)
+     */
+    const appendSingleMessage = (msg) => {
+        const container = document.getElementById('chat-messages');
+        if (!container) return;
+
+        // Kiểm tra tin nhắn đã tồn tại chưa (tránh duplicate)
+        if (container.querySelector(`[data-msg-id="${msg.messageId}"]`)) return;
+
+        const isAtBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 100;
+        const { userId } = ChatService.getAuth();
+        const isMine = msg.senderId == userId;
+
+        const bubble = document.createElement('div');
+        bubble.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
+        bubble.setAttribute('data-msg-id', msg.messageId);
+        bubble.innerHTML = `
+            <div class="chat-bubble ${isMine ? 'chat-bubble-seller' : 'chat-bubble-buyer'} px-3 py-2 text-sm max-w-[80%]">
+                <div class="${isMine ? 'text-white' : 'text-gray-800'}">${escapeHtml(msg.content)}</div>
+                <div class="text-[10px] ${isMine ? 'text-white/70' : 'text-gray-400'} mt-1 text-right">${ChatService.formatTime(msg.createdAt)}</div>
+            </div>
+        `;
+        container.appendChild(bubble);
+
+        // Nếu đang ở dưới cùng, tự động cuộn xuống
         if (isAtBottom) {
             container.scrollTop = container.scrollHeight;
         }
@@ -360,22 +418,27 @@ const ChatUI = (() => {
         stopMessagePolling();
         messagePollingInterval = setInterval(() => {
             if (activeChatId === chatId) {
-                // Kiểm tra role từ Auth để gọi đúng hàm xử lý ngầm
                 const { role } = ChatService.getAuth();
                 if (role === 'SELLER' || role === 'seller') {
-                    // Gọi hàm load tin nhắn không xóa màn hình của Seller
                     loadSellerMessagesSilent(chatId);
                 } else {
                     loadMessages(chatId);
                 }
             }
-        }, 3000); // Quét tin nhắn mới mỗi 3 giây
+        }, 1500); // Giảm từ 3s xuống 1.5s
     };
 
     const stopMessagePolling = () => {
         if (messagePollingInterval) {
             clearInterval(messagePollingInterval);
             messagePollingInterval = null;
+        }
+    };
+
+    const stopFirebaseListener = () => {
+        if (firebaseUnsubscribe) {
+            firebaseUnsubscribe();
+            firebaseUnsubscribe = null;
         }
     };
 
@@ -470,7 +533,10 @@ const injectSellerChatStyles = () => {
      */
     const openSellerChat = async (chatId) => {
         activeChatId = chatId;
+        // Reset cache khi mở room mới
+        renderedMessageIds = new Set();
         stopMessagePolling();
+        stopFirebaseListener();
 
         const emptyState = document.getElementById('seller-chat-empty');
         const chatContent = document.getElementById('seller-chat-content');
@@ -500,7 +566,21 @@ const injectSellerChatStyles = () => {
 
         loadSellerMessages(chatId);
         ChatService.markAsRead(chatId).catch(() => {});
-        startMessagePolling(chatId);
+
+        // Thử Firebase realtime trước, fallback polling
+        const unsub = ChatService.listenMessages(chatId, (msg) => {
+            if (!renderedMessageIds.has(msg.messageId)) {
+                appendSellerSingleMessage(msg);
+                renderedMessageIds.add(msg.messageId);
+            }
+        }, () => {
+            startMessagePolling(chatId);
+        });
+        if (unsub) {
+            firebaseUnsubscribe = unsub;
+        } else {
+            startMessagePolling(chatId);
+        }
     };
 
     const loadSellerMessages = async (chatId) => {
@@ -518,6 +598,8 @@ const injectSellerChatStyles = () => {
             if (messages.length > 0) {
                 sellerLastDocId = messages[messages.length - 1]?.id;
                 sellerHasMoreMessages = messages.length === 30;
+                // Cập nhật cache
+                messages.forEach(m => renderedMessageIds.add(m.messageId));
             } else {
                 sellerHasMoreMessages = false;
             }
@@ -538,6 +620,8 @@ const injectSellerChatStyles = () => {
             if (messages.length > 0) {
                 sellerLastDocId = messages[messages.length - 1]?.id;
                 sellerHasMoreMessages = messages.length === 30;
+                // Cập nhật cache
+                messages.forEach(m => renderedMessageIds.add(m.messageId));
             }
             // Render thẳng ra giao diện mượt mà
             renderSellerMessages(messages);
@@ -560,6 +644,8 @@ const injectSellerChatStyles = () => {
             if (newMessages.length > 0) {
                 sellerLastDocId = newMessages[newMessages.length - 1]?.id;
                 sellerHasMoreMessages = newMessages.length === 30;
+                // Cập nhật cache
+                newMessages.forEach(m => renderedMessageIds.add(m.messageId));
                 
                 const { userId } = ChatService.getAuth();
                 const fragment = document.createDocumentFragment();
@@ -568,6 +654,7 @@ const injectSellerChatStyles = () => {
                     const isMine = msg.senderId == userId;
                     const bubble = document.createElement('div');
                     bubble.className = `flex ${isMine ? 'justify-end' : 'justify-start'} mb-3`;
+                    bubble.setAttribute('data-msg-id', msg.messageId);
                     bubble.innerHTML = `
                         <div class="chat-bubble ${isMine ? 'chat-bubble-seller' : 'chat-bubble-buyer'} px-3 py-2 text-sm">
                             <div class="${isMine ? 'text-white' : 'text-gray-800'}">${escapeHtml(msg.content)}</div>
@@ -610,6 +697,7 @@ const injectSellerChatStyles = () => {
             const isMine = msg.senderId == userId;
             const bubble = document.createElement('div');
             bubble.className = `flex ${isMine ? 'justify-end' : 'justify-start'} mb-3`;
+            bubble.setAttribute('data-msg-id', msg.messageId);
             bubble.innerHTML = `
                 <div class="chat-bubble ${isMine ? 'chat-bubble-seller' : 'chat-bubble-buyer'} px-3 py-2 text-sm">
                     <div class="${isMine ? 'text-white' : 'text-gray-800'}">${escapeHtml(msg.content)}</div>
@@ -618,6 +706,36 @@ const injectSellerChatStyles = () => {
             `;
             container.appendChild(bubble);
         });
+
+        if (isAtBottom) {
+            container.scrollTop = container.scrollHeight;
+        }
+    };
+
+    /**
+     * Append 1 tin nhắn mới vào khung chat Seller (không render lại toàn bộ)
+     */
+    const appendSellerSingleMessage = (msg) => {
+        const container = document.getElementById('seller-chat-messages');
+        if (!container) return;
+
+        // Kiểm tra tin nhắn đã tồn tại chưa
+        if (container.querySelector(`[data-msg-id="${msg.messageId}"]`)) return;
+
+        const isAtBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 100;
+        const { userId } = ChatService.getAuth();
+        const isMine = msg.senderId == userId;
+
+        const bubble = document.createElement('div');
+        bubble.className = `flex ${isMine ? 'justify-end' : 'justify-start'} mb-3`;
+        bubble.setAttribute('data-msg-id', msg.messageId);
+        bubble.innerHTML = `
+            <div class="chat-bubble ${isMine ? 'chat-bubble-seller' : 'chat-bubble-buyer'} px-3 py-2 text-sm">
+                <div class="${isMine ? 'text-white' : 'text-gray-800'}">${escapeHtml(msg.content)}</div>
+                <div class="text-[10px] ${isMine ? 'text-white/70' : 'text-gray-400'} mt-1 text-right">${ChatService.formatTime(msg.createdAt)}</div>
+            </div>
+        `;
+        container.appendChild(bubble);
 
         if (isAtBottom) {
             container.scrollTop = container.scrollHeight;

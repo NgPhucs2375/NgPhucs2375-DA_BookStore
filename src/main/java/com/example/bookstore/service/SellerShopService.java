@@ -133,8 +133,8 @@ public class SellerShopService {
         SellerShop shop = shopRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng."));
         
-        // Khách chỉ được xem các shop đã được duyệt
-        if (shop.getApprovalStatus() != ApprovalStatus.APPROVED) {
+        // Chỉ chặn các shop bị từ chối (REJECTED), cho phép xem cả APPROVED và PENDING
+        if (shop.getApprovalStatus() == ApprovalStatus.REJECTED) {
             throw new RuntimeException("Cửa hàng này hiện không hoạt động.");
         }
         

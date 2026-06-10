@@ -49,8 +49,6 @@
   </script>
 
   <style>
-    [x-cloak] { display: none !important; }
-
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #FAF5E8; }
@@ -423,9 +421,6 @@
     </div>
   </section>
 
-</main>
-
-<footer th:replace="~{fragments/footer :: footer}"></footer>
 
 <div th:replace="~{fragments/_QuickViewModal :: quickViewModal}"></div>
 <script src="/js/api-service.js"></script>
@@ -435,6 +430,12 @@
     function openQuickView(bookId) {
         window.dispatchEvent(new CustomEvent('open-quick-view', { detail: { bookId: bookId } }));
     }
+
+
 </script>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
 </body>
 </html>

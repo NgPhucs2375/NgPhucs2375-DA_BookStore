@@ -32,6 +32,8 @@
                              document.querySelector('[data-shop-status]');
     const shopSlugDisplay = document.getElementById('shop-slug') || 
                            document.querySelector('[data-shop-slug]');
+    const shopProductCount = document.getElementById('shop-product-count') || 
+                            document.querySelector('[data-shop-product-count]');
 
     const saveShopBtn = document.getElementById('save-shop-btn') || 
                        document.querySelector('button[data-action="save-shop"]');
@@ -90,6 +92,28 @@
     // 5. FETCH & RENDER FUNCTIONS
     // ==========================================
 
+    const loadProductCount = async () => {
+        try {
+            // Gọi API với size=1 chỉ để lấy totalElements (tổng số sản phẩm)
+            const response = await ApiService.Book.getSellerBooks('', null, 0, 1);
+            const total = response?.totalElements ?? response?.total ?? 0;
+            if (shopProductCount) {
+                shopProductCount.textContent = total.toLocaleString('vi-VN');
+            }
+            console.log('✓ Số lượng sản phẩm:', total);
+        } catch (error) {
+            console.error('❌ Lỗi tải số lượng sản phẩm:', error);
+            // Log thêm thông tin chi tiết để debug
+            if (error.data) {
+                console.error('   Response data:', error.data);
+            }
+            if (error.status) {
+                console.error('   HTTP status:', error.status);
+            }
+            // Giữ nguyên giá trị mặc định từ Thymeleaf (không ghi đè)
+        }
+    };
+
     const loadShopInfo = async () => {
         try {
             const shop = await ApiService.SellerShop.getMyShop();
@@ -104,6 +128,10 @@
 
             setEditMode(false);
             console.log('✓ Thông tin shop tải thành công');
+
+            // Tải số lượng sản phẩm sau khi có thông tin shop
+            await loadProductCount();
+
             return shop;
 
         } catch (error) {

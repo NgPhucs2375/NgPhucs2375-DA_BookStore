@@ -22,28 +22,24 @@ var ApiService = window.ApiService || (() => {
         let token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
         let role = localStorage.getItem('userRole') || sessionStorage.getItem('userRole');
 
-        // 🛡️ VÁ LỖI TOÀN HỆ THỐNG: Tự động giải mã JWT chuẩn nếu bị mất ID
-        if (token && (!userId || !role)) {
+        // Tự động giải mã JWT chuẩn nếu bị mất ID
+        if (token) {
             try {
                 let base64Url = token.split('.')[1];
                 let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-
-                // Bơm thêm dấu '=' để sửa lỗi sập hàm atob() của Javascript
-                while (base64.length % 4) {
-                    base64 += '=';
-                }
-
+                while (base64.length % 4) { base64 += '='; }
                 let payload = JSON.parse(window.atob(base64));
 
-                // Trích xuất dữ liệu từ Token
                 userId = payload.userId || payload.id;
                 role = payload.roles ? payload.roles[0] : (payload.role || 'BUYER');
 
-                // Tự động lưu lại vào bộ nhớ để dùng cho các luồng khác
+                if (role) role = role.replace('ROLE_', '').toUpperCase();
+
+                // Lưu đè lại để dọn dẹp sạch lỗi GUEST cũ trong trình duyệt của bạn
                 if (userId) localStorage.setItem('userId', String(userId));
-                if (role) localStorage.setItem('userRole', role.replace('ROLE_', '').toUpperCase());
+                if (role) localStorage.setItem('userRole', role);
             } catch (e) {
-                console.warn("Lỗi tự động bẻ khóa JWT:", e);
+                console.warn("Lỗi bẻ khóa JWT:", e);
             }
         }
 
@@ -948,6 +944,7 @@ var ApiService = window.ApiService || (() => {
         getAuth,
         getHeaders,
         formatVND,
+        fetchWithAuth,
 
         // API Groups
         Auth,
@@ -959,17 +956,7 @@ var ApiService = window.ApiService || (() => {
         Category,
         Chat,
         Admin,
-    // ==========================================
-    // 7. Recommemdation APIs
-    // ============================================
-    // ... các code phía trên ...
-        Wishlist,
-        Order,
-        SellerShop,
-        Category,
-        Admin,
 
-        // 👇 BẮT ĐẦU DÁN TỪ ĐÂY 👇
         Recommendation: {
             getBoughtTogether: async (bookId) => {
                 const response = await fetch(`${API_BASE}/recommendations/${bookId}/bought-together`, {
@@ -998,9 +985,12 @@ var ApiService = window.ApiService || (() => {
         storeAuth: (authData) => {
             localStorage.setItem('userId', authData.userId);
             localStorage.setItem('accessToken', authData.accessToken);
-            localStorage.setItem('userRole', authData.role);
 
-            // Nếu có sellerId thì lưu, nếu không có (như ADMIN/BUYER) thì phải xóa sạch key cũ đi
+            //  Chuẩn hóa ROLE_BUYER thành BUYER ngay khi ghi vào bộ nhớ
+            let role = authData.role || '';
+            role = role.replace('ROLE_', '').toUpperCase();
+            localStorage.setItem('userRole', role);
+
             if (authData.sellerId) {
                 localStorage.setItem('sellerId', String(authData.sellerId));
             } else {

@@ -41,11 +41,12 @@ public class MlApiService {
         HttpEntity<CustomerMLInput> request = new HttpEntity<>(input, headers);
 
         // ================================================================
-        // DEBUG: In ra JSON body thực tế gửi lên Python API
+        // DEBUG: Serialize request body để log ra devtool (qua error response)
         // ================================================================
+        String jsonBody = null;
         try {
             objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-            String jsonBody = objectMapper.writeValueAsString(input);
+            jsonBody = objectMapper.writeValueAsString(input);
             log.info("========== 🐍 DEBUG: JSON gửi lên Python ML API ==========");
             log.info("URL: {}", mlApiUrl);
             log.info("Request Body:\n{}", jsonBody);
@@ -65,10 +66,17 @@ public class MlApiService {
             log.error("========== 🐍 DEBUG: LỖI GỌI PYTHON ML API ==========");
             log.error("URL: {}", mlApiUrl);
             log.error("Input gửi lên: {}", input);
+            log.error("JSON Body gửi lên:\n{}", jsonBody != null ? jsonBody : "N/A");
             // Log full stacktrace
             log.error("Full stacktrace:", e);
             log.error("==========================================================");
-            throw new RuntimeException("ML API call failed: " + e.getMessage(), e);
+            // Ném exception kèm JSON body để frontend có thể log ra devtool
+            throw new RuntimeException(
+                "ML API call failed. Request body sent to Python:\n" +
+                (jsonBody != null ? jsonBody : "N/A") +
+                "\n\nPython error: " + e.getMessage(),
+                e
+            );
         }
     }
 }

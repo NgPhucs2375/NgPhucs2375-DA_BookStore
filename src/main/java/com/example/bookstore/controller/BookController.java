@@ -70,7 +70,14 @@ public class BookController {
         Integer yearTo = parseYearBound(publishYearTo);
         List<Long> effectiveCategoryIds = (categoryIds != null && !categoryIds.isEmpty()) ? categoryIds : null;
         List<Long> effectiveSellerIds = (sellerIds != null && !sellerIds.isEmpty()) ? sellerIds : null;
-        List<String> effectivePublishers = (publishers != null && !publishers.isEmpty()) ? publishers : null;
+        // Lọc bỏ các publisher không hợp lệ (URL ảnh, chuỗi quá dài)
+        List<String> effectivePublishers = null;
+        if (publishers != null && !publishers.isEmpty()) {
+            effectivePublishers = publishers.stream()
+                .filter(p -> p != null && p.length() < 100 && !p.matches("^(https?://|data:image).*") && !p.matches(".*\\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)(\\?.*)?$"))
+                .collect(java.util.stream.Collectors.toList());
+            if (effectivePublishers.isEmpty()) effectivePublishers = null;
+        }
         return bookService.searchApprovedBooks(
                 keyword,
                 effectiveCategoryIds,

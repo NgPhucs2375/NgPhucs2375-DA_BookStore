@@ -9,17 +9,7 @@
 
 (function () {
     // ==========================================
-    // 1. CHECK AUTHENTICATION
-    // ==========================================
-
-    if (!ApiService.isAuthenticated() || !ApiService.isSeller()) {
-        alert('Chỉ seller mới có quyền truy cập');
-        window.location.href = '/';
-        return;
-    }
-
-    // ==========================================
-    // 2. FORM ELEMENTS REFERENCES
+    // 1. FORM ELEMENTS REFERENCES
     // ==========================================
 
     const shopNameInput = document.getElementById('shop-name') || 
@@ -132,6 +122,9 @@
             // Tải số lượng sản phẩm sau khi có thông tin shop
             await loadProductCount();
 
+            // Dispatch event để các script khác (panel form) nhận dữ liệu
+            window.dispatchEvent(new CustomEvent('shop:loaded', { detail: shop }));
+
             return shop;
 
         } catch (error) {
@@ -144,6 +137,8 @@
             } else {
                 alert('❌ Lỗi tải thông tin shop');
             }
+            // Dispatch event với lỗi để panel form biết
+            window.dispatchEvent(new CustomEvent('shop:loaded', { detail: null }));
             return null;
         }
     };

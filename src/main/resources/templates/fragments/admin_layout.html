@@ -108,17 +108,6 @@
             <span class="menu-label">Kiểm duyệt sách</span>
         </a>
 
-        <a th:href="@{/admin/orders}" class="group flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
-           th:classappend="${activeMenu == 'admin-orders'} ? ' bg-[#FAF5E8] text-[#ea580c] shadow-sm' : ' text-gray-600 hover:bg-gray-50'">
-            <div class="h-2 w-2 rounded-full shrink-0" th:classappend="${activeMenu == 'admin-orders'} ? ' bg-[#ea580c]' : ' bg-gray-300 group-hover:bg-gray-400'"></div>
-            <span class="menu-label">Đơn hàng</span>
-        </a>
-
-        <a th:href="@{/admin/customers}" class="group flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
-           th:classappend="${activeMenu == 'admin-customers'} ? ' bg-[#FAF5E8] text-[#ea580c] shadow-sm' : ' text-gray-600 hover:bg-gray-50'">
-            <div class="h-2 w-2 rounded-full shrink-0" th:classappend="${activeMenu == 'admin-customers'} ? ' bg-[#ea580c]' : ' bg-gray-300 group-hover:bg-gray-400'"></div>
-            <span class="menu-label">Phân tích khách hàng</span>
-        </a>
     </nav>
 
     <script th:inline="javascript">

@@ -45,7 +45,23 @@ public class PanelPageController {
     }
     @GetMapping("/seller/shop")
     public String sellerShop(Model model, Authentication authentication) {
-        // Redirect to the unified shop page with the seller's ID
+        model.addAttribute("pageTitle", "Hồ sơ gian hàng");
+        model.addAttribute("pageSubtitle", "Quản lý thông tin cửa hàng của bạn");
+        model.addAttribute("activeMenu", "seller-shop");
+
+        // Default values for layout
+        model.addAttribute("sellerName", "Seller");
+        model.addAttribute("sellerEmail", "seller@bookom.com");
+        model.addAttribute("sellerAvatar", null);
+        model.addAttribute("authUserId", null);
+        model.addAttribute("authUserRole", "SELLER");
+        model.addAttribute("authAccessToken", null);
+        model.addAttribute("isOwner", false);
+        model.addAttribute("shopSlug", null);
+        model.addAttribute("shop", null);
+        model.addAttribute("bookCount", 0);
+        model.addAttribute("joinDuration", "—");
+
         if (authentication != null && authentication.isAuthenticated()) {
             Object principal = authentication.getPrincipal();
             Long userId = null;
@@ -57,15 +73,27 @@ public class PanelPageController {
             }
 
             if (userId != null) {
-                // Find seller's shop to get sellerId
+                model.addAttribute("authUserId", userId);
                 SellerShop shop = sellerShopRepository.findBySellerId(userId).orElse(null);
-                if (shop != null) {
-                    return "redirect:/shop/" + shop.getSeller().getId();
+                if (shop != null && shop.getSeller() != null) {
+                    // Inject authentication data cho JS
+                    model.addAttribute("authUserRole", "SELLER");
+                    model.addAttribute("authAccessToken", null);
+                    // Chủ shop -> isOwner = true
+                    model.addAttribute("isOwner", true);
+                    model.addAttribute("shopSlug", shop.getSlug());
+                    model.addAttribute("shop", shop);
+                    // Inject seller info for layout
+                    String fullName = shop.getSeller().getFirstName() + " " + shop.getSeller().getLastName();
+                    model.addAttribute("sellerName", fullName.trim().isEmpty() ? shop.getSeller().getUsername() : fullName.trim());
+                    model.addAttribute("sellerEmail", shop.getContactEmail() != null ? shop.getContactEmail() : shop.getSeller().getEmail());
+                    model.addAttribute("sellerAvatar", shop.getLogoUrl());
                 }
             }
         }
-        return "redirect:/";
+        return "seller/Shop_Seller";
     }
+
 
 
     @GetMapping("/admin")

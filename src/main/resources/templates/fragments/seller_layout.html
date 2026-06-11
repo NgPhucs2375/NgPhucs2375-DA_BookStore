@@ -85,7 +85,14 @@
     </div>
     <div class="flex items-center gap-3">
         <a th:href="@{/}" class="hidden sm:inline-flex text-sm font-black text-[#5D4037]/70 hover:text-[#5D4037]">Ve trang mua sam</a>
-        <div class="h-10 w-10 rounded-full bg-[#D19C74] text-white flex items-center justify-center text-xs font-black shadow-sm">SL</div>
+        <div class="h-10 w-10 rounded-full bg-[#D19C74] text-white flex items-center justify-center text-xs font-black shadow-sm overflow-hidden" th:title="${sellerName}">
+            <img th:if="${sellerAvatar}" th:src="${sellerAvatar}" alt="Avatar" class="w-full h-full object-cover" />
+            <span th:unless="${sellerAvatar}" class="text-xs font-black">SL</span>
+        </div>
+        <div class="hidden sm:block text-xs">
+            <div class="font-bold text-[#5D4037]" th:text="${sellerName}">Seller</div>
+            <div class="text-[#5D4037]/60" th:text="${sellerEmail}">seller@email.com</div>
+        </div>
         <button id="header-logout-btn" class="text-sm font-black text-red-500 hover:text-red-700 transition ml-2" title="Đăng xuất">
             <i class="fas fa-sign-out-alt"></i>
         </button>

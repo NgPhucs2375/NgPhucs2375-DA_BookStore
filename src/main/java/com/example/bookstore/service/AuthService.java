@@ -53,7 +53,7 @@ public class AuthService {
      * Submit a seller application: create a SellerShop record with PENDING approval.
      * Does NOT change the user's role — admin must approve to set role to SELLER.
      */
-    public SellerShop submitSellerApplication(Long userId, String shopName, String shopAddress) {
+    public SellerShop submitSellerApplication(Long userId, String shopName, String shopAddress, String city, String province) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
@@ -68,6 +68,8 @@ public class AuthService {
                 .slug(slug)
                 .shopName(shopName != null && !shopName.isBlank() ? shopName.trim() : user.getUsername())
                 .address(shopAddress != null && !shopAddress.isBlank() ? shopAddress.trim() : "Chưa cập nhật")
+                .city(city != null && !city.isBlank() ? city.trim() : "Chưa cập nhật")
+                .province(province != null && !province.isBlank() ? province.trim() : null)
                 .approvalStatus(ApprovalStatus.PENDING)
                 .build();
 
@@ -120,6 +122,7 @@ public class AuthService {
                     .slug(slug)
                     .shopName(username)
                     .address("Chưa cập nhật")
+                    .city("Chưa cập nhật")
                     .approvalStatus(ApprovalStatus.PENDING)
                     .build();
             sellerShopRepository.save(newSellerShop);

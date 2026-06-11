@@ -36,6 +36,11 @@
         .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600; }
         .badge-default { background: #E5CBB5; color: #5D4037; }
         .badge-success { background: #d1fae5; color: #065f46; }
+        /* Validation styles */
+        .field-error { @apply text-red-500 text-sm mt-1 hidden; }
+        .input-field.error { @apply border-red-500 bg-red-50; }
+        .field-error { display: block; }
+        .input-field.error { border-color: #dc2626 !important; background-color: #fef2f2 !important; }
     </style>
 </head>
 <body>
@@ -227,11 +232,13 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-bold text-brand-dark mb-2">Tên *</label>
-                                <input type="text" id="firstName" class="input-field" placeholder="Tên" required>
+                                <input type="text" id="firstName" class="input-field" placeholder="Tên" required onblur="validateProfileField('firstName')" oninput="ValidationUtils.clearError('firstName')">
+                                <span id="firstName-error" class="field-error text-red-500 text-sm mt-1 hidden"></span>
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-brand-dark mb-2">Họ *</label>
-                                <input type="text" id="lastName" class="input-field" placeholder="Họ" required>
+                                <input type="text" id="lastName" class="input-field" placeholder="Họ" required onblur="validateProfileField('lastName')" oninput="ValidationUtils.clearError('lastName')">
+                                <span id="lastName-error" class="field-error text-red-500 text-sm mt-1 hidden"></span>
                             </div>
                         </div>
                         <div>
@@ -241,7 +248,8 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-bold text-brand-dark mb-2">Số Điện Thoại</label>
-                                <input type="tel" id="phone" class="input-field" placeholder="+84 123 456 789">
+                                <input type="tel" id="phone" class="input-field" placeholder="Số điện thoại" maxlength="10" onblur="validateProfileField('phone')" oninput="ValidationUtils.filterPhoneInput(this); ValidationUtils.clearError('phone')">
+                                <span id="phone-error" class="field-error text-red-500 text-sm mt-1 hidden"></span>
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-brand-dark mb-2">Giới Tính</label>
@@ -255,7 +263,8 @@
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-brand-dark mb-2">Ngày Sinh</label>
-                            <input type="date" id="dateOfBirth" class="input-field">
+                            <input type="date" id="dateOfBirth" class="input-field" onblur="validateProfileField('dateOfBirth')" onchange="ValidationUtils.clearError('dateOfBirth')">
+                            <span id="dateOfBirth-error" class="field-error text-red-500 text-sm mt-1 hidden"></span>
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-brand-dark mb-2">Tiểu Sử</label>
@@ -387,8 +396,9 @@
     </div>
 </main>
 
-<!-- include api service and sweetalert -->
+<!-- include api service, validation utils and sweetalert -->
 <script src="/js/api-service.js"></script>
+<script src="/js/validation-utils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- Add Address Modal -->
@@ -412,12 +422,14 @@
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-brand-dark mb-2">Tên Người Nhận *</label>
-                    <input type="text" id="recipientName" class="input-field" required>
+                    <input type="text" id="recipientName" class="input-field" required onblur="validateAddressField('recipientName')" oninput="ValidationUtils.clearError('recipientName')">
+                    <span id="recipientName-error" class="field-error text-red-500 text-sm mt-1 hidden"></span>
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-bold text-brand-dark mb-2">Số Điện Thoại Người Nhận *</label>
-                <input type="tel" id="recipientPhone" class="input-field" required>
+                <input type="tel" id="recipientPhone" class="input-field" required maxlength="10" onblur="validateAddressField('recipientPhone')" oninput="ValidationUtils.filterPhoneInput(this); ValidationUtils.clearError('recipientPhone')">
+                <span id="recipientPhone-error" class="field-error text-red-500 text-sm mt-1 hidden"></span>
             </div>
             <div>
                 <label class="block text-sm font-bold text-brand-dark mb-2">Địa Chỉ Chi Tiết *</label>
@@ -604,9 +616,116 @@
         }
     }
 
-    // Form submissions
+    // ==========================================
+    // VALIDATION FUNCTIONS
+    // ==========================================
+
+    /**
+     * Validate một field trong Profile Form
+     */
+    function validateProfileField(fieldId) {
+        const value = document.getElementById(fieldId).value;
+        let result;
+
+        switch (fieldId) {
+            case 'firstName':
+                result = ValidationUtils.validateFullName(value, 'Tên');
+                if (result.valid) {
+                    document.getElementById(fieldId).value = result.sanitized;
+                    ValidationUtils.clearError(fieldId);
+                } else {
+                    ValidationUtils.showError(fieldId, result.error);
+                }
+                return result.valid;
+
+            case 'lastName':
+                result = ValidationUtils.validateFullName(value, 'Họ');
+                if (result.valid) {
+                    document.getElementById(fieldId).value = result.sanitized;
+                    ValidationUtils.clearError(fieldId);
+                } else {
+                    ValidationUtils.showError(fieldId, result.error);
+                }
+                return result.valid;
+
+            case 'phone':
+                result = ValidationUtils.validatePhone(value);
+                if (result.valid) {
+                    document.getElementById(fieldId).value = result.normalized;
+                    ValidationUtils.clearError(fieldId);
+                } else {
+                    ValidationUtils.showError(fieldId, result.error);
+                }
+                return result.valid;
+
+            case 'dateOfBirth':
+                result = ValidationUtils.validateDateOfBirth(value, 0);
+                if (result.valid) {
+                    ValidationUtils.clearError(fieldId);
+                } else {
+                    ValidationUtils.showError(fieldId, result.error);
+                }
+                return result.valid;
+
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Validate một field trong Address Form
+     */
+    function validateAddressField(fieldId) {
+        const value = document.getElementById(fieldId).value;
+        let result;
+
+        switch (fieldId) {
+            case 'recipientName':
+                result = ValidationUtils.validateFullName(value, 'Tên người nhận');
+                if (result.valid) {
+                    document.getElementById(fieldId).value = result.sanitized;
+                    ValidationUtils.clearError(fieldId);
+                } else {
+                    ValidationUtils.showError(fieldId, result.error);
+                }
+                return result.valid;
+
+            case 'recipientPhone':
+                result = ValidationUtils.validatePhone(value);
+                if (result.valid) {
+                    document.getElementById(fieldId).value = result.normalized;
+                    ValidationUtils.clearError(fieldId);
+                } else {
+                    ValidationUtils.showError(fieldId, result.error);
+                }
+                return result.valid;
+
+            default:
+                return true;
+        }
+    }
+
+    // ==========================================
+    // FORM SUBMISSIONS WITH VALIDATION
+    // ==========================================
+
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // Validate tất cả các field trước khi submit
+        ValidationUtils.clearAllErrors();
+        const isFirstNameValid = validateProfileField('firstName');
+        const isLastNameValid = validateProfileField('lastName');
+        const isPhoneValid = validateProfileField('phone');
+        const isDobValid = validateProfileField('dateOfBirth');
+
+        if (!isFirstNameValid || !isLastNameValid || !isPhoneValid || !isDobValid) {
+            // Focus vào field lỗi đầu tiên
+            const firstError = document.querySelector('.input-field.error');
+            if (firstError) firstError.focus();
+            return;
+        }
+
         try {
             const token = localStorage.getItem('accessToken');
             const response = await fetch('/buyer/profile/api/profile/update', {
@@ -639,6 +758,18 @@
 
     document.getElementById('addressForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // Validate các field trong Address Form
+        ValidationUtils.clearAllErrors();
+        const isNameValid = validateAddressField('recipientName');
+        const isPhoneValid = validateAddressField('recipientPhone');
+
+        if (!isNameValid || !isPhoneValid) {
+            const firstError = document.querySelector('.input-field.error');
+            if (firstError) firstError.focus();
+            return;
+        }
+
         try {
             const token = localStorage.getItem('accessToken');
             const response = await fetch('/buyer/profile/api/addresses/create', {
@@ -759,6 +890,32 @@
         }
     }
 
+    // ==========================================
+    // ORDER STATUS HELPERS (tiếng Việt)
+    // ==========================================
+
+    const getOrderStatusLabel = (status) => {
+        const map = {
+            'PROCESSING': 'Đang xác nhận',
+            'COMFIRMED': 'Đã xác nhận',
+            'SHIPPING': 'Đang giao',
+            'COMPLETED': 'Đã hoàn thành',
+            'CANCELLED': 'Đã hủy'
+        };
+        return map[String(status || '').toUpperCase()] || status || '';
+    };
+
+    const getOrderStatusBadge = (status) => {
+        const map = {
+            'PROCESSING': 'bg-amber-100 text-amber-800',
+            'COMFIRMED': 'bg-blue-100 text-blue-800',
+            'SHIPPING': 'bg-cyan-100 text-cyan-800',
+            'COMPLETED': 'bg-green-100 text-green-800',
+            'CANCELLED': 'bg-red-100 text-red-800'
+        };
+        return map[String(status || '').toUpperCase()] || 'bg-gray-100 text-gray-700';
+    };
+
     // Load buyer orders and render
     async function loadOrders() {
         try {
@@ -769,12 +926,15 @@
                 return;
             }
 
-            listEl.innerHTML = orders.map(o => `
+            listEl.innerHTML = orders.map(o => {
+                const statusLabel = getOrderStatusLabel(o.overallStatus);
+                const statusBadge = getOrderStatusBadge(o.overallStatus);
+                return `
                 <div class="border border-brand-accent rounded-lg p-4 flex items-center justify-between">
                     <div>
                         <div class="text-sm text-gray-500">Mã đơn: <span class="font-bold">#BKO-${String(o.orderId || '').padStart(6,'0')}</span></div>
                         <div class="font-semibold text-brand-dark">${new Date(o.createdAt).toLocaleString('vi-VN')}</div>
-                        <div class="text-sm text-gray-600 mt-1">${o.subOrderCount || 0} phần • ${o.overallStatus || ''}</div>
+                        <div class="text-sm text-gray-600 mt-1">${o.subOrderCount || 0} phần • <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge}">${statusLabel}</span></div>
                         <div class="text-sm text-gray-500 mt-1">${o.shippingAddress || ''}</div>
                     </div>
                     <div class="text-right">
@@ -784,7 +944,7 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         } catch (err) {
             console.error('Error loading orders:', err);
             const listEl = document.getElementById('ordersList');

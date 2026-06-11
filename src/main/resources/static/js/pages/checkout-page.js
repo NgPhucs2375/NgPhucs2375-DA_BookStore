@@ -1,6 +1,44 @@
 (() => {
     if (!window.ApiService) return;
 
+    // ==========================================
+    // VALIDATION FUNCTIONS (dùng cho onblur)
+    // ==========================================
+
+    /**
+     * Validate checkout field (fullname, phone) - gọi từ HTML onblur
+     */
+    window.validateCheckoutField = function(fieldId) {
+        if (!window.ValidationUtils) return true;
+        const value = document.getElementById(fieldId)?.value || '';
+        let result;
+
+        switch (fieldId) {
+            case 'fullname':
+                result = ValidationUtils.validateFullName(value, 'Họ và tên');
+                if (result.valid) {
+                    document.getElementById(fieldId).value = result.sanitized;
+                    ValidationUtils.clearError(fieldId);
+                } else {
+                    ValidationUtils.showError(fieldId, result.error);
+                }
+                return result.valid;
+
+            case 'phone':
+                result = ValidationUtils.validatePhone(value);
+                if (result.valid) {
+                    document.getElementById(fieldId).value = result.normalized;
+                    ValidationUtils.clearError(fieldId);
+                } else {
+                    ValidationUtils.showError(fieldId, result.error);
+                }
+                return result.valid;
+
+            default:
+                return true;
+        }
+    };
+
     // --- DOM ELEMENTS ---
     const badgeEl = document.getElementById('checkout-items-badge');
     const itemsEl = document.getElementById('checkout-cart-items');
@@ -340,74 +378,34 @@
         } catch (e) { throw e; }
     };
 
-    // --- PHONE VALIDATION ---
-    const setPhoneError = (message) => {
-        if (!phoneErrorEl) return;
-        if (message) {
-            phoneErrorEl.textContent = message;
-            phoneErrorEl.classList.remove('hidden');
-            phoneInput?.classList.add('border-red-500', 'focus:border-red-500');
-            phoneInput?.classList.remove('focus:border-[#E76F51]');
-        } else {
-            phoneErrorEl.textContent = '';
-            phoneErrorEl.classList.add('hidden');
-            phoneInput?.classList.remove('border-red-500', 'focus:border-red-500');
-            phoneInput?.classList.add('focus:border-[#E76F51]');
-        }
-    };
-
-    const validatePhoneFormat = (phone) => {
-        // Chỉ cho phép số, loại bỏ ký tự không phải số
-        const cleaned = phone.replace(/\D/g, '');
-        if (cleaned.length > 10) {
-            return cleaned.slice(0, 10);
-        }
-        return cleaned;
-    };
-
-    const isPhoneValid = (phone) => {
-        return /^\d{10}$/.test(phone);
-    };
-
-    const checkPhoneExists = async (phone) => {
-        try {
-            const res = await fetch(`/api/auth/check-phone?phone=${encodeURIComponent(phone)}`);
-            const data = await res.json();
-            return data.exists;
-        } catch (e) {
-            console.error('Check phone error:', e);
-            return false;
-        }
-    };
+    // --- PHONE VALIDATION (dùng ValidationUtils) ---
+    // checkPhoneExists đã được thay thế bằng ValidationUtils.validatePhoneUnique
 
     // Validate phone input on every keystroke
     phoneInput?.addEventListener('input', function() {
-        const raw = this.value;
-        const cleaned = validatePhoneFormat(raw);
-        if (cleaned !== raw) {
-            this.value = cleaned;
-        }
+        ValidationUtils.filterPhoneInput(this);
         // Clear error while typing
-        setPhoneError('');
+        ValidationUtils.clearError('phone');
     });
 
     // Validate phone on blur (when user leaves the field)
     phoneInput?.addEventListener('blur', async function() {
         const phone = this.value.trim();
         if (!phone) {
-            setPhoneError('');
+            ValidationUtils.clearError('phone');
             return;
         }
-        if (!isPhoneValid(phone)) {
-            setPhoneError('Số điện thoại phải gồm đúng 10 chữ số.');
+        const result = ValidationUtils.validatePhone(phone);
+        if (!result.valid) {
+            ValidationUtils.showError('phone', result.error);
             return;
         }
-        // Check uniqueness
-        const exists = await checkPhoneExists(phone);
-        if (exists) {
-            setPhoneError('Số điện thoại này đã được sử dụng bởi người dùng khác.');
+        // Check uniqueness using ValidationUtils
+        const uniqueResult = await ValidationUtils.validatePhoneUnique(result.normalized);
+        if (!uniqueResult.valid) {
+            ValidationUtils.showError('phone', uniqueResult.error);
         } else {
-            setPhoneError('');
+            ValidationUtils.clearError('phone');
         }
     });
 
@@ -432,25 +430,41 @@
                 isDefault: saveDefaultCheckbox?.checked || false
             };
 
-            // Xác thực dữ liệu
-            if (!payload.recipientName || !payload.recipientPhone || !payload.province || !payload.district || !payload.ward || !payload.addressLine) {
-                alert('Vui lòng điền và chọn đầy đủ thông tin địa chỉ!');
+            // Xác thực dữ liệu bằng ValidationUtils
+            ValidationUtils.clearAllErrors();
+
+            // Validate fullname
+            const nameResult = ValidationUtils.validateFullName(payload.recipientName, 'Tên người nhận');
+            if (!nameResult.valid) {
+                ValidationUtils.showError('fullname', nameResult.error);
                 return;
             }
 
-            // Validate phone number format
-            const phone = payload.recipientPhone;
-            if (!isPhoneValid(phone)) {
-                setPhoneError('Số điện thoại phải gồm đúng 10 chữ số.');
+            // Validate phone
+            const phoneResult = ValidationUtils.validatePhone(payload.recipientPhone);
+            if (!phoneResult.valid) {
+                ValidationUtils.showError('phone', phoneResult.error);
                 return;
             }
 
-            // Check phone uniqueness
-            const phoneExists = await checkPhoneExists(phone);
-            if (phoneExists) {
-                setPhoneError('Số điện thoại này đã được sử dụng bởi người dùng khác.');
+            // Kiểm tra các trường địa chỉ bắt buộc
+            if (!payload.province || !payload.district || !payload.ward || !payload.addressLine) {
+                alert('Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã và điền địa chỉ chi tiết!');
                 return;
             }
+
+            // Check phone uniqueness using ValidationUtils
+            const uniqueResult = await ValidationUtils.validatePhoneUnique(phoneResult.normalized);
+            if (!uniqueResult.valid) {
+                ValidationUtils.showError('phone', uniqueResult.error);
+                return;
+            }
+
+            // Cập nhật giá trị đã chuẩn hóa
+            fullnameInput.value = nameResult.sanitized;
+            phoneInput.value = phoneResult.normalized;
+            payload.recipientName = nameResult.sanitized;
+            payload.recipientPhone = phoneResult.normalized;
 
             const created = await createAddress(payload);
             if (created?.id && payload.isDefault) {
@@ -546,13 +560,14 @@
             if (!addressId) {
                 const phone = (phoneInput?.value || '').trim();
                 if (phone) {
-                    if (!isPhoneValid(phone)) {
-                        setPhoneError('Số điện thoại phải gồm đúng 10 chữ số.');
+                    const result = ValidationUtils.validatePhone(phone);
+                    if (!result.valid) {
+                        ValidationUtils.showError('phone', result.error);
                         return;
                     }
-                    const phoneExists = await checkPhoneExists(phone);
-                    if (phoneExists) {
-                        setPhoneError('Số điện thoại này đã được sử dụng bởi người dùng khác.');
+                    const uniqueResult = await ValidationUtils.validatePhoneUnique(result.normalized);
+                    if (!uniqueResult.valid) {
+                        ValidationUtils.showError('phone', uniqueResult.error);
                         return;
                     }
                 }

@@ -408,6 +408,89 @@
     });
 
 
+    // ==========================================
+    // AGE CHECK BEFORE CHECKOUT
+    // ==========================================
+
+    /**
+     * Kiểm tra độ tuổi người dùng trước khi cho phép checkout
+     * Yêu cầu: người dùng phải từ 13 tuổi trở lên
+     * Sử dụng ValidationUtils.validateDateOfBirth để đảm bảo đồng nhất logic
+     */
+    async function checkAgeBeforeCheckout() {
+        try {
+            const headers = ApiService.getHeaders();
+            const response = await fetch('/buyer/profile/api/profile', { headers });
+            if (!response.ok) return true; // Nếu không lấy được profile, vẫn cho checkout
+
+            const profile = await response.json();
+            const dob = profile.dateOfBirth;
+            if (!dob) {
+                // Nếu chưa có ngày sinh, cảnh báo nhưng vẫn cho checkout
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Thiếu thông tin',
+                    text: 'Vui lòng cập nhật ngày sinh trong hồ sơ để xác thực độ tuổi.',
+                    confirmButtonText: 'Để sau'
+                });
+                return true;
+            }
+
+            // Sử dụng ValidationUtils.validateDateOfBirth với minAge = 13
+            if (window.ValidationUtils) {
+                const result = ValidationUtils.validateDateOfBirth(dob, 13);
+                if (!result.valid) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Không đủ điều kiện',
+                        text: result.error,
+                        confirmButtonText: 'Đã hiểu'
+                    });
+                    return false;
+                }
+                return true;
+            }
+
+            // Fallback nếu ValidationUtils chưa load
+            const birthDate = new Date(dob);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            if (age < 13) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Không đủ điều kiện',
+                    text: 'Bạn phải từ 13 tuổi trở lên để thực hiện giao dịch trên BOOKOM.',
+                    confirmButtonText: 'Đã hiểu'
+                });
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Age check error:', error);
+            return true; // Nếu có lỗi, vẫn cho checkout
+        }
+    }
+
+    // Thêm age check vào nút checkout
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', async (e) => {
+            const isAllowed = await checkAgeBeforeCheckout();
+            if (!isAllowed) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            // Nếu đủ tuổi, cho phép chuyển hướng bình thường
+            window.location.href = '/main/checkout';
+        });
+    }
+
     fetchCart().catch((error) => {
         const message = error?.message || 'Khong the tai gio hang.';
         liveContainer.innerHTML = `

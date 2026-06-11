@@ -124,7 +124,7 @@
         // Orders data là SubOrderSummaryResponse array từ API
         const totalRevenue = orders.reduce((sum, o) => sum + (o.subTotal || o.totalAmount || 0), 0);
         const totalOrders = orders.length;
-        const pendingOrders = orders.filter(o => o.status === 'PENDING_PAYMENT' || o.status === 'PENDING').length;
+        const pendingOrders = orders.filter(o => o.status === 'PROCESSING' || o.status === 'PENDING').length;
         const confirmedOrders = orders.filter(o => o.status === 'CONFIRMED').length;
         const shippedOrders = orders.filter(o => o.status === 'SHIPPING' || o.status === 'SHIPPED').length;
         const deliveredOrders = orders.filter(o => o.status === 'DELIVERED').length;

@@ -176,9 +176,32 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
-            const status = params.get('status');
-            const orderId = params.get('orderId');
-            const errorCode = params.get('errorCode');
+            let status = params.get('status');
+            let orderId = params.get('orderId');
+            let errorCode = params.get('errorCode');
+
+            // Nếu không có params chuẩn, kiểm tra params VNPay (redirect trực tiếp từ VNPay)
+            if (!status && !orderId) {
+                const vnpResponseCode = params.get('vnp_ResponseCode');
+                const vnpTxnRef = params.get('vnp_TxnRef');
+                const vnpTransactionStatus = params.get('vnp_TransactionStatus');
+
+                if (vnpResponseCode) {
+                    // VNPay redirect trực tiếp — parse orderId từ transactionCode (ORD{orderId}{timestamp})
+                    if (vnpTxnRef) {
+                        const match = vnpTxnRef.match(/^ORD(\d+)/);
+                        if (match) {
+                            orderId = match[1];
+                        }
+                    }
+                    if (vnpResponseCode === '00' && vnpTransactionStatus === '00') {
+                        status = 'success';
+                    } else {
+                        status = 'failed';
+                        errorCode = vnpResponseCode;
+                    }
+                }
+            }
 
             const loadingState = document.getElementById('loading-state');
             const successState = document.getElementById('success-state');
@@ -217,10 +240,10 @@
                             '08': 'Giao dịch bị hủy bởi người dùng',
                             '99': 'Lỗi hệ thống VNPay. Vui lòng thử lại sau.'
                         };
-                        reasonEl.textContent = `Mã lỗi ${errorCode || 'Unkown'}: ${errorMessages[errorCode] || 'Giao dịch bị hủy hoặc xảy ra lỗi'}`;
+                        reasonEl.textContent = `Mã lỗi ${errorCode || 'Unknown'}: ${errorMessages[errorCode] || 'Giao dịch bị hủy hoặc xảy ra lỗi'}`;
                     }
 
-                    // TRỊ TẬN GỐC: GẮN LINK CHUYỂN HƯỚNG SANG TRANG CHI TIẾT ĐƠN HÀNG ĐỂ NGƯỜI DÙNG THANH TOÁN LẠI
+                    // Gắn link chuyển hướng sang trang chi tiết đơn hàng để người dùng thanh toán lại
                     const retryBtn = document.getElementById('retry-payment-btn');
                     if (retryBtn && orderId) {
                         retryBtn.href = `/main/order-details?orderId=${orderId}`;

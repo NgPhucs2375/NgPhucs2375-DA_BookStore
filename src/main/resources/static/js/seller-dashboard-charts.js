@@ -34,17 +34,15 @@
 
     // Status colors for doughnut chart
     const STATUS_COLORS = {
-        'PENDING_PAYMENT': '#F59E0B',  // amber
-        'PROCESSING': '#6366F1',       // indigo
-        'COMFIRMED': '#8B5CF6',        // violet
-        'SHIPPING': '#06B6D4',         // cyan
-        'COMPLETED': '#10B981',        // emerald
-        'CANCELLED': '#EF4444'         // red
+        'PROCESSING': '#F59E0B',       // amber - Đang xác nhận
+        'COMFIRMED': '#6366F1',        // indigo - Đã xác nhận
+        'SHIPPING': '#06B6D4',         // cyan - Đang giao
+        'COMPLETED': '#10B981',        // emerald - Đã hoàn thành
+        'CANCELLED': '#EF4444'         // red - Đã hủy
     };
 
     const STATUS_LABELS = {
-        'PENDING_PAYMENT': 'Chờ thanh toán',
-        'PROCESSING': 'Đang xử lý',
+        'PROCESSING': 'Đang xác nhận',
         'COMFIRMED': 'Đã xác nhận',
         'SHIPPING': 'Đang giao',
         'COMPLETED': 'Đã hoàn thành',

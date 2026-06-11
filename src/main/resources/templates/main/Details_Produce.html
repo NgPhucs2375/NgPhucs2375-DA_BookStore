@@ -1576,22 +1576,155 @@
               const imgUrl = book.imageUrl || '/images/default-book.png';
 
               htmlString += `
-                    <div class="bg-white border-2 border-brand-accent/30 rounded-2xl overflow-hidden hover:border-brand-orange hover:shadow-xl transition-all duration-300 group flex flex-col h-full cursor-pointer" onclick="window.location.href='/book/${book.id}'">
-                        <div class="relative overflow-hidden aspect-[3/4] bg-gray-50">
-                            <img src="${imgUrl}" alt="${book.title}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-in-out">
-                            <div class="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-md text-brand-orange opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                            </div>
-                        </div>
-                        <div class="p-4 flex flex-col flex-grow">
-                            <h3 class="font-bold text-brand-dark text-sm leading-tight line-clamp-2 mb-2 group-hover:text-brand-orange transition-colors">${book.title}</h3>
-                            <p class="text-xs text-brand-brown font-medium mb-3 truncate">${book.author}</p>
-                            <div class="mt-auto">
-                                <span class="font-black text-brand-orange text-lg">${price}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                    <div class="bg-white rounded-2xl shadow-premium border border-brand-border p-6 md:p-8 flex flex-col lg:flex-row gap-10">
+          <div class="w-full lg:w-5/12 flex flex-col gap-6 flex-shrink-0">
+            <div class="bg-brand-bg border border-brand-border rounded-xl p-4">
+
+              <div class="w-full aspect-square bg-brand-brown/10 rounded-lg border border-brand-brown/20 flex items-center justify-center overflow-hidden mb-4 img-zoom-container relative cursor-pointer">
+
+                <span class="absolute text-slate-400 text-sm font-medium z-0 select-none">Không có ảnh bìa</span>
+
+                <img th:src="${book.largeimageUrl != null ? book.largeimageUrl : (book.imageUrl != null ? book.imageUrl : 'https://via.placeholder.com/400x500?text=No+Cover')}"
+                     th:alt="${book.title}"
+                     onerror="this.onerror=null; this.style.opacity='0';"
+                     class="w-3/4 aspect-[3/4] object-cover border-8 border-white shadow-xl z-10 bg-white transition-opacity duration-300">
+
+                <div class="absolute bottom-4 right-4 bg-white/80 p-2 rounded-full text-brand-dark shadow-sm backdrop-blur-sm z-20">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-4 gap-3">
+                <div class="aspect-square bg-[#2c3e50]/80 rounded border-2 border-brand-orange cursor-pointer flex items-center justify-center shadow-sm">
+                  <span class="text-white text-[8px] font-bold">MẶT TRƯỚC</span>
+                </div>
+                <div class="aspect-square bg-brand-brown/20 rounded border border-brand-border cursor-pointer flex items-center justify-center hover:border-brand-brown transition">
+                  <span class="text-brand-dark text-[8px] font-bold">MẶT SAU</span>
+                </div>
+                <div class="aspect-square bg-brand-brown/20 rounded border border-brand-border cursor-pointer flex items-center justify-center hover:border-brand-brown transition">
+                  <span class="text-brand-dark text-[8px] font-bold">BÊN TRONG</span>
+                </div>
+                <div class="aspect-square bg-brand-brown/20 rounded border border-brand-border cursor-pointer flex items-center justify-center hover:border-brand-brown transition">
+                  <span class="text-brand-dark text-[8px] font-bold">QUÀ TẶNG</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-2 border-brand-border bg-brand-hero/10 rounded-xl p-5 flex items-center gap-4 hover:border-brand-brown transition-colors">
+              <div class="w-16 h-16 rounded-full bg-brand-hero border-2 border-white shadow-sm flex-shrink-0 flex items-center justify-center">
+                <span class="font-bold text-brand-dark text-lg" th:text="${book.seller != null ? #strings.substring(book.seller.username, 0, 2).toUpperCase() : 'SHOP'}">NN</span>
+              </div>
+
+              <div class="flex-grow flex flex-col justify-center">
+                <div class="flex items-center gap-2 mb-1">
+                  <h3 class="font-bold text-lg text-brand-dark" th:text="${book.seller != null ? book.seller.username : 'Nhà bán hàng'}">
+                    Tên Shop
+                  </h3>
+                  <span class="bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded">SHOP</span>
+                </div>
+                <div class="flex items-center gap-1 text-sm text-brand-dark mb-3">
+                  <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  <span class="text-gray-600 text-sm">Gian hàng uy tín</span>
+                </div>
+                <div class="flex gap-2">
+                  <button id="chat-now-btn" type="button" class="flex-1 border border-brand-brown text-brand-brown text-[12px] font-bold py-2 px-4 rounded-full hover:bg-brand-brown/5 transition shadow-sm uppercase flex items-center justify-center gap-2"
+                          th:attr="data-product-id=${book.id}, data-seller-id=${book.seller != null ? book.seller.id : ''}, data-product-title=${book.title}, data-product-price=${book.price}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01M8 8h.01M12 8h.01M16 8h.01M6 8h.01M6 12h.01M6 16h.01M18 8h.01M18 12h.01M18 16h.01"></path>
+                    </svg>
+                    Chat Ngay
+                  </button>
+                  <a th:href="@{/shop/{id}(id=${book.seller != null ? book.seller.id : 0})}" class="flex-1 bg-brand-brown text-white text-[12px] font-bold py-2 px-4 rounded-full hover:bg-brand-brown-dark transition shadow flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Xem Shop
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="w-full lg:w-7/12 flex flex-col">
+            <div class="mb-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="bg-brand-orange text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase" th:text="${book.category != null ? book.category.name : 'Sách'}">Thể loại</span>
+                <span class="bg-green-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">Mới Xuất Bản</span>
+              </div>
+              <h1 class="text-2xl md:text-3xl font-bold text-brand-dark leading-snug" th:text="${book.title}">Tên Sách</h1>
+              <p class="text-brand-brown font-medium mt-1" th:text="'Tác giả: ' + ${book.author}">Tác giả</p>
+            </div>
+
+            <div class="flex items-center text-sm mb-6 pb-6 border-b border-brand-border/60">
+              <div class="flex items-center gap-1 text-brand-orange border-r border-brand-border pr-4">
+                <span class="font-bold text-lg border-b border-brand-orange">5.0</span>
+                <div class="flex text-brand-orange text-sm tracking-tighter">
+                  ★★★★★
+                </div>
+              </div>
+              <div class="px-4 flex items-center gap-1">
+                <span class="font-bold text-brand-dark">3.5k</span>
+                <span class="text-gray-500">Đã bán</span>
+              </div>
+            </div>
+
+            <div class="bg-brand-bg rounded-xl p-6 mb-6 flex flex-col gap-2 border border-brand-border shadow-inner"
+                 th:with="safePrice=${book.price != null ? book.price : 0}, safeDiscount=${book.discountAmount != null ? book.discountAmount : 0}, finalPrice=${safePrice - safeDiscount}">
+
+              <div class="flex items-baseline gap-4">
+                <span class="text-brand-dark font-medium text-lg">Giá:</span>
+
+                <span th:if="${safeDiscount > 0}" class="text-gray-400 text-lg line-through decoration-1"
+                      th:text="|${#numbers.formatDecimal(safePrice, 0, 'COMMA', 0, 'POINT')}đ|">103,500đ</span>
+
+                <span class="text-4xl font-extrabold text-brand-orange"
+                      th:text="|${#numbers.formatDecimal(finalPrice, 0, 'COMMA', 0, 'POINT')}đ|">69,000đ</span>
+
+                <span th:if="${safeDiscount > 0}" class="bg-brand-orange text-white text-xs font-bold px-2 py-1 rounded-sm ml-2"
+                      th:text="'-' + ${safeDiscount} + 'đ GIẢM'">-33% GIẢM</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 mt-8 mb-6">
+              <span class="text-brand-dark font-bold uppercase tracking-wider text-sm">Số lượng</span>
+              <div class="flex items-center border-2 border-brand-accent rounded-full bg-white overflow-hidden w-36 shadow-sm">
+                <button type="button" id="btn-decrease-qty" class="w-12 h-10 flex items-center justify-center text-brand-dark hover:bg-brand-peach transition-colors font-black text-xl select-none outline-none">-</button>
+                <input type="text" id="detail-qty-input" value="1" readonly="" class="w-12 h-10 text-center text-brand-dark font-black text-lg outline-none border-x-2 border-brand-accent bg-brand-bg select-none">
+                <button type="button" id="btn-increase-qty" class="w-12 h-10 flex items-center justify-center text-brand-dark hover:bg-brand-peach transition-colors font-black text-xl select-none outline-none">+</button>
+              </div>
+              <span class="text-sm text-gray-500 font-medium ml-2" th:text="${book.stockQuantity} + ' sản phẩm có sẵn'">64 sản phẩm có sẵn</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 mt-auto">
+
+              <button id="detail-add-to-cart-btn" type="button" class="flex-1 text-lg font-bold py-3.5 px-6 rounded-lg transition shadow-sm flex items-center justify-center gap-2 border bg-brand-orange-light border-brand-orange text-brand-orange hover:bg-orange-100 group"
+                      th:attr="data-book-id=${book.id}" th:disabled="${book.stockQuantity <= 0}">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <span th:text="${book.stockQuantity > 0 ? 'Thêm Vào Giỏ' : 'Hết Hàng'}">Thêm Vào Giỏ Hàng</span>
+              </button>
+
+              <button id="detail-toggle-wishlist-btn" type="button" class="flex-1 border border-brand-orange text-brand-orange text-lg font-bold py-3.5 px-6 rounded-lg hover:bg-brand-orange-light transition shadow-sm flex items-center justify-center gap-2"
+                      th:attr="data-book-id=${book.id}, data-book-title=${book.title}, data-book-author=${book.author}, data-book-price=${book.price}, data-book-category=${book.category != null ? book.category.name : ''}">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                <span>Yêu thích</span>
+              </button>
+
+              <button id="detail-buy-now-btn" type="button" class="flex-1 text-lg font-bold py-3.5 px-6 rounded-lg transition shadow-md shadow-brand-orange/30 bg-brand-orange text-white hover:bg-orange-700"
+                      th:attr="data-book-id=${book.id}" th:disabled="${book.stockQuantity <= 0}">
+                Mua Ngay
+              </button>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-brand-border flex flex-wrap gap-6 text-xs text-brand-dark font-medium">
+              </div>
+          </div>
+        </div>`;
             });
 
             containerEl.innerHTML = htmlString;

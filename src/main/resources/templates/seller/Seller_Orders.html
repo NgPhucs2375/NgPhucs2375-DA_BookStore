@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/panel_head :: head('BOOKOM SELLER - Don hang', false)}"></head>
+<head th:replace="~{fragments/panel_head :: head('BOOKOM SELLER - Đơn hàng', false)}"></head>
 <body class="font-sans bg-[#fbfaf8] text-[#5D4037]">
 <div class="flex min-h-screen">
     <div th:replace="~{fragments/seller_layout :: sidebar(${activeMenu})}"></div>
@@ -8,7 +8,7 @@
         <div th:replace="~{fragments/seller_layout :: header(${pageTitle}, ${pageSubtitle})}"></div>
         <main class="p-4 md:p-8 space-y-6">
             <section class="rounded-xl border border-[#E5CBB5] bg-white p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input id="orders-q" class="rounded-lg border border-[#E5CBB5] px-3 py-2 font-bold" placeholder="Tim ma don/khach/san pham">
+                <input id="orders-q" class="rounded-lg border border-[#E5CBB5] px-3 py-2 font-bold" placeholder="Tìm mã đơn hàng/sản phẩm">
                 <select id="orders-status" class="rounded-lg border border-[#E5CBB5] px-3 py-2 font-bold">
                     <option value="all">Tất cả trạng thái</option>
                     <option value="PENDING_PAYMENT">Chờ thanh toán</option>

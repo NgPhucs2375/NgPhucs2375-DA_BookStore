@@ -56,11 +56,31 @@ public class CustomerAnalysisService {
             customer.setProductReviewScoreAvg(freshFeatures.getProductReviewScoreAvg());
             customer.setSatisfactionScore(freshFeatures.getSatisfactionScore());
             customer.setPriceSensitivityIndex(freshFeatures.getPriceSensitivityIndex());
+            customer.setDiscountUsageRate(freshFeatures.getDiscountUsageRate());
+            customer.setReturnRate(freshFeatures.getReturnRate());
             log.info("Refreshed ML features for existing Customer record of user {}", userId);
         }
 
         // 2. Map sang DTO gửi lên ML API
         CustomerMLInput input = customerService.toMlInput(customer);
+
+        // ================================================================
+        // DEBUG: In ra toàn bộ features trước khi gửi lên Python API
+        // ================================================================
+        log.info("========== 🧠 DEBUG: Features gửi lên ML API cho userId={} ==========", userId);
+        log.info("accountAgeMonths={}", input.getAccountAgeMonths());
+        log.info("avgOrderValue={}", input.getAvgOrderValue());
+        log.info("totalOrders={}", input.getTotalOrders());
+        log.info("customerSupportTickets={}", input.getCustomerSupportTickets());
+        log.info("loyaltyMember={}", input.getLoyaltyMember());
+        log.info("browsingFrequencyPerWeek={}", input.getBrowsingFrequencyPerWeek());
+        log.info("cartAbandonmentRate={}", input.getCartAbandonmentRate());
+        log.info("productReviewScoreAvg={}", input.getProductReviewScoreAvg());
+        log.info("satisfactionScore={}", input.getSatisfactionScore());
+        log.info("priceSensitivityIndex={}", input.getPriceSensitivityIndex());
+        log.info("discountUsageRate={}", input.getDiscountUsageRate());
+        log.info("returnRate={}", input.getReturnRate());
+        log.info("================================================================");
 
         // 3. Gọi ML API
         PredictionResult result = mlApiService.predictCustomer(input);
@@ -102,6 +122,8 @@ public class CustomerAnalysisService {
                     customer.setProductReviewScoreAvg(freshFeatures.getProductReviewScoreAvg());
                     customer.setSatisfactionScore(freshFeatures.getSatisfactionScore());
                     customer.setPriceSensitivityIndex(freshFeatures.getPriceSensitivityIndex());
+                    customer.setDiscountUsageRate(freshFeatures.getDiscountUsageRate());
+                    customer.setReturnRate(freshFeatures.getReturnRate());
                 }
 
                 CustomerMLInput input = customerService.toMlInput(customer);

@@ -12,6 +12,7 @@ import com.example.bookstore.dto.UserProfileUpdateRequest;
 import com.example.bookstore.model.RefreshToken;
 import com.example.bookstore.model.User;
 import com.example.bookstore.model.enums.UserRole;
+import com.example.bookstore.repository.UserRepository;
 import com.example.bookstore.security.JwtTokenProvider;
 import com.example.bookstore.service.AuthOtpService;
 import com.example.bookstore.service.AuthService;
@@ -48,6 +49,9 @@ public class AuthController {
 
     @Autowired
     FirebaseAuthService firebaseAuthService;
+
+    @Autowired
+    UserRepository userRepository;
 
     @PostMapping("/otp/request")
     public ResponseEntity<?> requestRegisterOtp(@Valid @RequestBody EmailOtpRequest request) {
@@ -373,7 +377,7 @@ public class AuthController {
 
         // 2 Chống thêm các thể html 
         if (request.getShopName() != null) {
-            request.setShopName(request.getShopName().replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
+            request.setShopName(request.getShopName().replaceAll("<", "<").replaceAll(">", ">"));
         }
         // 3. Đẩy xuống Service xử lý
         try {
@@ -382,6 +386,23 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    /**
+     * Check if a phone number already exists in the system.
+     * Used by checkout page to validate phone number uniqueness.
+     * 
+     * GET /api/auth/check-phone?phone=0123456789
+     * 
+     * Response:
+     * {
+     *   "exists": true
+     * }
+     */
+    @GetMapping("/check-phone")
+    public ResponseEntity<Map<String, Boolean>> checkPhone(@RequestParam String phone) {
+        boolean exists = userRepository.existsByPhone(phone);
+        return ResponseEntity.ok(Map.of("exists", exists));
     }
 
 }

@@ -948,6 +948,7 @@ var ApiService = window.ApiService || (() => {
         getAuth,
         getHeaders,
         formatVND,
+        fetchWithAuth,
 
         // API Groups
         Auth,
@@ -1007,15 +1008,37 @@ var ApiService = window.ApiService || (() => {
                 localStorage.removeItem('sellerId');
             }
         },
-        // Helper: Logout
-        logout: () => {
+        // Helper: Logout - Xóa toàn bộ dữ liệu xác thực và chống rollback
+        logout: async () => {
+            // 1. Gọi server logout để invalidate token (nếu có)
+            try {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+            } catch (e) {
+                // Bỏ qua lỗi nếu server không hỗ trợ endpoint logout
+                console.log('Logout API call failed (optional):', e);
+            }
+
+            // 2. Xóa toàn bộ dữ liệu xác thực khỏi localStorage
             localStorage.removeItem('userId');
             localStorage.removeItem('accessToken');
             localStorage.removeItem('userRole');
+            localStorage.removeItem('sellerId');
+
+            // 3. Xóa toàn bộ dữ liệu xác thực khỏi sessionStorage
             sessionStorage.removeItem('userId');
             sessionStorage.removeItem('accessToken');
             sessionStorage.removeItem('userRole');
-            window.location.href = '/';
+            sessionStorage.removeItem('sellerId');
+
+            // 4. Xóa toàn bộ localStorage (dự phòng xóa các key khác)
+            localStorage.clear();
+
+            // 5. Dùng replace() để xóa trang hiện tại khỏi lịch sử trình duyệt
+            //    User KHÔNG THỂ bấm nút Back để quay lại trang seller
+            window.location.replace('/');
         }
     };
 })();

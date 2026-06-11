@@ -1,5 +1,6 @@
 package com.example.bookstore.model;
 
+import com.example.bookstore.model.converter.LoyaltyMemberConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 /**
  * Entity lưu thông tin khách hàng phục vụ ML churn prediction (mô hình final-gauss-lightgbm).
  * Quan hệ 1-1 với User, tách biệt để không ảnh hưởng bảng users.
- * Input: 10 raw features
+ * Input: 12 raw features (đồng bộ với features_config.json)
  * Output: predicted_label (0/1), churn_probability, risk_level (LOW/HIGH)
  */
 @Entity
@@ -31,7 +32,7 @@ public class Customer {
     private User user;
 
     // ========================
-    // ML Input Features (10 raw features)
+    // ML Input Features (12 raw features — đồng bộ với features_config.json)
     // ========================
 
     @Column(nullable = false)
@@ -46,8 +47,9 @@ public class Customer {
     @Column(nullable = false)
     private Double customerSupportTickets;
 
-    @Column(nullable = false, length = 10)
-    private String loyaltyMember; // "Yes" / "No"
+    @Convert(converter = LoyaltyMemberConverter.class)
+    @Column(nullable = false, columnDefinition = "FLOAT")
+    private Double loyaltyMember; // 0.0 = No, 1.0 = Yes (float theo features_config.json)
 
     @Column(nullable = false)
     private Double browsingFrequencyPerWeek;
@@ -63,6 +65,12 @@ public class Customer {
 
     @Column(nullable = false)
     private Double priceSensitivityIndex;
+
+    @Column(nullable = false)
+    private Double discountUsageRate; // Tỷ lệ sử dụng giảm giá 0.0-1.0
+
+    @Column(nullable = false)
+    private Double returnRate; // Tỷ lệ trả hàng 0.0-1.0
 
     // ========================
     // ML Output Results

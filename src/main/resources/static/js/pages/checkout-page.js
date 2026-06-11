@@ -23,6 +23,7 @@
     const addressesContainer = document.getElementById('checkout-addresses-list');
     const fullnameInput = document.getElementById('fullname');
     const phoneInput = document.getElementById('phone');
+    const phoneErrorEl = document.getElementById('phone-error');
     const addressDetailInput = document.getElementById('address_detail');
     const saveDefaultCheckbox = document.getElementById('save-default-checkbox');
     const estimatedDeliveryEl = document.getElementById('checkout-estimated-delivery');
@@ -339,6 +340,77 @@
         } catch (e) { throw e; }
     };
 
+    // --- PHONE VALIDATION ---
+    const setPhoneError = (message) => {
+        if (!phoneErrorEl) return;
+        if (message) {
+            phoneErrorEl.textContent = message;
+            phoneErrorEl.classList.remove('hidden');
+            phoneInput?.classList.add('border-red-500', 'focus:border-red-500');
+            phoneInput?.classList.remove('focus:border-[#E76F51]');
+        } else {
+            phoneErrorEl.textContent = '';
+            phoneErrorEl.classList.add('hidden');
+            phoneInput?.classList.remove('border-red-500', 'focus:border-red-500');
+            phoneInput?.classList.add('focus:border-[#E76F51]');
+        }
+    };
+
+    const validatePhoneFormat = (phone) => {
+        // Chỉ cho phép số, loại bỏ ký tự không phải số
+        const cleaned = phone.replace(/\D/g, '');
+        if (cleaned.length > 10) {
+            return cleaned.slice(0, 10);
+        }
+        return cleaned;
+    };
+
+    const isPhoneValid = (phone) => {
+        return /^\d{10}$/.test(phone);
+    };
+
+    const checkPhoneExists = async (phone) => {
+        try {
+            const res = await fetch(`/api/auth/check-phone?phone=${encodeURIComponent(phone)}`);
+            const data = await res.json();
+            return data.exists;
+        } catch (e) {
+            console.error('Check phone error:', e);
+            return false;
+        }
+    };
+
+    // Validate phone input on every keystroke
+    phoneInput?.addEventListener('input', function() {
+        const raw = this.value;
+        const cleaned = validatePhoneFormat(raw);
+        if (cleaned !== raw) {
+            this.value = cleaned;
+        }
+        // Clear error while typing
+        setPhoneError('');
+    });
+
+    // Validate phone on blur (when user leaves the field)
+    phoneInput?.addEventListener('blur', async function() {
+        const phone = this.value.trim();
+        if (!phone) {
+            setPhoneError('');
+            return;
+        }
+        if (!isPhoneValid(phone)) {
+            setPhoneError('Số điện thoại phải gồm đúng 10 chữ số.');
+            return;
+        }
+        // Check uniqueness
+        const exists = await checkPhoneExists(phone);
+        if (exists) {
+            setPhoneError('Số điện thoại này đã được sử dụng bởi người dùng khác.');
+        } else {
+            setPhoneError('');
+        }
+    });
+
     // --- EVENT LISTENERS ---
 
     // Nút Lưu Địa Chỉ
@@ -363,6 +435,20 @@
             // Xác thực dữ liệu
             if (!payload.recipientName || !payload.recipientPhone || !payload.province || !payload.district || !payload.ward || !payload.addressLine) {
                 alert('Vui lòng điền và chọn đầy đủ thông tin địa chỉ!');
+                return;
+            }
+
+            // Validate phone number format
+            const phone = payload.recipientPhone;
+            if (!isPhoneValid(phone)) {
+                setPhoneError('Số điện thoại phải gồm đúng 10 chữ số.');
+                return;
+            }
+
+            // Check phone uniqueness
+            const phoneExists = await checkPhoneExists(phone);
+            if (phoneExists) {
+                setPhoneError('Số điện thoại này đã được sử dụng bởi người dùng khác.');
                 return;
             }
 
@@ -454,6 +540,22 @@
             if (!addressLine || addressLine.split('•').length < 3) {
                 alert('Vui lòng chọn địa chỉ đã lưu hoặc điền đầy đủ form địa chỉ mới.');
                 return;
+            }
+
+            // Nếu đang dùng form nhập tay (không chọn địa chỉ đã lưu), validate phone
+            if (!addressId) {
+                const phone = (phoneInput?.value || '').trim();
+                if (phone) {
+                    if (!isPhoneValid(phone)) {
+                        setPhoneError('Số điện thoại phải gồm đúng 10 chữ số.');
+                        return;
+                    }
+                    const phoneExists = await checkPhoneExists(phone);
+                    if (phoneExists) {
+                        setPhoneError('Số điện thoại này đã được sử dụng bởi người dùng khác.');
+                        return;
+                    }
+                }
             }
 
             const paymentMethod = document.querySelector('input[name="payment"]:checked')?.id;

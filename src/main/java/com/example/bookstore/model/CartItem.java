@@ -31,5 +31,5 @@ public class CartItem {
     private Book book;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private Integer quantity; // số lượng
 }

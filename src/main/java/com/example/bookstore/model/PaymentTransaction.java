@@ -16,7 +16,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PaymentTransaction {
+public class PaymentTransaction { // lưu vết giao dịch
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,7 +57,7 @@ public class PaymentTransaction {
     private LocalDateTime paidAt; // When payment was completed
 
     @Column(name = "expired_at")
-    private LocalDateTime expiredAt; // Payment link expiry
+    private LocalDateTime expiredAt; // Payment link expiry : vòng đời
 
     @Column(length = 500)
     private String failureReason; // Reason if payment failed

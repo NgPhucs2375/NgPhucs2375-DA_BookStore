@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SupportTicket {
+public class SupportTicket { // hỗ trợ khiếu nại
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

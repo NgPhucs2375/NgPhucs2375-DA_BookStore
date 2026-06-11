@@ -17,6 +17,7 @@ import java.util.Objects;
 @Component
 public class JwtTokenProvider {
 
+    //
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final byte[] secret;

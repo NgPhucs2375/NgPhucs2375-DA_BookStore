@@ -6,6 +6,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SecurityUtils {
+    // CHỐNG XSS(CROSS-SITE SCRIPTING) : USE LIB OWASP HTML SANITIZER DỂ LỌC SẠCH THẺ <SCRIPT> ĐỘC HẠI KHI USER LOGIN
+
+
+
     // chỉ cho phép 1 số thẻ HTML cơ bản, chặn <script> và các thẻ nguy hiểm khác
     private static final PolicyFactory SANITIZER_POLICY = new HtmlPolicyBuilder()
             .allowElements("b", "i", "u", "em", "strong", "p", "br", "ul", "ol", "li")

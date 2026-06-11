@@ -41,7 +41,7 @@ public class BookReview {
 
     @Column(name = "is_hidden", nullable = false)
     @ColumnDefault("0")
-    private boolean isHidden = false;
+    private boolean isHidden = false; // ẩn bình luận
 
     @PrePersist
     protected void onCreate() {

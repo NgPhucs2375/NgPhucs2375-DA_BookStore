@@ -21,7 +21,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Order {
+public class Order { // đơn hàng gốc Master_orders
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

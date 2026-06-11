@@ -25,22 +25,22 @@ import java.util.Set;
 @NoArgsConstructor // Tự tạo Constructor không tham số
 @AllArgsConstructor // Tự tạo Constructor có đủ tham số
 @Builder
-public class User {
+public class User { // Center
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Tự động tăng ID
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String username;
+    private String username; // Tên đăng nhâp
 
     @JsonIgnore
     @Column(nullable = false, name = "password_hash")
-    private String passwordHash;
+    private String passwordHash; // password
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private UserRole role;
+    private UserRole role; // Phân quyền
 
     // Profile Information
     @Column(length = 100)
@@ -62,7 +62,7 @@ public class User {
     private String gender; // MALE, FEMALE, OTHER
 
     @Column(length = 500)
-    private String bio;
+    private String bio; // tiểu sử (Phúc : thấy hơi thừa mà thôi kệ  : ) )
 
     // Seller Information
     @Column(length = 255)
@@ -75,6 +75,9 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    // DÙng Set kết hợp EqualsAndHashCode.Exclude cho Many to Many để tối ưu perf và tránh lỗi bộ nhớ bị leak trong Hibernate
+
+    // Thể loại yêu thích ở trang auth đó
     @ManyToMany
     @JoinTable(
         name = "user_favorite_categories",
@@ -86,6 +89,7 @@ public class User {
     @EqualsAndHashCode.Exclude
     private Set<Category> favoriteCategories = new LinkedHashSet<>();
 
+    // Wishlist : list favor đó
     @ManyToMany
     @JoinTable(
         name = "user_wishlist_books",
@@ -97,6 +101,7 @@ public class User {
     @Builder.Default
     private Set<Book> wishlistBooks = new LinkedHashSet<>();
 
+    // 1 user có thể mua nhiều sách
     @OneToMany(mappedBy = "seller")
     @JsonIgnore
     @Builder.Default
@@ -104,6 +109,7 @@ public class User {
     @EqualsAndHashCode.Exclude
     private List<Book> books = new ArrayList<>();
 
+    // 1 user có thể mua nhiều sách từ nhiều seller
     @OneToMany(mappedBy = "seller")
     @JsonIgnore
     @Builder.Default
@@ -111,21 +117,25 @@ public class User {
     @EqualsAndHashCode.Exclude
     private List<SubOrder> subOrders = new ArrayList<>();
 
+    // n user có thể có nheieuf thông  báo
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @Builder.Default
     private List<Notification> notifications = new ArrayList<>();
 
+    // 1 user có thể có nhiều địa chỉ
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @Builder.Default
     private List<UserAddress> addresses = new ArrayList<>();
 
+    // 1 user có thể có nhiều sự kiện bảo mật
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @Builder.Default
     private List<UserSecurityEvent> securityEvents = new ArrayList<>();
 
+    // 1 buyer có 1 giỏ hàng
     @OneToOne(mappedBy = "buyer")
     @JsonIgnore
     @ToString.Exclude

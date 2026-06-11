@@ -14,7 +14,7 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RefreshToken {
+public class RefreshToken { // để làm vụ remmember me đó
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;

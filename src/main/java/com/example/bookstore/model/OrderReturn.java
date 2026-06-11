@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderReturn {
+public class OrderReturn { // trả hàng/ hoàn tiền hoặc trả lại 1 phần (orderitem)
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

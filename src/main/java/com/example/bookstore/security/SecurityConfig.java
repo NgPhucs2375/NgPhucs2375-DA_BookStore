@@ -25,8 +25,26 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-public class SecurityConfig {
+public class SecurityConfig { // Phân quyền theo Vai trò RBAC
+    // ROLE : SELLER, BUYER, ADMIN
+    // LỚP 1 : Phân quyền theo Vai trò RBAC (Role-Based Access Control)
+    //1. triển khai : authorizeHttpRequests : chặn các Endpoint(URL) không được phép đó
+    //      Ví dụ /api/seller bắt buộc phải có quyền SELLER
 
+
+    // LỚP 2 : PHÂN QUYỀN THEO THUỘC TÍNH DỮ LIỆU ABAC (Attribute-Based Access Control)
+    // PROBLEM : CLASS1  CHỈ PHÂN BIỆT "ROLE" HOW STOP NG A crud PROFUCE NG B HAY XEM DUỌC HNAFG CỦA NG B
+    // SOLUTION : CustomPermissionEvaluator
+    //HƠ TO ỬOD : KHI RUN FUNC SPBOOT RUN @PreAuthorize("hasPermission(#bookId, 'Book', 'update')") HỎI SYS BOOK NÀY CÓ THUỘC VỀ SELLERID ĐANG CẦM TOKEN HAY KHÔNG
+
+    // EROR 401 SMART : NẾU GỌI API THÌ TRẢ VỀ JSON LỖI {"error": "Unauthorized"} RỒI REDIRECT VỀ /MAIN/AUTH
+
+    //csrf.disable() : OFF CSRF VÌ SYS DUNGF JWT (DON'T YÊU SESSION/COOKIE DÈAULT NÊN KHÔNG SỢ CSRF)
+    //corsConfigurationSource() : CONFIG CORS MỞ CỬA * ĐỂ fe KO BỊ CHẶN NET::ERR_FAILED
+
+    //sessionManagement(STATELESS) : KHÔNG SAVE SESSION TRÊN RAM MỌI REQUEST ĐỀU PHẢI GỬI KÈM JWT TOKEN GIÚP DỄ SCALE
+
+    //.addFilterBefore(...) : CHÈN JwtAuthenticationFilter CHẶN KIỂM TRA TRƯỚC THẺ (TOKEN) CỦA MỌI REQUEST
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
@@ -66,7 +84,7 @@ public class SecurityConfig {
                         })
                 )
 
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> auth // chặn các Endpoint(URL) không được phép đó
                         // Public routes
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/assets/**", "/webjars/**", "/favicon.ico").permitAll() // mở khóa file tĩnh
                         .requestMatchers("/api/auth/register-admin").hasAuthority("ADMIN")

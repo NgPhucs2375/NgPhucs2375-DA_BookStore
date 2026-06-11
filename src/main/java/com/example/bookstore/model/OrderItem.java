@@ -16,7 +16,8 @@ import lombok.EqualsAndHashCode;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderItem {
+public class OrderItem { // chi tiết sản phẩm nằm bên trong sub-order
+    //
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,7 +32,7 @@ public class OrderItem {
     private Book book;
 
     @Column(nullable = false)
-    private Double unitPrice;
+    private Double unitPrice; // lưư lại lịch sử giá chốt tại thười điểm mua
 
     @Column(nullable = false)
     private Integer quantity;

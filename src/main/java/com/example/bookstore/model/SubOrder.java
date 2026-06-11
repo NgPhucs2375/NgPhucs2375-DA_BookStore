@@ -21,7 +21,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SubOrder {
+public class SubOrder { // đơn hàng phụ - shop_orders
+    // mỗi sub đc gắn với 1 seller
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,7 +43,7 @@ public class SubOrder {
     @Column(nullable = false)
     private Double subTotal;
 
-    @Version
+    @Version //(Optimistic Locking) : tránh tranh chấp dữ liệu khi n user/system cung cấo update status sub-order cùng lúc
     @Builder.Default
     private Long version = 0L;
 

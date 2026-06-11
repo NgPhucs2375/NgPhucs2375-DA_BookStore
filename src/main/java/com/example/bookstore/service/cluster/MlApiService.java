@@ -2,6 +2,9 @@ package com.example.bookstore.service.cluster;
 
 import com.example.bookstore.dto.ml.CustomerMLInput;
 import com.example.bookstore.dto.ml.PredictionResult;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +23,7 @@ import org.springframework.web.client.RestTemplate;
 public class MlApiService {
 
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     @Value("${ml.api.url}")
     private String mlApiUrl;
@@ -36,13 +40,34 @@ public class MlApiService {
 
         HttpEntity<CustomerMLInput> request = new HttpEntity<>(input, headers);
 
+        // ================================================================
+        // DEBUG: In ra JSON body thực tế gửi lên Python API
+        // ================================================================
+        try {
+            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+            String jsonBody = objectMapper.writeValueAsString(input);
+            log.info("========== 🐍 DEBUG: JSON gửi lên Python ML API ==========");
+            log.info("URL: {}", mlApiUrl);
+            log.info("Request Body:\n{}", jsonBody);
+            log.info("==========================================================");
+        } catch (JsonProcessingException e) {
+            log.warn("Không thể serialize input thành JSON để debug: {}", e.getMessage());
+        }
+
         log.info("Calling ML API at {} with input: {}", mlApiUrl, input);
         try {
             PredictionResult result = restTemplate.postForObject(mlApiUrl, request, PredictionResult.class);
-            log.info("ML API response: {}", result);
+            log.info("========== 🐍 DEBUG: Response từ Python ML API ==========");
+            log.info("Response: {}", result);
+            log.info("==========================================================");
             return result;
         } catch (Exception e) {
-            log.error("Failed to call ML API: {}", e.getMessage());
+            log.error("========== 🐍 DEBUG: LỖI GỌI PYTHON ML API ==========");
+            log.error("URL: {}", mlApiUrl);
+            log.error("Input gửi lên: {}", input);
+            // Log full stacktrace
+            log.error("Full stacktrace:", e);
+            log.error("==========================================================");
             throw new RuntimeException("ML API call failed: " + e.getMessage(), e);
         }
     }

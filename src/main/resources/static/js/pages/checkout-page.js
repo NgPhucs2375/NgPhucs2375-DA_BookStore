@@ -1,6 +1,44 @@
 (() => {
     if (!window.ApiService) return;
 
+    // ==========================================
+    // VALIDATION FUNCTIONS (dùng cho onblur)
+    // ==========================================
+
+    /**
+     * Validate checkout field (fullname, phone) - gọi từ HTML onblur
+     */
+    window.validateCheckoutField = function(fieldId) {
+        if (!window.ValidationUtils) return true;
+        const value = document.getElementById(fieldId)?.value || '';
+        let result;
+
+        switch (fieldId) {
+            case 'fullname':
+                result = ValidationUtils.validateFullName(value, 'Họ và tên');
+                if (result.valid) {
+                    document.getElementById(fieldId).value = result.sanitized;
+                    ValidationUtils.clearError(fieldId);
+                } else {
+                    ValidationUtils.showError(fieldId, result.error);
+                }
+                return result.valid;
+
+            case 'phone':
+                result = ValidationUtils.validatePhone(value);
+                if (result.valid) {
+                    document.getElementById(fieldId).value = result.normalized;
+                    ValidationUtils.clearError(fieldId);
+                } else {
+                    ValidationUtils.showError(fieldId, result.error);
+                }
+                return result.valid;
+
+            default:
+                return true;
+        }
+    };
+
     // --- DOM ELEMENTS ---
     const badgeEl = document.getElementById('checkout-items-badge');
     const itemsEl = document.getElementById('checkout-cart-items');
@@ -23,6 +61,7 @@
     const addressesContainer = document.getElementById('checkout-addresses-list');
     const fullnameInput = document.getElementById('fullname');
     const phoneInput = document.getElementById('phone');
+    const phoneErrorEl = document.getElementById('phone-error');
     const addressDetailInput = document.getElementById('address_detail');
     const saveDefaultCheckbox = document.getElementById('save-default-checkbox');
     const estimatedDeliveryEl = document.getElementById('checkout-estimated-delivery');
@@ -339,6 +378,37 @@
         } catch (e) { throw e; }
     };
 
+    // --- PHONE VALIDATION (dùng ValidationUtils) ---
+    // checkPhoneExists đã được thay thế bằng ValidationUtils.validatePhoneUnique
+
+    // Validate phone input on every keystroke
+    phoneInput?.addEventListener('input', function() {
+        ValidationUtils.filterPhoneInput(this);
+        // Clear error while typing
+        ValidationUtils.clearError('phone');
+    });
+
+    // Validate phone on blur (when user leaves the field)
+    phoneInput?.addEventListener('blur', async function() {
+        const phone = this.value.trim();
+        if (!phone) {
+            ValidationUtils.clearError('phone');
+            return;
+        }
+        const result = ValidationUtils.validatePhone(phone);
+        if (!result.valid) {
+            ValidationUtils.showError('phone', result.error);
+            return;
+        }
+        // Check uniqueness using ValidationUtils
+        const uniqueResult = await ValidationUtils.validatePhoneUnique(result.normalized);
+        if (!uniqueResult.valid) {
+            ValidationUtils.showError('phone', uniqueResult.error);
+        } else {
+            ValidationUtils.clearError('phone');
+        }
+    });
+
     // --- EVENT LISTENERS ---
 
     // Nút Lưu Địa Chỉ
@@ -360,11 +430,41 @@
                 isDefault: saveDefaultCheckbox?.checked || false
             };
 
-            // Xác thực dữ liệu
-            if (!payload.recipientName || !payload.recipientPhone || !payload.province || !payload.district || !payload.ward || !payload.addressLine) {
-                alert('Vui lòng điền và chọn đầy đủ thông tin địa chỉ!');
+            // Xác thực dữ liệu bằng ValidationUtils
+            ValidationUtils.clearAllErrors();
+
+            // Validate fullname
+            const nameResult = ValidationUtils.validateFullName(payload.recipientName, 'Tên người nhận');
+            if (!nameResult.valid) {
+                ValidationUtils.showError('fullname', nameResult.error);
                 return;
             }
+
+            // Validate phone
+            const phoneResult = ValidationUtils.validatePhone(payload.recipientPhone);
+            if (!phoneResult.valid) {
+                ValidationUtils.showError('phone', phoneResult.error);
+                return;
+            }
+
+            // Kiểm tra các trường địa chỉ bắt buộc
+            if (!payload.province || !payload.district || !payload.ward || !payload.addressLine) {
+                alert('Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã và điền địa chỉ chi tiết!');
+                return;
+            }
+
+            // Check phone uniqueness using ValidationUtils
+            const uniqueResult = await ValidationUtils.validatePhoneUnique(phoneResult.normalized);
+            if (!uniqueResult.valid) {
+                ValidationUtils.showError('phone', uniqueResult.error);
+                return;
+            }
+
+            // Cập nhật giá trị đã chuẩn hóa
+            fullnameInput.value = nameResult.sanitized;
+            phoneInput.value = phoneResult.normalized;
+            payload.recipientName = nameResult.sanitized;
+            payload.recipientPhone = phoneResult.normalized;
 
             const created = await createAddress(payload);
             if (created?.id && payload.isDefault) {
@@ -454,6 +554,23 @@
             if (!addressLine || addressLine.split('•').length < 3) {
                 alert('Vui lòng chọn địa chỉ đã lưu hoặc điền đầy đủ form địa chỉ mới.');
                 return;
+            }
+
+            // Nếu đang dùng form nhập tay (không chọn địa chỉ đã lưu), validate phone
+            if (!addressId) {
+                const phone = (phoneInput?.value || '').trim();
+                if (phone) {
+                    const result = ValidationUtils.validatePhone(phone);
+                    if (!result.valid) {
+                        ValidationUtils.showError('phone', result.error);
+                        return;
+                    }
+                    const uniqueResult = await ValidationUtils.validatePhoneUnique(result.normalized);
+                    if (!uniqueResult.valid) {
+                        ValidationUtils.showError('phone', uniqueResult.error);
+                        return;
+                    }
+                }
             }
 
             const paymentMethod = document.querySelector('input[name="payment"]:checked')?.id;

@@ -107,7 +107,7 @@ public class OrderService {
             SubOrder subOrder = SubOrder.builder()
                     .parentOrder(order)
                     .seller(seller)
-                    .status(OrderStatus.PENDING_PAYMENT)
+                    .status(OrderStatus.PROCESSING)
                     .subTotal(0.0)
                     .build();
 
@@ -235,7 +235,7 @@ public class OrderService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
 
         if (!canBuyerCancelOrder(order)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ có thể hủy đơn hàng ở trạng thái chờ thanh toán hoặc chờ xác nhận");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ có thể hủy đơn hàng ở trạng thái đang xác nhận");
         }
 
         if (order.getSubOrders() != null) {
@@ -435,9 +435,6 @@ public class OrderService {
         OrderStatus nextStatus;
 
         switch (currentStatus) {
-            case PENDING_PAYMENT:
-                nextStatus = OrderStatus.PROCESSING;
-                break;
             case PROCESSING:
                 nextStatus = OrderStatus.COMFIRMED;
                 break;
@@ -449,7 +446,7 @@ public class OrderService {
                 break;
             default:
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        String.format("Không thể xác nhận đơn hàng ở trạng thái '%s'. Chỉ có thể xác nhận đơn ở trạng thái: PENDING_PAYMENT, PROCESSING, COMFIRMED, SHIPPING",
+                        String.format("Không thể xác nhận đơn hàng ở trạng thái '%s'. Chỉ có thể xác nhận đơn ở trạng thái: PROCESSING, COMFIRMED, SHIPPING",
                                 currentStatus));
         }
 
@@ -489,7 +486,6 @@ public class OrderService {
     private String getStatusDisplayName(OrderStatus status) {
         if (status == null) return "Không xác định";
         switch (status) {
-            case PENDING_PAYMENT: return "Chờ thanh toán";
             case PROCESSING:      return "Đang xác nhận";
             case COMFIRMED:       return "Đã xác nhận";
             case SHIPPING:        return "Đang giao";
@@ -707,7 +703,7 @@ public class OrderService {
      */
     private OrderStatus determineOverallOrderStatus(Order order) {
         if (order.getSubOrders() == null || order.getSubOrders().isEmpty()) {
-            return OrderStatus.PENDING_PAYMENT;
+            return OrderStatus.PROCESSING;
         }
 
         if (order.getSubOrders().stream().allMatch(so -> so.getStatus() == OrderStatus.CANCELLED)) {
@@ -729,7 +725,7 @@ public class OrderService {
             return OrderStatus.PROCESSING;
         }
 
-        return OrderStatus.PENDING_PAYMENT;
+        return OrderStatus.PROCESSING;
     }
 
     /**
@@ -737,10 +733,10 @@ public class OrderService {
      */
     private boolean hasOrderStatus(Order order, OrderStatus status) {
         if (order.getSubOrders() == null || order.getSubOrders().isEmpty()) {
-            return status == OrderStatus.PENDING_PAYMENT;
+            return status == OrderStatus.PROCESSING;
         }
 
-        if (status == OrderStatus.CANCELLED || status == OrderStatus.COMPLETED || status == OrderStatus.PENDING_PAYMENT) {
+        if (status == OrderStatus.CANCELLED || status == OrderStatus.COMPLETED || status == OrderStatus.PROCESSING) {
             return order.getSubOrders().stream()
                 .allMatch(subOrder -> subOrder.getStatus() == status);
         }
@@ -754,11 +750,10 @@ public class OrderService {
             return true;
         }
 
-        // Allow cancellation only if all sub-orders are in PENDING_PAYMENT or PROCESSING state
+        // Allow cancellation only if all sub-orders are in PROCESSING state
         // Cannot cancel: COMFIRMED, SHIPPING, COMPLETED, CANCELLED
         return order.getSubOrders().stream()
             .allMatch(subOrder -> 
-                subOrder.getStatus() == OrderStatus.PENDING_PAYMENT ||
                 subOrder.getStatus() == OrderStatus.PROCESSING);
     }
 
@@ -773,7 +768,7 @@ public class OrderService {
             buyerReq.setTitle("Đơn hàng đã được tạo");
             buyerReq.setMessage(String.format("Đơn hàng #%d của bạn đã được tạo thành công.", order.getId()));
             buyerReq.setPayloadJson(String.format("{\"orderId\":%d,\"status\":\"%s\",\"source\":\"checkout\"}",
-                    order.getId(), OrderStatus.PENDING_PAYMENT.name()));
+                    order.getId(), OrderStatus.PROCESSING.name()));
             buyerReq.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
             notificationService.createNotification(buyer.getId(), buyer.getId(), buyerReq);
         } catch (Exception e) {
@@ -786,7 +781,7 @@ public class OrderService {
             adminReq.setTitle("Có đơn hàng mới");
             adminReq.setMessage(String.format("Đơn hàng #%d vừa được tạo bởi %s.", order.getId(), buyer.getUsername()));
             adminReq.setPayloadJson(String.format("{\"orderId\":%d,\"buyerId\":%d,\"buyerUsername\":\"%s\",\"status\":\"%s\"}",
-                    order.getId(), buyer.getId(), buyer.getUsername().replace("\"", "\\\""), OrderStatus.PENDING_PAYMENT.name()));
+                    order.getId(), buyer.getId(), buyer.getUsername().replace("\"", "\\\""), OrderStatus.PROCESSING.name()));
             adminReq.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
             notificationService.createNotificationForAdmins(buyer.getId(), adminReq);
         } catch (Exception e) {
@@ -816,7 +811,7 @@ public class OrderService {
                 sellerReq.setMessage(String.format("Đơn hàng #%d có sản phẩm của shop bạn, tổng tiền phần shop: %.0f VND.",
                         order.getId(), sellerTotal));
                 sellerReq.setPayloadJson(String.format("{\"orderId\":%d,\"sellerId\":%d,\"status\":\"%s\",\"subTotal\":%.0f}",
-                        order.getId(), seller.getId(), OrderStatus.PENDING_PAYMENT.name(), sellerTotal));
+                        order.getId(), seller.getId(), OrderStatus.PROCESSING.name(), sellerTotal));
                 sellerReq.setPriority(com.example.bookstore.model.enums.NotificationPriority.NORMAL);
                 notificationService.createNotification(buyer.getId(), seller.getId(), sellerReq);
             } catch (Exception e) {

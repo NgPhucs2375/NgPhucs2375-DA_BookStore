@@ -192,4 +192,25 @@ public interface BookRepository extends JpaRepository<Book, Long>,JpaSpecificati
             Pageable pageable
     );
 
+    /**
+     * Lấy danh sách danh mục kèm số lượng sách đã APPROVED của một seller.
+     * Query tối ưu: chỉ scan trên index (seller_id, approval_status, is_active, category_id)
+     */
+    @Query(value = """
+        SELECT c.id, c.name, COUNT(b.id) AS cnt
+        FROM category c
+        INNER JOIN books b ON b.category_id = c.id
+        WHERE b.seller_id = :sellerId
+          AND b.approval_status = :status
+          AND b.is_active = 1
+        GROUP BY c.id, c.name
+        ORDER BY c.name ASC
+        """, nativeQuery = true)
+    List<Object[]> countBooksByCategoryAndSeller(
+            @Param("sellerId") Long sellerId,
+            @Param("status") String status
+    );
+
 }
+
+

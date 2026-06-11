@@ -49,31 +49,47 @@ public class CustomerAnalysisService {
             customer.setAccountAgeMonths(freshFeatures.getAccountAgeMonths());
             customer.setAvgOrderValue(freshFeatures.getAvgOrderValue());
             customer.setTotalOrders(freshFeatures.getTotalOrders());
-            customer.setDaysSinceLastPurchase(freshFeatures.getDaysSinceLastPurchase());
-            customer.setDiscountUsageRate(freshFeatures.getDiscountUsageRate());
-            customer.setReturnRate(freshFeatures.getReturnRate());
             customer.setCustomerSupportTickets(freshFeatures.getCustomerSupportTickets());
             customer.setLoyaltyMember(freshFeatures.getLoyaltyMember());
             customer.setBrowsingFrequencyPerWeek(freshFeatures.getBrowsingFrequencyPerWeek());
             customer.setCartAbandonmentRate(freshFeatures.getCartAbandonmentRate());
             customer.setProductReviewScoreAvg(freshFeatures.getProductReviewScoreAvg());
-            customer.setEngagementScore(freshFeatures.getEngagementScore());
             customer.setSatisfactionScore(freshFeatures.getSatisfactionScore());
             customer.setPriceSensitivityIndex(freshFeatures.getPriceSensitivityIndex());
+            customer.setDiscountUsageRate(freshFeatures.getDiscountUsageRate());
+            customer.setReturnRate(freshFeatures.getReturnRate());
             log.info("Refreshed ML features for existing Customer record of user {}", userId);
         }
 
         // 2. Map sang DTO gửi lên ML API
         CustomerMLInput input = customerService.toMlInput(customer);
 
+        // ================================================================
+        // DEBUG: In ra toàn bộ features trước khi gửi lên Python API
+        // ================================================================
+        log.info("========== 🧠 DEBUG: Features gửi lên ML API cho userId={} ==========", userId);
+        log.info("accountAgeMonths={}", input.getAccountAgeMonths());
+        log.info("avgOrderValue={}", input.getAvgOrderValue());
+        log.info("totalOrders={}", input.getTotalOrders());
+        log.info("customerSupportTickets={}", input.getCustomerSupportTickets());
+        log.info("loyaltyMember={}", input.getLoyaltyMember());
+        log.info("browsingFrequencyPerWeek={}", input.getBrowsingFrequencyPerWeek());
+        log.info("cartAbandonmentRate={}", input.getCartAbandonmentRate());
+        log.info("productReviewScoreAvg={}", input.getProductReviewScoreAvg());
+        log.info("satisfactionScore={}", input.getSatisfactionScore());
+        log.info("priceSensitivityIndex={}", input.getPriceSensitivityIndex());
+        log.info("discountUsageRate={}", input.getDiscountUsageRate());
+        log.info("returnRate={}", input.getReturnRate());
+        log.info("================================================================");
+
         // 3. Gọi ML API
         PredictionResult result = mlApiService.predictCustomer(input);
 
         // 4. Cập nhật kết quả vào entity
-        // Python API trả về: cluster_id (0-3), churn_probability, is_churn_predicted, risk_level
+        // Python API trả về: predicted_label (0/1), churn_probability, risk_level (LOW/HIGH)
         customerService.updateMlResult(
                 customer,
-                result.getPredictedClass(),   // cluster_id từ Python → predictedClass
+                result.getPredictedLabel(),   // predicted_label từ Python
                 result.getChurnProbability(),
                 result.getRiskLevel()
         );
@@ -99,24 +115,22 @@ public class CustomerAnalysisService {
                     customer.setAccountAgeMonths(freshFeatures.getAccountAgeMonths());
                     customer.setAvgOrderValue(freshFeatures.getAvgOrderValue());
                     customer.setTotalOrders(freshFeatures.getTotalOrders());
-                    customer.setDaysSinceLastPurchase(freshFeatures.getDaysSinceLastPurchase());
-                    customer.setDiscountUsageRate(freshFeatures.getDiscountUsageRate());
-                    customer.setReturnRate(freshFeatures.getReturnRate());
                     customer.setCustomerSupportTickets(freshFeatures.getCustomerSupportTickets());
                     customer.setLoyaltyMember(freshFeatures.getLoyaltyMember());
                     customer.setBrowsingFrequencyPerWeek(freshFeatures.getBrowsingFrequencyPerWeek());
                     customer.setCartAbandonmentRate(freshFeatures.getCartAbandonmentRate());
                     customer.setProductReviewScoreAvg(freshFeatures.getProductReviewScoreAvg());
-                    customer.setEngagementScore(freshFeatures.getEngagementScore());
                     customer.setSatisfactionScore(freshFeatures.getSatisfactionScore());
                     customer.setPriceSensitivityIndex(freshFeatures.getPriceSensitivityIndex());
+                    customer.setDiscountUsageRate(freshFeatures.getDiscountUsageRate());
+                    customer.setReturnRate(freshFeatures.getReturnRate());
                 }
 
                 CustomerMLInput input = customerService.toMlInput(customer);
                 PredictionResult result = mlApiService.predictCustomer(input);
                 customerService.updateMlResult(
                         customer,
-                        result.getPredictedClass(),
+                        result.getPredictedLabel(),
                         result.getChurnProbability(),
                         result.getRiskLevel()
                 );

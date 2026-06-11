@@ -45,79 +45,26 @@ public class PanelPageController {
     }
     @GetMapping("/seller/shop")
     public String sellerShop(Model model, Authentication authentication) {
-        model.addAttribute("pageTitle", "Ho so gian hang");
-        model.addAttribute("pageSubtitle", "Cap nhat thong tin shop va trang thai hoat dong");
-        model.addAttribute("activeMenu", "seller-shop");
-
-        // Load shop data for the current seller
+        // Redirect to the unified shop page with the seller's ID
         if (authentication != null && authentication.isAuthenticated()) {
             Object principal = authentication.getPrincipal();
             Long userId = null;
-            String role = null;
-            String accessToken = null;
 
             if (principal instanceof com.example.bookstore.security.JwtAuthenticatedPrincipal jwtPrincipal) {
                 userId = jwtPrincipal.userId();
-                role = jwtPrincipal.roles() != null && !jwtPrincipal.roles().isEmpty()
-                    ? jwtPrincipal.roles().get(0) : null;
             } else if (principal instanceof User user) {
                 userId = user.getId();
-                role = user.getRole() != null ? user.getRole().name() : null;
             }
 
             if (userId != null) {
-                // Generate JWT token for the authenticated user (for JS to use)
-                if (role != null) {
-                    try {
-                        User user = userRepository.findById(userId).orElse(null);
-                        if (user != null) {
-                            accessToken = jwtUtil.generateToken(user);
-                        }
-                    } catch (Exception e) {
-                        // Token generation failed silently - frontend will use X-User-Id fallback
-                    }
-                }
-
-                // Inject auth data into model for JS to use
-                model.addAttribute("authUserId", userId);
-                model.addAttribute("authUserRole", role != null ? role : "BUYER");
-                model.addAttribute("authAccessToken", accessToken);
-
-                // Find seller's shop
+                // Find seller's shop to get sellerId
                 SellerShop shop = sellerShopRepository.findBySellerId(userId).orElse(null);
-                model.addAttribute("shop", shop);
-
                 if (shop != null) {
-                    // Đếm tổng số sản phẩm của shop (dùng count query để tránh load toàn bộ)
-                    long bookCount = bookRepository.countBySellerId(shop.getSeller().getId());
-                    model.addAttribute("bookCount", bookCount);
-
-                    // Calculate join duration
-                    String joinDuration = "Mới";
-                    if (shop.getCreatedAt() != null) {
-                        long years = ChronoUnit.YEARS.between(shop.getCreatedAt(), LocalDateTime.now());
-                        if (years > 0) {
-                            joinDuration = years + " năm";
-                        } else {
-                            long months = ChronoUnit.MONTHS.between(shop.getCreatedAt(), LocalDateTime.now());
-                            joinDuration = (months > 0 ? months + " tháng" : "Mới");
-                        }
-                    }
-                    model.addAttribute("joinDuration", joinDuration);
-
-                } else {
-                    model.addAttribute("books", List.of());
-                    model.addAttribute("bookCount", 0);
-                    model.addAttribute("joinDuration", "Mới");
+                    return "redirect:/shop/" + shop.getSeller().getId();
                 }
-
-                // Load categories
-                List<Category> categories = categoryRepository.findAll();
-                model.addAttribute("categories", categories);
             }
         }
-
-        return "seller/Shop_Seller";
+        return "redirect:/";
     }
 
 

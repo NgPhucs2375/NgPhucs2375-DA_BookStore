@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/panel_head :: head('BOOKOM SELLER - Kho hang', false)}"></head>
+<head th:replace="~{fragments/panel_head :: head('BOOKOM SELLER - Kho hàng', false)}"></head>
 <body class="font-sans bg-[#fbfaf8] text-brand-dark">
 <div class="flex min-h-screen">
     <div th:replace="~{fragments/seller_layout :: sidebar(${activeMenu})}"></div>
@@ -19,7 +19,7 @@
                 </a>
             </div>
             <section class="rounded-xl border border-brand-accent bg-white p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input id="inv-q" class="rounded-lg border border-brand-accent px-3 py-2 font-bold" placeholder="Tim ten sach/tac gia">
+                <input id="inv-q" class="rounded-lg border border-brand-accent px-3 py-2 font-bold" placeholder="Tìm tên sách/tác giả">
                 <select id="inv-category" class="rounded-lg border border-brand-accent px-3 py-2 font-bold">
                     <option value="all">Tat ca danh muc</option>
                 </select>

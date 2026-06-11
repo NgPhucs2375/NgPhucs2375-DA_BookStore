@@ -47,7 +47,7 @@ public class SellerShop {
     private String contactPhone;
 
     private String address;
-    @Column(name = "city", nullable = true)
+    @Column(name = "city", nullable = false)
     private String city;
     @Column(name = "province", nullable = true)
     private String province;

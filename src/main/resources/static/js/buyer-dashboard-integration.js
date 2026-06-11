@@ -55,7 +55,7 @@
     // 4. UTILITY FUNCTIONS
     // ==========================================
 
-    const normalizeStatus = (status) => String(status || 'PENDING_PAYMENT').toUpperCase();
+    const normalizeStatus = (status) => String(status || 'PROCESSING').toUpperCase();
 
     const getOrderId = (order) => Number(order?.orderId ?? order?.id ?? 0);
 
@@ -76,19 +76,19 @@
         const normalized = normalizeStatus(status);
 
         const meta = {
-            PENDING_PAYMENT: {
-                label: 'Chờ xác nhận',
+            PROCESSING: {
+                label: 'Đang xác nhận',
                 icon: '⏳',
                 badge: 'bg-amber-100 text-amber-800',
                 border: 'border-amber-200',
                 hint: 'Đơn hàng đang chờ người bán xác nhận.'
             },
-            PROCESSING: {
-                label: 'Đang xử lý',
+            COMFIRMED: {
+                label: 'Đã xác nhận',
                 icon: '📝',
                 badge: 'bg-blue-100 text-blue-800',
                 border: 'border-blue-200',
-                hint: 'Người bán đang chuẩn bị đơn hàng.'
+                hint: 'Người bán đã xác nhận đơn hàng.'
             },
             SHIPPING: {
                 label: 'Đang giao',
@@ -124,10 +124,10 @@
 
     const isPendingLike = (status) => {
         const normalized = normalizeStatus(status);
-        return normalized === 'PENDING_PAYMENT' || normalized === 'PROCESSING';
+        return normalized === 'PROCESSING';
     };
 
-    const isCancelable = (order) => normalizeStatus(order?.overallStatus) === 'PENDING_PAYMENT';
+    const isCancelable = (order) => normalizeStatus(order?.overallStatus) === 'PROCESSING';
 
     const setTextOnNodes = (nodes, value) => {
         nodes.forEach((node) => {

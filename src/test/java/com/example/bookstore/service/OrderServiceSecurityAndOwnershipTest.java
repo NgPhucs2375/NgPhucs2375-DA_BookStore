@@ -126,7 +126,7 @@ class OrderServiceSecurityAndOwnershipTest {
 
         SubOrder subOrder = SubOrder.builder()
                 .id(301L)
-                .status(OrderStatus.PENDING_PAYMENT)
+                .status(OrderStatus.PROCESSING)
                 .seller(User.builder().id(55L).username("seller").passwordHash("x").role(UserRole.SELLER).build())
                 .subTotal(45000.0)
                 .parentOrder(Order.builder().id(9L).buyer(buyer).build())

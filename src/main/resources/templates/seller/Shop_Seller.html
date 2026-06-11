@@ -112,6 +112,9 @@
     </style>
 </head>
 <body class="bg-brand-bg font-sans text-brand-dark flex flex-col min-h-screen selection:bg-brand-brown selection:text-white">
+
+<div id="shop-host" th:attr="data-slug=${shopSlug}" style="display:none"></div>
+
 <!-- Auth data injected from server for JS -->
 <script th:inline="javascript">
 /*<![CDATA[*/

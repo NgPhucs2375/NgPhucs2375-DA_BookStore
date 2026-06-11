@@ -84,10 +84,15 @@
 
             <template x-if="!isLoading && bookData">
                 <div class="w-full flex flex-col md:flex-row overflow-y-auto">
-                    <div class="w-full md:w-2/5 bg-gray-50 flex items-center justify-center p-6 border-r border-gray-100">
-                        <img :src="bookData.largeimageUrl || bookData.imageUrl || '/images/no-cover.png'"
-                             @error="$event.target.src='/images/no-cover.png'"
-                             class="max-h-[380px] object-contain drop-shadow-xl rounded-md transition-transform duration-300 hover:scale-105">
+                    <div class="relative w-full md:w-2/5 bg-gray-100 flex items-center justify-center p-6 border-r border-gray-100 overflow-hidden">
+
+                        <span class="absolute text-slate-400 text-sm font-medium text-center px-2 select-none z-0">
+                            Không có ảnh bìa
+                        </span>
+
+                        <img :src="bookData.largeimageUrl || bookData.imageUrl || 'https://via.placeholder.com/280x380?text=No+Cover'"
+                             @error="$event.target.style.opacity='0'"
+                             class="relative z-10 max-h-[380px] object-contain drop-shadow-xl rounded-md transition-transform duration-300 hover:scale-105 bg-white">
                     </div>
 
                     <div class="w-full md:w-3/5 p-8 flex flex-col justify-between">

@@ -140,7 +140,8 @@
     <!--shop_footer-->
     <div th:replace="~{seller/shop_seller/shop_footer :: shop_footer}"></div>
 
-    <!--shop_panel - Chỉ hiển thị cho SELLER -->
+    <!--shop_panel - Chỉ hiển thị cho chủ shop (isOwner = true) -->
+    <div th:if="${isOwner}" th:replace="~{seller/shop_seller/shop_panel :: shop_panel}"></div>
 
 </main>
 
@@ -267,7 +268,434 @@
 })();
 </script>
 <script th:src="@{/js/api-service.js}"></script>
+<script th:src="@{/js/shop-seller-integration.js}"></script>
 <script th:src="@{/js/pages/shop-voucher-fetch.js}"></script>
 <script th:src="@{/js/pages/shop-product-fetch.js}"></script>
+
+<!-- Shop Panel JS - Chỉ chạy khi là chủ shop -->
+<script th:if="${isOwner}">
+(() => {
+    const API_BASE = '/api/seller/me/shop';
+    const UPLOAD_API = '/api/seller/me/shop/upload-image';
+    const fields = ['shopName', 'slug', 'description', 'logoUrl', 'bannerUrl', 'contactEmail', 'contactPhone', 'address', 'city', 'province'];
+
+    const form = document.getElementById('shop-panel-form');
+    const btnSave = document.getElementById('shop-panel-save');
+    const btnCancel = document.getElementById('shop-panel-cancel');
+    const btnDelete = document.getElementById('shop-panel-delete');
+    const alertBox = document.getElementById('shop-panel-alert');
+    const panel = document.getElementById('seller-shop-panel');
+
+    const displayName = document.getElementById('shop-display-name');
+    const displayStatus = document.getElementById('shop-display-status');
+    const displayInitials = document.getElementById('shop-display-initials');
+    const displayLogo = document.getElementById('shop-display-logo');
+    const bannerHost = document.getElementById('shop-banner-host');
+
+    // File upload elements
+    const logoFileInput = document.getElementById('logo-file-input');
+    const logoChooseBtn = document.getElementById('logo-choose-btn');
+    const logoClearBtn = document.getElementById('logo-clear-btn');
+    const logoPreviewImg = document.getElementById('logo-preview-img');
+    const logoPreviewPlaceholder = document.getElementById('logo-preview-placeholder');
+    const bannerFileInput = document.getElementById('banner-file-input');
+    const bannerChooseBtn = document.getElementById('banner-choose-btn');
+    const bannerClearBtn = document.getElementById('banner-clear-btn');
+    const bannerPreviewImg = document.getElementById('banner-preview-img');
+    const bannerPreviewPlaceholder = document.getElementById('banner-preview-placeholder');
+
+    // Pending files to upload (before save)
+    let pendingLogoFile = null;
+    let pendingBannerFile = null;
+
+    let currentShop = null;
+    let initialState = null;
+    let loading = false;
+
+    function getAuthHeaders() {
+        const token = localStorage.getItem('token') || localStorage.getItem('jwt') || localStorage.getItem('accessToken');
+        const userId = localStorage.getItem('userId');
+        const headers = { 'Content-Type': 'application/json' };
+        
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        if (userId) {
+            headers['X-User-Id'] = userId;
+        }
+        return headers;
+    }
+
+    function readForm() {
+        const payload = {};
+        for (const key of fields) {
+            const value = document.getElementById(key).value.trim();
+            payload[key] = value || null;
+        }
+        return payload;
+    }
+
+    function normalized(input) {
+        return {
+            shopName: input.shopName || '',
+            slug: input.slug || '',
+            description: input.description || '',
+            logoUrl: input.logoUrl || '',
+            bannerUrl: input.bannerUrl || '',
+            contactEmail: input.contactEmail || '',
+            contactPhone: input.contactPhone || '',
+            address: input.address || '',
+            city: input.city || '',
+            province: input.province || ''
+        };
+    }
+
+    function hasChanged() {
+        if (!initialState) {
+            return true;
+        }
+        return JSON.stringify(normalized(readForm())) !== JSON.stringify(initialState);
+    }
+
+    function closePanel() {
+        if (panel) {
+            panel.removeAttribute('open');
+        }
+    }
+
+    function setLoading(isLoading) {
+        loading = isLoading;
+        btnSave.disabled = isLoading || !hasChanged() || !form.checkValidity();
+        btnCancel.disabled = isLoading;
+        btnDelete.disabled = isLoading || !currentShop;
+    }
+
+    function showAlert(type, message) {
+        alertBox.classList.remove('hidden', 'border-red-200', 'bg-red-50', 'text-red-700', 'border-green-200', 'bg-green-50', 'text-green-700');
+        if (type === 'success') {
+            alertBox.classList.add('border-green-200', 'bg-green-50', 'text-green-700');
+        } else {
+            alertBox.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
+        }
+        alertBox.textContent = message;
+    }
+
+    function clearAlert() {
+        alertBox.classList.add('hidden');
+        alertBox.textContent = '';
+    }
+
+    function fillForm(data) {
+        const values = normalized(data);
+        for (const key of fields) {
+            document.getElementById(key).value = values[key];
+        }
+        initialState = values;
+    }
+
+    function getInitials(name) {
+        const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) {
+            return 'NN';
+        }
+        return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join('');
+    }
+
+    function syncHero(shop) {
+        if (!shop) {
+            return;
+        }
+        displayName.textContent = shop.shopName || 'Nha Nam Official';
+        displayInitials.textContent = getInitials(shop.shopName);
+
+        if (shop.logoUrl && displayLogo) {
+            displayLogo.src = shop.logoUrl;
+            displayLogo.classList.remove('hidden');
+            displayInitials.classList.add('hidden');
+        } else {
+            if (displayLogo) displayLogo.classList.add('hidden');
+            displayInitials.classList.remove('hidden');
+        }
+
+        const status = (shop.approvalStatus || 'PENDING').toUpperCase();
+        if (status === 'APPROVED') {
+            displayStatus.innerHTML = '<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0"></path></svg>Gian hang da duoc duyet';
+        } else if (status === 'REJECTED') {
+            displayStatus.innerHTML = '<svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>Gian hang bi tu choi';
+        } else {
+            displayStatus.innerHTML = '<svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0"></path></svg>Dang cho duyet';
+        }
+
+        if (shop.bannerUrl) {
+            bannerHost.style.backgroundImage = `url('${shop.bannerUrl}')`;
+            bannerHost.style.backgroundSize = 'cover';
+            bannerHost.style.backgroundPosition = 'center';
+        } else {
+            bannerHost.style.backgroundImage = '';
+            bannerHost.style.backgroundSize = '';
+            bannerHost.style.backgroundPosition = '';
+        }
+    }
+
+    async function parseError(res) {
+        const text = await res.text();
+        if (!text) {
+            return `Yeu cau that bai (${res.status})`;
+        }
+        return text;
+    }
+
+    async function request(url, options = {}) {
+        const response = await fetch(url, { ...options, headers: { ...getAuthHeaders(), ...(options.headers || {}) } });
+        if (!response.ok) {
+            throw new Error(await parseError(response));
+        }
+        return response.status === 204 ? null : response.json();
+    }
+
+    // ==========================================
+    // FILE UPLOAD HELPERS
+    // ==========================================
+
+    async function uploadImage(file, type) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', type);
+
+        const token = localStorage.getItem('token') || localStorage.getItem('jwt') || localStorage.getItem('accessToken');
+        const userId = localStorage.getItem('userId');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (userId) headers['X-User-Id'] = userId;
+
+        const response = await fetch(UPLOAD_API, {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText || 'Upload thất bại');
+        }
+
+        return await response.text();
+    }
+
+    function setupFilePicker(fileInput, chooseBtn, clearBtn, previewImg, previewPlaceholder, type) {
+        chooseBtn.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showAlert('error', 'Vui lòng chọn file ảnh.');
+                fileInput.value = '';
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('error', 'Ảnh không được quá 5MB.');
+                fileInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('hidden');
+                previewPlaceholder.classList.add('hidden');
+                clearBtn.classList.remove('hidden');
+                chooseBtn.textContent = 'Chọn ảnh khác';
+            };
+            reader.readAsDataURL(file);
+
+            if (type === 'logo') {
+                pendingLogoFile = file;
+            } else {
+                pendingBannerFile = file;
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            previewImg.src = '';
+            previewImg.classList.add('hidden');
+            previewPlaceholder.classList.remove('hidden');
+            clearBtn.classList.add('hidden');
+            chooseBtn.textContent = type === 'logo' ? 'Chon anh logo' : 'Chon anh banner';
+
+            if (type === 'logo') {
+                pendingLogoFile = null;
+                document.getElementById('logoUrl').value = '';
+            } else {
+                pendingBannerFile = null;
+                document.getElementById('bannerUrl').value = '';
+            }
+        });
+    }
+
+    // Initialize file pickers
+    setupFilePicker(logoFileInput, logoChooseBtn, logoClearBtn, logoPreviewImg, logoPreviewPlaceholder, 'logo');
+    setupFilePicker(bannerFileInput, bannerChooseBtn, bannerClearBtn, bannerPreviewImg, bannerPreviewPlaceholder, 'banner');
+
+    function updateImagePreviews(data) {
+        if (data.logoUrl) {
+            logoPreviewImg.src = data.logoUrl;
+            logoPreviewImg.classList.remove('hidden');
+            logoPreviewPlaceholder.classList.add('hidden');
+            logoClearBtn.classList.remove('hidden');
+            logoChooseBtn.textContent = 'Chọn ảnh khác';
+        } else {
+            logoPreviewImg.src = '';
+            logoPreviewImg.classList.add('hidden');
+            logoPreviewPlaceholder.classList.remove('hidden');
+            logoClearBtn.classList.add('hidden');
+            logoChooseBtn.textContent = 'Chọn ảnh logo';
+        }
+
+        if (data.bannerUrl) {
+            bannerPreviewImg.src = data.bannerUrl;
+            bannerPreviewImg.classList.remove('hidden');
+            bannerPreviewPlaceholder.classList.add('hidden');
+            bannerClearBtn.classList.remove('hidden');
+            bannerChooseBtn.textContent = 'Chọn ảnh khác';
+        } else {
+            bannerPreviewImg.src = '';
+            bannerPreviewImg.classList.add('hidden');
+            bannerPreviewPlaceholder.classList.remove('hidden');
+            bannerClearBtn.classList.add('hidden');
+            bannerChooseBtn.textContent = 'Chọn ảnh banner';
+        }
+    }
+
+    async function loadShop() {
+        clearAlert();
+        setLoading(true);
+        try {
+            const data = await request(API_BASE, { method: 'GET' });
+            currentShop = data;
+            fillForm(data);
+            updateImagePreviews(data);
+            syncHero(data);
+        } catch (error) {
+            currentShop = null;
+            fillForm({});
+            updateImagePreviews({});
+            showAlert('error', 'Chua co shop hoac ban chua dang nhap role SELLER.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function saveShop(event) {
+        event.preventDefault();
+        clearAlert();
+
+        if (!form.reportValidity()) {
+            showAlert('error', 'Vui long kiem tra lai du lieu bat buoc.');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            let logoUrl = document.getElementById('logoUrl').value;
+            let bannerUrl = document.getElementById('bannerUrl').value;
+
+            if (pendingLogoFile) {
+                try {
+                    logoUrl = await uploadImage(pendingLogoFile, 'logo');
+                    document.getElementById('logoUrl').value = logoUrl;
+                    pendingLogoFile = null;
+                } catch (err) {
+                    showAlert('error', 'Upload logo that bai: ' + err.message);
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            if (pendingBannerFile) {
+                try {
+                    bannerUrl = await uploadImage(pendingBannerFile, 'banner');
+                    document.getElementById('bannerUrl').value = bannerUrl;
+                    pendingBannerFile = null;
+                } catch (err) {
+                    showAlert('error', 'Upload banner that bai: ' + err.message);
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            const method = currentShop ? 'PUT' : 'POST';
+            const data = await request(API_BASE, {
+                method,
+                body: JSON.stringify(readForm())
+            });
+            currentShop = data;
+            fillForm(data);
+            updateImagePreviews(data);
+            syncHero(data);
+            showAlert('success', method === 'POST' ? 'Da tao shop thanh cong.' : 'Da cap nhat shop thanh cong.');
+            closePanel();
+        } catch (error) {
+            showAlert('error', error.message || 'Khong the luu thong tin shop.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function deleteShop() {
+        if (!currentShop) {
+            return;
+        }
+        if (!window.confirm('Bạn có chắc chắn muốn xóa cửa hàng này? Hành động này không thể hoàn tác.')) {
+            return;
+        }
+        clearAlert();
+        setLoading(true);
+        try {
+            await request(API_BASE, { method: 'DELETE' });
+            currentShop = null;
+            fillForm({});
+            updateImagePreviews({});
+            showAlert('success', 'Đã xóa cửa hàng.');
+            closePanel();
+        } catch (error) {
+            showAlert('error', error.message || 'Khong the xoa shop.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    form.addEventListener('submit', saveShop);
+    btnCancel.addEventListener('click', () => {
+        closePanel();
+    });
+    btnDelete.addEventListener('click', deleteShop);
+
+    fields.forEach((field) => {
+        const input = document.getElementById(field);
+        input.addEventListener('input', () => {
+            if (field === 'slug') {
+                input.value = input.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+            }
+            setLoading(false);
+        });
+    });
+
+    // Auto-collapse: Click outside panel -> close
+    if (panel) {
+        document.addEventListener('click', (e) => {
+            if (panel.hasAttribute('open') && !panel.contains(e.target)) {
+                panel.removeAttribute('open');
+            }
+        });
+    }
+
+    loadShop();
+})();
+</script>
 </body>
 </html>

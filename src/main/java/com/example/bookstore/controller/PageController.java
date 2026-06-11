@@ -2,6 +2,7 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.config.JwtUtil;
 import com.example.bookstore.model.Book;
+import com.example.bookstore.model.SellerShop;
 import com.example.bookstore.model.User;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.SellerShopRepository;
@@ -101,6 +102,8 @@ public class PageController {
                 return "redirect:/";
             }
 
+            SellerShop shop = shopOpt.get();
+
             // Inject authentication data cho JS
             Long authUserId = null;
             String authUserRole = null;
@@ -131,11 +134,16 @@ public class PageController {
                 }
             }
 
+            // Xác định xem user hiện tại có phải là chủ shop không
+            boolean isOwner = authUserId != null && shop.getSeller() != null
+                && authUserId.equals(shop.getSeller().getId());
+
             model.addAttribute("authUserId", authUserId);
             model.addAttribute("authUserRole", authUserRole != null ? authUserRole : "GUEST");
             model.addAttribute("authAccessToken", authAccessToken);
-            model.addAttribute("isSeller", "SELLER".equals(authUserRole));
-            model.addAttribute("shopSlug", shopOpt.get().getSlug());
+            model.addAttribute("isOwner", isOwner);
+            model.addAttribute("shop", shop);
+            model.addAttribute("shopSlug", shop.getSlug());
             return "main/Shop_Public";
         }
 }

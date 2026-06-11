@@ -137,7 +137,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const resp = await ApiService.Book.search('', null, 0, 200);
             const books = Array.isArray(resp?.content) ? resp.content : [];
-            const pubs = Array.from(new Set(books.map(b => b.publisher).filter(Boolean))).slice(0, 10);
+            // Lọc: chỉ giữ publisher là tên NXB thật (không phải URL ảnh)
+            const isImageUrl = (val) => /^(https?:\/\/|data:image)/i.test(val) || /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)(\?|$)/i.test(val);
+            const pubs = Array.from(new Set(books.map(b => b.publisher).filter(Boolean)))
+                .filter(p => !isImageUrl(p) && p.length < 100) // Loại URL ảnh và chuỗi quá dài
+                .slice(0, 10);
             if (publisherListEl && pubs.length > 0) {
                 publisherListEl.innerHTML = pubs.map(p => `
                     <li>

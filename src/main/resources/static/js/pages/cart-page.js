@@ -108,25 +108,52 @@
         }).join('');
     };
 
+    // Hàm tính tổng tiền dựa trên các checkbox được chọn
+    const computeSelectedTotal = (cart) => {
+        if (!cart || !cart.items || cart.items.length === 0) {
+            return { selectedCount: 0, selectedAmount: 0 };
+        }
+
+        let selectedCount = 0;
+        let selectedAmount = 0;
+
+        document.querySelectorAll('.row-checkbox').forEach((checkbox) => {
+            if (checkbox.checked) {
+                const row = checkbox.closest('[data-item-id]');
+                if (row) {
+                    const itemId = Number(row.getAttribute('data-item-id'));
+                    const item = cart.items.find(i => (i.id || i.itemId) === itemId);
+                    if (item) {
+                        selectedCount += (item.quantity || 0);
+                        selectedAmount += (item.lineTotal || 0);
+                    }
+                }
+            }
+        });
+
+        return { selectedCount, selectedAmount };
+    };
+
     const updateSummary = (cart) => {
-        const totalItems = Number(cart?.totalItems || 0);
-        const subtotal = Number(cart?.totalAmount || 0);
-        const shippingFee = totalItems > 0 ? 35000 : 0;
+        const { selectedCount, selectedAmount } = computeSelectedTotal(cart);
+        const subtotal = selectedAmount;
+        const shippingFee = selectedCount > 0 ? 35000 : 0;
         const shipDiscount = subtotal >= 250000 ? 15000 : 0;
         const voucher = 0;
         const total = Math.max(0, subtotal + shippingFee - shipDiscount - voucher);
 
-        if (itemsLabelEl) itemsLabelEl.textContent = `Tong tien hang (${totalItems} san pham)`;
+        if (itemsLabelEl) itemsLabelEl.textContent = `Tong tien hang (${selectedCount} san pham)`;
         if (subtotalEl) subtotalEl.textContent = formatVnd(subtotal);
         if (shippingEl) shippingEl.textContent = formatVnd(shippingFee);
         if (shipDiscountEl) shipDiscountEl.textContent = `-${formatVnd(shipDiscount)}`;
         if (voucherEl) voucherEl.textContent = `-${formatVnd(voucher)}`;
         if (totalEl) totalEl.textContent = formatVnd(total);
         if (checkoutBtn) {
-            checkoutBtn.classList.toggle('pointer-events-none', totalItems === 0);
-            checkoutBtn.classList.toggle('opacity-60', totalItems === 0);
+            checkoutBtn.classList.toggle('pointer-events-none', selectedCount === 0);
+            checkoutBtn.classList.toggle('opacity-60', selectedCount === 0);
         }
     };
+
 
     const fetchCart = async () => {
         let { userId, role, token } = window.ApiService.getAuth();
@@ -170,12 +197,15 @@
         // Đã có ID số 8 -> Gọi API
         try {
             const cart = await ApiService.Cart.get(userId);
+            // Lưu cart data để checkbox change handler có thể dùng
+            window.__cartData = cart;
             renderCart(cart);
             updateSummary(cart);
             return cart;
         } catch (error) {
             console.error("Lỗi fetch giỏ hàng:", error);
         }
+
     };
     const patchQuantity = async (itemId, quantity) => {
         const { userId } = ApiService.getAuth();
@@ -333,12 +363,133 @@
         }
     });
 
+    // Hàm cập nhật tổng tiền khi checkbox thay đổi
+    const refreshSummaryFromCheckboxes = () => {
+        // Lấy cart từ biến đã lưu (nếu có) hoặc từ DOM
+        const cartData = window.__cartData;
+        if (cartData) {
+            updateSummary(cartData);
+        }
+    };
+
     document.getElementById('selectAll')?.addEventListener('change', (e) => {
         const checked = e.target.checked;
         document.querySelectorAll('.shop-checkbox, .row-checkbox').forEach((cb) => {
             cb.checked = checked;
         });
+        refreshSummaryFromCheckboxes();
     });
+
+    // Lắng nghe sự kiện thay đổi trên tất cả checkbox (row + shop)
+    liveContainer.addEventListener('change', (event) => {
+        const checkbox = event.target.closest('.row-checkbox, .shop-checkbox');
+        if (!checkbox) return;
+
+        // Nếu là shop-checkbox, đồng bộ các row-checkbox trong cùng shop
+        if (checkbox.classList.contains('shop-checkbox')) {
+            const shopSection = checkbox.closest('.bg-white.border');
+            if (shopSection) {
+                const isChecked = checkbox.checked;
+                shopSection.querySelectorAll('.row-checkbox').forEach((cb) => {
+                    cb.checked = isChecked;
+                });
+            }
+        }
+
+        // Cập nhật trạng thái "Chọn tất cả"
+        const allRows = document.querySelectorAll('.row-checkbox');
+        const checkedRows = document.querySelectorAll('.row-checkbox:checked');
+        const selectAllCheckbox = document.getElementById('selectAll');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = allRows.length > 0 && allRows.length === checkedRows.length;
+        }
+
+        refreshSummaryFromCheckboxes();
+    });
+
+
+    // ==========================================
+    // AGE CHECK BEFORE CHECKOUT
+    // ==========================================
+
+    /**
+     * Kiểm tra độ tuổi người dùng trước khi cho phép checkout
+     * Yêu cầu: người dùng phải từ 13 tuổi trở lên
+     * Sử dụng ValidationUtils.validateDateOfBirth để đảm bảo đồng nhất logic
+     */
+    async function checkAgeBeforeCheckout() {
+        try {
+            const headers = ApiService.getHeaders();
+            const response = await fetch('/buyer/profile/api/profile', { headers });
+            if (!response.ok) return true; // Nếu không lấy được profile, vẫn cho checkout
+
+            const profile = await response.json();
+            const dob = profile.dateOfBirth;
+            if (!dob) {
+                // Nếu chưa có ngày sinh, cảnh báo nhưng vẫn cho checkout
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Thiếu thông tin',
+                    text: 'Vui lòng cập nhật ngày sinh trong hồ sơ để xác thực độ tuổi.',
+                    confirmButtonText: 'Để sau'
+                });
+                return true;
+            }
+
+            // Sử dụng ValidationUtils.validateDateOfBirth với minAge = 13
+            if (window.ValidationUtils) {
+                const result = ValidationUtils.validateDateOfBirth(dob, 13);
+                if (!result.valid) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Không đủ điều kiện',
+                        text: result.error,
+                        confirmButtonText: 'Đã hiểu'
+                    });
+                    return false;
+                }
+                return true;
+            }
+
+            // Fallback nếu ValidationUtils chưa load
+            const birthDate = new Date(dob);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            if (age < 13) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Không đủ điều kiện',
+                    text: 'Bạn phải từ 13 tuổi trở lên để thực hiện giao dịch trên BOOKOM.',
+                    confirmButtonText: 'Đã hiểu'
+                });
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Age check error:', error);
+            return true; // Nếu có lỗi, vẫn cho checkout
+        }
+    }
+
+    // Thêm age check vào nút checkout
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', async (e) => {
+            const isAllowed = await checkAgeBeforeCheckout();
+            if (!isAllowed) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            // Nếu đủ tuổi, cho phép chuyển hướng bình thường
+            window.location.href = '/main/checkout';
+        });
+    }
 
     fetchCart().catch((error) => {
         const message = error?.message || 'Khong the tai gio hang.';

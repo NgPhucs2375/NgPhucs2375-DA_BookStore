@@ -9,6 +9,8 @@ import com.example.bookstore.service.NotificationService;
 import com.example.bookstore.service.MailService;
 import com.example.bookstore.service.SellerShopService;
 import com.example.bookstore.repository.SellerShopRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,6 +38,8 @@ public class AdminSellerController {
 
     @Autowired
     private MailService mailService;
+
+    private static final Logger log = LoggerFactory.getLogger(AdminSellerController.class);
 
     @GetMapping
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -87,22 +91,34 @@ public class AdminSellerController {
         // Promote user and approve via service
         var result = sellerShopService.adminApproveSeller(shop.getSeller().getId());
 
-        // Notify seller
-        NotificationCreateRequest nc = new NotificationCreateRequest();
-        nc.setType(com.example.bookstore.model.enums.NotificationType.SHOP_APPROVAL_UPDATED);
-        nc.setTitle("Yêu cầu mở cửa hàng đã được duyệt");
-        nc.setMessage("Cửa hàng của bạn đã được admin duyệt và kích hoạt.");
-        nc.setPayloadJson(String.format("{\"shopId\":%d,\"status\":\"APPROVED\"}", shop.getId()));
-        var notificationResp = notificationService.createNotification(null, shop.getSeller().getId(), nc);
-
-        boolean mailConfigured = mailService.isConfigured();
-        boolean mailSent = mailService.sendSellerApplicationApproved(shop.getSeller(), shop);
-
         Map<String, Object> resp = new LinkedHashMap<>();
         resp.put("result", result);
-        resp.put("notificationId", notificationResp != null ? notificationResp.getId() : null);
-        resp.put("mailConfigured", mailConfigured);
-        resp.put("mailSent", mailSent);
+
+        // Notify seller (catch lỗi để không ảnh hưởng tới response chính)
+        try {
+            NotificationCreateRequest nc = new NotificationCreateRequest();
+            nc.setType(com.example.bookstore.model.enums.NotificationType.SHOP_APPROVAL_UPDATED);
+            nc.setTitle("Yêu cầu mở cửa hàng đã được duyệt");
+            nc.setMessage("Cửa hàng của bạn đã được admin duyệt và kích hoạt.");
+            nc.setPayloadJson(String.format("{\"shopId\":%d,\"status\":\"APPROVED\"}", shop.getId()));
+            var notificationResp = notificationService.createNotification(null, shop.getSeller().getId(), nc);
+            resp.put("notificationId", notificationResp != null ? notificationResp.getId() : null);
+        } catch (Exception e) {
+            log.warn("Approve OK but notification failed for shop {}: {}", shopId, e.getMessage());
+            resp.put("notificationId", null);
+        }
+
+        try {
+            boolean mailConfigured = mailService.isConfigured();
+            boolean mailSent = mailService.sendSellerApplicationApproved(shop.getSeller(), shop);
+            resp.put("mailConfigured", mailConfigured);
+            resp.put("mailSent", mailSent);
+        } catch (Exception e) {
+            log.warn("Approve OK but mail failed for shop {}: {}", shopId, e.getMessage());
+            resp.put("mailConfigured", false);
+            resp.put("mailSent", false);
+        }
+
         return ResponseEntity.ok(resp);
     }
 
@@ -134,33 +150,45 @@ public class AdminSellerController {
         // Lưu thay đổi vào DB trước khi tạo thông báo
         shopRepository.save(shop);
 
-        // Tạo Notification
-        NotificationCreateRequest nc = new NotificationCreateRequest();
-        nc.setType(com.example.bookstore.model.enums.NotificationType.SHOP_APPROVAL_UPDATED);
-        nc.setTitle("Yêu cầu mở cửa hàng bị từ chối");
-        nc.setMessage("Yêu cầu của bạn bị từ chối: " + reason);
-
-        // Sử dụng ObjectMapper hoặc Map để sinh chuỗi JSON an toàn thay vì String.format cộng chuỗi thủ công
-        try {
-            java.util.Map<String, Object> payloadMap = new java.util.HashMap<>();
-            payloadMap.put("shopId", shop.getId());
-            payloadMap.put("status", "REJECTED");
-            payloadMap.put("reason", reason);
-            nc.setPayloadJson(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(payloadMap));
-        } catch (Exception e) {
-            nc.setPayloadJson("{\"status\":\"REJECTED\"}");
-        }
-
-        var notificationResp = notificationService.createNotification(null, shop.getSeller().getId(), nc);
-
-        boolean mailConfigured = mailService.isConfigured();
-        boolean mailSent = mailService.sendSellerApplicationRejected(shop.getSeller(), shop, reason);
-
         Map<String, Object> resp = new LinkedHashMap<>();
         resp.put("status", "rejected");
-        resp.put("notificationId", notificationResp != null ? notificationResp.getId() : null);
-        resp.put("mailConfigured", mailConfigured);
-        resp.put("mailSent", mailSent);
+
+        // Tạo Notification (catch lỗi để không ảnh hưởng tới response chính)
+        try {
+            NotificationCreateRequest nc = new NotificationCreateRequest();
+            nc.setType(com.example.bookstore.model.enums.NotificationType.SHOP_APPROVAL_UPDATED);
+            nc.setTitle("Yêu cầu mở cửa hàng bị từ chối");
+            nc.setMessage("Yêu cầu của bạn bị từ chối: " + reason);
+
+            // Sử dụng ObjectMapper hoặc Map để sinh chuỗi JSON an toàn thay vì String.format cộng chuỗi thủ công
+            try {
+                java.util.Map<String, Object> payloadMap = new java.util.HashMap<>();
+                payloadMap.put("shopId", shop.getId());
+                payloadMap.put("status", "REJECTED");
+                payloadMap.put("reason", reason);
+                nc.setPayloadJson(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(payloadMap));
+            } catch (Exception e) {
+                nc.setPayloadJson("{\"status\":\"REJECTED\"}");
+            }
+
+            var notificationResp = notificationService.createNotification(null, shop.getSeller().getId(), nc);
+            resp.put("notificationId", notificationResp != null ? notificationResp.getId() : null);
+        } catch (Exception e) {
+            log.warn("Reject OK but notification failed for shop {}: {}", shopId, e.getMessage());
+            resp.put("notificationId", null);
+        }
+
+        try {
+            boolean mailConfigured = mailService.isConfigured();
+            boolean mailSent = mailService.sendSellerApplicationRejected(shop.getSeller(), shop, reason);
+            resp.put("mailConfigured", mailConfigured);
+            resp.put("mailSent", mailSent);
+        } catch (Exception e) {
+            log.warn("Reject OK but mail failed for shop {}: {}", shopId, e.getMessage());
+            resp.put("mailConfigured", false);
+            resp.put("mailSent", false);
+        }
+
         return ResponseEntity.ok(resp);
     }
     @PutMapping("/{shopId}/resend-email")

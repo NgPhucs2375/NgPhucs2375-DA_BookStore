@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const total = Math.max(0, subtotal + shipping - shippingDiscount);
         const cancelButton = document.getElementById('details-cancel-order-button');
         const cancelHint = document.getElementById('details-cancel-hint');
-        const canCancel = items.length > 0 && items.every((item) => String(item.subOrderStatus || '').toUpperCase() === 'PENDING_PAYMENT');
+        const canCancel = items.length > 0 && items.every((item) => String(item.subOrderStatus || '').toUpperCase() === 'PROCESSING');
 
         const metaEl = document.getElementById('details-order-meta');
         if (metaEl) {

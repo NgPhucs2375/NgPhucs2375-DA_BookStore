@@ -69,12 +69,11 @@
                     return {
                         ID: c.id,
                         Name: c.name || c.username || 'N/A',
-                        Cluster: c.predictedClass,
+                        Label: c.predictedLabel,
                         Risk: c.riskLevel,
                         ChurnProb: c.churnProbability ? (c.churnProbability * 100).toFixed(1) + '%' : '--',
                         Orders: c.totalOrders || 0,
                         AvgOrder: c.avgOrderValue ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(c.avgOrderValue) : '--',
-                        Engagement: c.engagementScore,
                         LastAnalyzed: c.lastAnalyzedAt || '--'
                     };
                 }));

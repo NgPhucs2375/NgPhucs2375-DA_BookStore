@@ -2,6 +2,7 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.config.JwtUtil;
 import com.example.bookstore.model.Book;
+import com.example.bookstore.model.SellerShop;
 import com.example.bookstore.model.User;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.SellerShopRepository;
@@ -95,12 +96,54 @@ public class PageController {
     }
 
         @GetMapping("/shop/{sellerId}")
-        public String viewPublicShopBySellerId(@PathVariable Long sellerId, Model model) {
+        public String viewPublicShopBySellerId(@PathVariable Long sellerId, Model model, Authentication authentication) {
             var shopOpt = sellerShopRepository.findBySellerId(sellerId);
-            if (shopOpt.isPresent()) {
-                model.addAttribute("shopSlug", shopOpt.get().getSlug());
-                return "main/Shop_Public";
+            if (shopOpt.isEmpty()) {
+                return "redirect:/";
             }
-            return "redirect:/";
+
+            SellerShop shop = shopOpt.get();
+
+            // Inject authentication data cho JS
+            Long authUserId = null;
+            String authUserRole = null;
+            String authAccessToken = null;
+
+            if (authentication != null && authentication.isAuthenticated()) {
+                Object principal = authentication.getPrincipal();
+
+                if (principal instanceof JwtAuthenticatedPrincipal jwtPrincipal) {
+                    authUserId = jwtPrincipal.userId();
+                    authUserRole = jwtPrincipal.roles() != null && !jwtPrincipal.roles().isEmpty()
+                        ? jwtPrincipal.roles().get(0) : null;
+                } else if (principal instanceof User user) {
+                    authUserId = user.getId();
+                    authUserRole = user.getRole() != null ? user.getRole().name() : null;
+                }
+
+                // Generate JWT token for the authenticated user (for JS to use)
+                if (authUserId != null && authUserRole != null) {
+                    try {
+                        User user = userRepository.findById(authUserId).orElse(null);
+                        if (user != null) {
+                            authAccessToken = jwtUtil.generateToken(user);
+                        }
+                    } catch (Exception e) {
+                        // Token generation failed silently
+                    }
+                }
+            }
+
+            // Xác định xem user hiện tại có phải là chủ shop không
+            boolean isOwner = authUserId != null && shop.getSeller() != null
+                && authUserId.equals(shop.getSeller().getId());
+
+            model.addAttribute("authUserId", authUserId);
+            model.addAttribute("authUserRole", authUserRole != null ? authUserRole : "GUEST");
+            model.addAttribute("authAccessToken", authAccessToken);
+            model.addAttribute("isOwner", isOwner);
+            model.addAttribute("shop", shop);
+            model.addAttribute("shopSlug", shop.getSlug());
+            return "main/Shop_Public";
         }
 }

@@ -1,5 +1,6 @@
 package com.example.bookstore.model;
 
+import com.example.bookstore.model.converter.LoyaltyMemberConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +10,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * Entity lưu thông tin khách hàng phục vụ ML churn prediction (mô hình gau-gbt6000).
+ * Entity lưu thông tin khách hàng phục vụ ML churn prediction (mô hình final-gauss-lightgbm).
  * Quan hệ 1-1 với User, tách biệt để không ảnh hưởng bảng users.
+ * Input: 12 raw features (đồng bộ với features_config.json)
+ * Output: predicted_label (0/1), churn_probability, risk_level (LOW/HIGH)
  */
 @Entity
 @Table(name = "customer_ml")
@@ -29,7 +32,7 @@ public class Customer {
     private User user;
 
     // ========================
-    // ML Input Features (14 raw features)
+    // ML Input Features (12 raw features — đồng bộ với features_config.json)
     // ========================
 
     @Column(nullable = false)
@@ -42,19 +45,11 @@ public class Customer {
     private Double totalOrders;
 
     @Column(nullable = false)
-    private Double daysSinceLastPurchase;
-
-    @Column
-    private Double discountUsageRate;
-
-    @Column(nullable = false)
-    private Double returnRate;
-
-    @Column(nullable = false)
     private Double customerSupportTickets;
 
-    @Column(nullable = false, length = 10)
-    private String loyaltyMember; // "Yes" / "No"
+    @Convert(converter = LoyaltyMemberConverter.class)
+    @Column(nullable = false, columnDefinition = "FLOAT")
+    private Double loyaltyMember; // 0.0 = No, 1.0 = Yes (float theo features_config.json)
 
     @Column(nullable = false)
     private Double browsingFrequencyPerWeek;
@@ -66,26 +61,29 @@ public class Customer {
     private Double productReviewScoreAvg;
 
     @Column(nullable = false)
-    private Double engagementScore;
-
-    @Column(nullable = false)
     private Double satisfactionScore;
 
     @Column(nullable = false)
     private Double priceSensitivityIndex;
+
+    @Column(nullable = false)
+    private Double discountUsageRate; // Tỷ lệ sử dụng giảm giá 0.0-1.0
+
+    @Column(nullable = false)
+    private Double returnRate; // Tỷ lệ trả hàng 0.0-1.0
 
     // ========================
     // ML Output Results
     // ========================
 
     @Column
-    private Integer predictedClass; // 0 = An toàn, 1 = Trung bình, 2 = Cao
+    private Integer predictedLabel; // 0 = Stay (Ở lại), 1 = Churn (Rời bỏ)
 
     @Column
     private Double churnProbability;
 
-    @Column(length = 30)
-    private String riskLevel; // "LOW (An toàn)" / "MEDIUM (Trung bình)" / "HIGH (Nguy cơ cao)"
+    @Column(length = 10)
+    private String riskLevel; // "LOW" hoặc "HIGH"
 
     @Column
     private LocalDateTime lastAnalyzedAt;

@@ -1,8 +1,10 @@
 package com.example.bookstore.controller;
 
+import com.example.bookstore.dto.CategoryWithCount;
 import com.example.bookstore.dto.SellerShopResponse;
 import com.example.bookstore.dto.SellerShopUpsertRequest;
 import com.example.bookstore.model.enums.ApprovalStatus;
+import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.security.JwtAuthenticatedPrincipal;
 import com.example.bookstore.service.SellerShopService;
 import jakarta.validation.Valid;
@@ -21,7 +23,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+
  
 
 @RestController
@@ -30,10 +35,12 @@ import java.util.UUID;
 public class SellerShopController {
 
     private final SellerShopService shopService;
+    private final BookRepository bookRepository;
 
     // ==========================================
     // ENDPOINTS DÀNH CHO SELLER QUẢN LÝ SHOP
     // ==========================================
+
 
     @GetMapping("/seller/me/shop")
     @PreAuthorize("hasAuthority('SELLER')")
@@ -153,9 +160,33 @@ public class SellerShopController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Lấy danh sách danh mục kèm số lượng sách đã duyệt của shop.
+     * Dùng cho sidebar lọc danh mục ở trang shop public.
+     * GET /api/shops/{slug}/categories
+     */
+    @GetMapping("/shops/{slug}/categories")
+    public ResponseEntity<List<CategoryWithCount>> getShopCategories(@PathVariable String slug) {
+        // Lấy sellerId từ slug
+        SellerShopResponse shop = shopService.getPublicShopBySlug(slug);
+        Long sellerId = shop.getSellerId();
+
+        // Query categories với count
+        List<Object[]> results = bookRepository.countBooksByCategoryAndSeller(sellerId, ApprovalStatus.APPROVED.name());
+        List<CategoryWithCount> categories = new ArrayList<>();
+        for (Object[] row : results) {
+            Long id = ((Number) row[0]).longValue();
+            String name = (String) row[1];
+            long count = ((Number) row[2]).longValue();
+            categories.add(new CategoryWithCount(id, name, count));
+        }
+        return ResponseEntity.ok(categories);
+    }
+
     // ==========================================
     // HELPER METHODS
     // ==========================================
+
 
     private Long getCurrentSellerId(JwtAuthenticatedPrincipal principal) {
         if (principal != null) {

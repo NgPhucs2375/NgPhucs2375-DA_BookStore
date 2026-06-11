@@ -309,12 +309,14 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div class="relative w-full">
-                            <input type="text" id="fullname" class="floating-input" placeholder=" ">
+                            <input type="text" id="fullname" class="floating-input" placeholder=" " onblur="validateCheckoutField('fullname')" oninput="ValidationUtils.clearError('fullname')">
                             <label for="fullname" class="floating-label">Họ và Tên người nhận</label>
+                            <span id="fullname-error" class="field-error text-red-500 text-xs font-bold mt-1.5 ml-1 hidden"></span>
                         </div>
                         <div class="relative w-full">
-                            <input type="tel" id="phone" class="floating-input" placeholder=" ">
+                            <input type="tel" id="phone" class="floating-input" placeholder=" " maxlength="10" onblur="validateCheckoutField('phone')" oninput="ValidationUtils.filterPhoneInput(this); ValidationUtils.clearError('phone')">
                             <label for="phone" class="floating-label">Số điện thoại liên hệ</label>
+                            <span id="phone-error" class="field-error text-red-500 text-xs font-bold mt-1.5 ml-1 hidden"></span>
                         </div>
 
                         <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -562,6 +564,7 @@
     </script>
 
     <script src="/js/api-service.js"></script>
+    <script src="/js/validation-utils.js"></script>
     <script src="/js/pages/checkout-page.js"></script>
 </main>
 <footer th:replace="~{fragments/footer :: footer}"></footer>

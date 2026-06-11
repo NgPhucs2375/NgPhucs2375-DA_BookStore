@@ -1,7 +1,8 @@
 /**
- * Shop Voucher Fetch - Client-side voucher rendering for Shop_Seller.html
- * Replaces Thymeleaf server-side render with API fetch from /api/seller/vouchers
- * Pattern: same as seller-vouchers-integration.js
+ * Shop Voucher Fetch - Client-side voucher rendering for Shop pages
+ * Supports both public (buyer/guest) and seller modes:
+ * - Public: fetches from /api/coupons/seller/{sellerId}
+ * - Seller: fetches from /api/seller/vouchers
  */
 (function() {
     'use strict';
@@ -122,23 +123,77 @@
     };
 
     /**
+     * Get sellerId from the shop info (try multiple sources)
+     */
+    const getSellerIdFromShop = () => {
+        // Try to get from the shop-host data attribute (set by Thymeleaf)
+        const host = document.getElementById('shop-host');
+        if (host && host.dataset.slug) {
+            // We have slug, will need to fetch shop info first
+            return null;
+        }
+        return null;
+    };
+
+    /**
      * Fetch vouchers from API and render
      */
     const fetchAndRenderVouchers = async () => {
         showState(loadingEl);
 
         try {
-            const response = await fetch(`${API_BASE}/seller/vouchers`, {
-                headers: getAuthHeaders()
-            });
+            const userRole = localStorage.getItem('userRole');
+            const isSeller = userRole === 'SELLER';
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+            let vouchers = [];
+
+            if (isSeller) {
+                // Seller mode: fetch from seller API
+                const response = await fetch(`${API_BASE}/seller/vouchers`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const pageData = await response.json();
+                vouchers = Array.isArray(pageData) ? pageData : (pageData.content || []);
+            } else {
+                // Public mode: need sellerId from shop info
+                // First, get the shop slug from the host element
+                const host = document.getElementById('shop-host');
+                if (!host || !host.dataset.slug) {
+                    showState(emptyEl);
+                    return;
+                }
+                const slug = host.dataset.slug;
+
+                // Fetch shop info to get sellerId
+                const shopRes = await fetch(`${API_BASE}/shops/${encodeURIComponent(slug)}`);
+                if (!shopRes.ok) {
+                    throw new Error('Không thể tải thông tin shop');
+                }
+                const shop = await shopRes.json();
+                const sellerId = shop.sellerId || (shop.seller && shop.seller.id) || shop.id;
+
+                if (!sellerId) {
+                    showState(emptyEl);
+                    return;
+                }
+
+                // Fetch public coupons for this seller
+                const couponRes = await fetch(`${API_BASE}/coupons/seller/${sellerId}`);
+                if (!couponRes.ok) {
+                    throw new Error(`HTTP ${couponRes.status}`);
+                }
+
+                vouchers = await couponRes.json();
+                // Ensure it's an array
+                if (!Array.isArray(vouchers)) {
+                    vouchers = [];
+                }
             }
-
-            const pageData = await response.json();
-            // API returns Page object { content: [...], totalElements, ... } or array
-            const vouchers = Array.isArray(pageData) ? pageData : (pageData.content || []);
 
             if (vouchers.length === 0) {
                 showState(emptyEl);

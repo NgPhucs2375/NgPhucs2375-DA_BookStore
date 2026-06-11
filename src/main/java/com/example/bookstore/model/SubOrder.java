@@ -54,7 +54,7 @@ public class SubOrder {
     @PrePersist
     public void onCreate() {
         if (status == null) {
-            status = OrderStatus.PENDING_PAYMENT;
+            status = OrderStatus.PROCESSING;
         }
     }
 }

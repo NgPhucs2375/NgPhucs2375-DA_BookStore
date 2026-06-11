@@ -1,8 +1,10 @@
 /**
- * Shop Product Fetch - Client-side product rendering for Shop_Seller.html
- * Pattern: same as shop-voucher-fetch.js
- * Loads products with pagination (20 items per page), "Xem thêm" button,
- * and deduplication via Set to ensure no duplicate products.
+ * Shop Product Fetch - Client-side product rendering for Shop pages
+ * Supports both public (buyer/guest) and seller modes:
+ * - Public: fetches from /api/books/search?sellerIds=...
+ * - Seller: fetches from /api/books/seller/me
+ * Features: pagination (20 items per page), "Xem thêm" button, deduplication via Set.
+ * Filter: category, price range, rating.
  */
 (function() {
     'use strict';
@@ -28,6 +30,16 @@
     const tabNewest = document.getElementById('tab-newest');
     const tabs = [tabAll, tabBestSeller, tabNewest].filter(Boolean);
 
+    // Filter elements
+    const categoryList = document.getElementById('category-list');
+    const categoryAllLink = document.getElementById('filter-category-all');
+    const categoryAllCount = document.getElementById('category-all-count');
+    const priceMinInput = document.getElementById('price-min');
+    const priceMaxInput = document.getElementById('price-max');
+    const btnApplyPrice = document.getElementById('btn-apply-price');
+    const rating5Checkbox = document.getElementById('rating-5');
+    const rating4Checkbox = document.getElementById('rating-4');
+
     // ==========================================
     // STATE
     // ==========================================
@@ -38,6 +50,15 @@
     let totalElements = 0;
     let loadedIds = new Set();  // Deduplication set
     let isLoading = false;
+    let sellerId = null;  // Cached sellerId for public mode
+
+    // Filter state
+    let filterState = {
+        categoryIds: [],      // Mảng các category ID đã chọn (rỗng = tất cả)
+        minPrice: null,
+        maxPrice: null,
+        minRating: null
+    };
 
     // ==========================================
     // HELPERS
@@ -194,6 +215,131 @@
     };
 
     /**
+     * Get auth headers for API calls
+     */
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
+        const userId = localStorage.getItem('userId');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (userId) headers['X-User-Id'] = userId;
+        return headers;
+    };
+
+    /**
+     * Fetch sellerId from shop slug (for public mode)
+     */
+    const resolveSellerId = async () => {
+        if (sellerId) return sellerId;
+        
+        const host = document.getElementById('shop-host');
+        if (!host || !host.dataset.slug) return null;
+        
+        try {
+            const res = await fetch(`/api/shops/${encodeURIComponent(host.dataset.slug)}`);
+            if (!res.ok) return null;
+            const shop = await res.json();
+            sellerId = shop.sellerId || (shop.seller && shop.seller.id) || shop.id;
+            return sellerId;
+        } catch (e) {
+            console.error('Không thể lấy sellerId:', e);
+            return null;
+        }
+    };
+
+    /**
+     * Highlight category đang được chọn
+     */
+    const highlightCategory = (selectedId) => {
+        // Reset tất cả
+        const allLinks = categoryList ? categoryList.querySelectorAll('a[data-category-id]') : [];
+        allLinks.forEach(link => {
+            link.classList.remove('text-brand-brown');
+            link.classList.add('hover:text-brand-brown');
+            const dot = link.querySelector('span.w-1\\.5');
+            if (dot) {
+                dot.classList.remove('bg-brand-brown');
+                dot.classList.add('bg-brand-border');
+            }
+        });
+
+        // Highlight selected
+        let selectedLink;
+        if (selectedId === 'all') {
+            selectedLink = categoryAllLink;
+        } else {
+            selectedLink = categoryList ? categoryList.querySelector(`a[data-category-id="${selectedId}"]`) : null;
+        }
+        if (selectedLink) {
+            selectedLink.classList.add('text-brand-brown');
+            selectedLink.classList.remove('hover:text-brand-brown');
+            const dot = selectedLink.querySelector('span.w-1\\.5');
+            if (dot) {
+                dot.classList.remove('bg-brand-border');
+                dot.classList.add('bg-brand-brown');
+            }
+        }
+    };
+
+    /**
+     * Load categories từ API và render vào sidebar
+     */
+    const loadCategories = async () => {
+        const host = document.getElementById('shop-host');
+        if (!host || !host.dataset.slug) return;
+
+        try {
+            const res = await fetch(`/api/shops/${encodeURIComponent(host.dataset.slug)}/categories`);
+            if (!res.ok) return;
+            const categories = await res.json();
+
+            // Cập nhật tổng số sản phẩm
+            let totalCount = 0;
+            if (categoryAllCount) {
+                categories.forEach(c => { totalCount += c.count; });
+                categoryAllCount.textContent = totalCount.toLocaleString('vi-VN');
+            }
+
+            // Render từng category
+            if (categoryList) {
+                categories.forEach(cat => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <a href="#"
+                           class="flex items-center justify-between group hover:text-brand-brown transition-colors"
+                           data-category-id="${cat.id}">
+                            <span class="flex items-center gap-3">
+                                <span class="w-1.5 h-1.5 rounded-full bg-brand-border group-hover:bg-brand-brown transition-colors"></span>
+                                ${cat.name}
+                            </span>
+                            <span class="text-xs bg-brand-hero px-2 py-0.5 rounded-full">${cat.count.toLocaleString('vi-VN')}</span>
+                        </a>
+                    `;
+                    categoryList.appendChild(li);
+
+                    // Gắn event click cho từng category
+                    const link = li.querySelector('a');
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const catId = link.dataset.categoryId;
+                        // Toggle category: nếu đã chọn thì bỏ chọn, nếu chưa thì chọn
+                        const idx = filterState.categoryIds.indexOf(Number(catId));
+                        if (idx >= 0) {
+                            filterState.categoryIds.splice(idx, 1);
+                        } else {
+                            filterState.categoryIds = [Number(catId)]; // Chỉ cho chọn 1 category
+                        }
+                        highlightCategory(filterState.categoryIds.length > 0 ? catId : 'all');
+                        fetchAndRenderProducts(currentFilter, true);
+                    });
+                });
+            }
+        } catch (e) {
+            console.error('Không thể tải danh mục:', e);
+        }
+    };
+
+    /**
      * Fetch products from API and render
      * @param {string} filter - 'all', 'best-seller', 'newest'
      * @param {boolean} reset - true to reset pagination, false to load next page
@@ -210,11 +356,78 @@
         }
 
         try {
-            const response = await ApiService.Book.getSellerBooks('', null, currentPage, PAGE_SIZE);
-            const pageData = response;
-            const books = Array.isArray(pageData) ? pageData : (pageData.content || []);
-            totalElements = pageData.totalElements != null ? pageData.totalElements : books.length;
-            totalPages = pageData.totalPages != null ? pageData.totalPages : 1;
+            const userRole = localStorage.getItem('userRole');
+            const isSeller = userRole === 'SELLER';
+
+            let books = [];
+            let total = 0;
+            let totalPg = 1;
+
+            if (isSeller) {
+                // Seller mode: use seller API
+                const response = await ApiService.Book.getSellerBooks('', null, currentPage, PAGE_SIZE);
+                const pageData = response;
+                books = Array.isArray(pageData) ? pageData : (pageData.content || []);
+                total = pageData.totalElements != null ? pageData.totalElements : books.length;
+                totalPg = pageData.totalPages != null ? pageData.totalPages : 1;
+            } else {
+                // Public mode: use public search API
+                const sid = await resolveSellerId();
+                if (!sid) {
+                    if (reset) showState(emptyEl);
+                    isLoading = false;
+                    return;
+                }
+
+                // Build sort parameter based on filter
+                let sortParam = 'latest';
+                if (filter === 'best-seller') sortParam = 'latest';
+                if (filter === 'newest') sortParam = 'latest';
+
+                // Build params với filter
+                const params = new URLSearchParams({
+                    sellerIds: sid,
+                    page: currentPage,
+                    size: PAGE_SIZE,
+                    sort: sortParam
+                });
+
+                // Thêm category filter
+                if (filterState.categoryIds && filterState.categoryIds.length > 0) {
+                    filterState.categoryIds.forEach(id => {
+                        params.append('categoryIds', id);
+                    });
+                }
+
+                // Thêm price range filter
+                if (filterState.minPrice != null && filterState.minPrice > 0) {
+                    params.set('minPrice', filterState.minPrice);
+                }
+                if (filterState.maxPrice != null && filterState.maxPrice > 0) {
+                    params.set('maxPrice', filterState.maxPrice);
+                }
+
+                // Thêm rating filter
+                if (filterState.minRating != null && filterState.minRating > 0) {
+                    params.set('minRating', filterState.minRating);
+                }
+
+                const response = await fetch(`/api/books/search?${params}`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const pageData = await response.json();
+                books = pageData.content || [];
+                total = pageData.totalElements != null ? pageData.totalElements : books.length;
+                totalPg = pageData.totalPages != null ? pageData.totalPages : 1;
+            }
+
+            totalElements = total;
+            totalPages = totalPg;
 
             if (books.length === 0 && reset) {
                 showState(emptyEl);
@@ -277,6 +490,65 @@
     }
 
     // ==========================================
+    // FILTER HANDLERS
+    // ==========================================
+
+    // Click "Tất cả sản phẩm" - reset tất cả filters
+    if (categoryAllLink) {
+        categoryAllLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Reset filter state
+            filterState.categoryIds = [];
+            filterState.minPrice = null;
+            filterState.maxPrice = null;
+            filterState.minRating = null;
+
+            // Reset UI
+            highlightCategory('all');
+            if (priceMinInput) priceMinInput.value = '';
+            if (priceMaxInput) priceMaxInput.value = '';
+            if (rating5Checkbox) rating5Checkbox.checked = false;
+            if (rating4Checkbox) rating4Checkbox.checked = false;
+
+            fetchAndRenderProducts(currentFilter, true);
+        });
+    }
+
+    // Áp dụng price filter
+    if (btnApplyPrice) {
+        btnApplyPrice.addEventListener('click', () => {
+            const minVal = priceMinInput ? parseFloat(priceMinInput.value) : NaN;
+            const maxVal = priceMaxInput ? parseFloat(priceMaxInput.value) : NaN;
+
+            filterState.minPrice = (!isNaN(minVal) && minVal >= 0) ? minVal : null;
+            filterState.maxPrice = (!isNaN(maxVal) && maxVal >= 0) ? maxVal : null;
+
+            fetchAndRenderProducts(currentFilter, true);
+        });
+    }
+
+    // Rating filter
+    const handleRatingChange = () => {
+        if (rating5Checkbox && rating5Checkbox.checked) {
+            filterState.minRating = 5;
+            if (rating4Checkbox) rating4Checkbox.checked = false;
+        } else if (rating4Checkbox && rating4Checkbox.checked) {
+            filterState.minRating = 4;
+            if (rating5Checkbox) rating5Checkbox.checked = false;
+        } else {
+            filterState.minRating = null;
+        }
+        fetchAndRenderProducts(currentFilter, true);
+    };
+
+    if (rating5Checkbox) {
+        rating5Checkbox.addEventListener('change', handleRatingChange);
+    }
+    if (rating4Checkbox) {
+        rating4Checkbox.addEventListener('change', handleRatingChange);
+    }
+
+    // ==========================================
     // LOAD MORE HANDLER
     // ==========================================
 
@@ -294,6 +566,9 @@
         if (tabAll) {
             activateTab(tabAll);
         }
+        // Load categories
+        loadCategories();
+        // Load products
         fetchAndRenderProducts('all', true);
     };
 

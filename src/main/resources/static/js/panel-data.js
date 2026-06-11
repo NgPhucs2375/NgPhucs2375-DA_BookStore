@@ -331,9 +331,9 @@
 
       return getJson(url).then(function (page) {
         var rows = (page.content || []).map(function (o) {
-          var statusClass = o.status === "PENDING_PAYMENT" ? "text-amber-600"
-              : o.status === "PROCESSING" ? "text-indigo-600"
-                  : o.status === "SHIPPED" ? "text-blue-600"
+          var statusClass = o.status === "PROCESSING" ? "text-indigo-600"
+              : o.status === "COMFIRMED" ? "text-amber-600"
+                  : o.status === "SHIPPING" ? "text-blue-600"
                       : o.status === "COMPLETED" ? "text-emerald-600"
                           : "text-rose-600";
 
@@ -536,7 +536,7 @@
   function initSellerDashboard() {
     return getJson(API_ROOT + "/seller/analytics").then(function (ana) {
       setText("seller-metric-revenue", vnd(ana.estimatedRevenue || 0));
-      setText("seller-metric-pending", String((ana.orderStatusCounts && (ana.orderStatusCounts["PENDING_PAYMENT"] || ana.orderStatusCounts["Cho xac nhan"])) || 0));
+      setText("seller-metric-pending", String((ana.orderStatusCounts && (ana.orderStatusCounts["PROCESSING"] || ana.orderStatusCounts["Đang xác nhận"])) || 0));
       setText("seller-metric-products", String(ana.bookCount || 0));
       setText("seller-metric-low", String(ana.lowStock || 0));
 
@@ -564,7 +564,6 @@
     var sEl = document.getElementById("orders-status");
     function getStatusColor(status) {
       switch(status) {
-        case 'PENDING_PAYMENT': return 'text-red-600';
         case 'PROCESSING': return 'text-indigo-600';
         case 'COMFIRMED': return 'text-amber-600';
         case 'SHIPPING': return 'text-blue-600';
@@ -576,8 +575,7 @@
 
     function getStatusLabel(status) {
       var labels = {
-        'PENDING_PAYMENT': 'Chờ thanh toán',
-        'PROCESSING': 'Đang xử lý',
+        'PROCESSING': 'Đang xác nhận',
         'COMFIRMED': 'Đã xác nhận',
         'SHIPPING': 'Đang giao',
         'COMPLETED': 'Đã hoàn thành',
@@ -624,7 +622,7 @@
             actionButtons = '<button class="rounded border border-brand-accent px-3 py-1 text-xs font-bold hover:bg-brand-accent hover:text-white transition" onclick="viewOrderDetail(' + (order.orderId || 0) + ')">Xem chi tiết</button>';
           } else {
             actionButtons = '<div class="flex gap-2 justify-end">' +
-                '<button class="rounded border border-emerald-500 px-3 py-1 text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition" onclick="confirmSellerOrder(' + (order.subOrderId || 0) + ',\'' + (order.status || "PENDING_PAYMENT") + '\')">' +
+                '<button class="rounded border border-emerald-500 px-3 py-1 text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition" onclick="confirmSellerOrder(' + (order.subOrderId || 0) + ',\'' + (order.status || "PROCESSING") + '\')">' +
                 'Xác nhận</button>' +
                 '<button class="rounded border border-rose-500 px-3 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 transition" onclick="cancelSellerOrder(' + (order.subOrderId || 0) + ')">Hủy</button>' +
                 '<button class="rounded border border-brand-accent px-3 py-1 text-xs font-bold hover:bg-brand-accent hover:text-white transition" onclick="viewOrderDetail(' + (order.orderId || 0) + ')">Xem chi tiết</button>' +
@@ -661,7 +659,6 @@
 
     window.confirmSellerOrder = function(subOrderId, currentStatus) {
       var statusLabel = {
-        'PENDING_PAYMENT': 'Đang xử lý',
         'PROCESSING': 'Đã xác nhận',
         'COMFIRMED': 'Đang giao',
         'SHIPPING': 'Đã hoàn thành'

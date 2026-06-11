@@ -253,17 +253,29 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         })
-        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            if (!r.ok) {
+                return r.text().then(function(text) {
+                    throw new Error(text);
+                });
+            }
+            return r.json();
+        })
         .then(function(result) {
             console.log('✅ Analysis result for user ' + userId + ':', result);
             loadCustomers();
             if (window.BookomToast) BookomToast.success('Phân tích thành công!');
         })
         .catch(function(err) {
+            console.log('%c========== 🐍 DEBUG: LỖI GỌI PYTHON ML API ==========', 'font-size:14px; font-weight:bold; color:red;');
+            console.log('%cRequest body gửi lên Python (từ error response):', 'font-weight:bold;');
+            console.log(err.message);
+            console.log('%c==========================================================', 'color:red;');
             console.error('Analysis failed:', err);
             if (window.BookomToast) BookomToast.error('Phân tích thất bại: ' + err.message);
         });
     };
+
 
     function analyzeAll() {
         if (!confirm('Bạn có chắc muốn phân tích tất cả khách hàng?')) return;

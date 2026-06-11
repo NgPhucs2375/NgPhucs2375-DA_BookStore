@@ -112,7 +112,7 @@
     </style>
 </head>
 <body class="bg-brand-bg font-sans text-brand-dark flex flex-col min-h-screen selection:bg-brand-brown selection:text-white">
-<!-- Inject auth data from server into localStorage for JS to use -->
+<!-- Auth data injected from server for JS -->
 <script th:inline="javascript">
 /*<![CDATA[*/
 (function() {
@@ -120,8 +120,6 @@
     var authUserRole = /*[[${authUserRole}]]*/ null;
     var authAccessToken = /*[[${authAccessToken}]]*/ null;
     
-    // Luôn ghi đè auth data từ server để đảm bảo token và role mới nhất
-    // (quan trọng: sau khi admin duyệt SELLER, role và token cần được cập nhật)
     if (authUserId) {
         localStorage.setItem('userId', String(authUserId));
     }
@@ -293,12 +291,20 @@
         return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join('');
     }
 
+    function updateHeaderName(shopName) {
+        const headerNameEls = document.querySelectorAll('#shop-header-name');
+        headerNameEls.forEach(el => {
+            if (el) el.textContent = shopName || 'Cửa hàng';
+        });
+    }
+
     function syncHero(shop) {
         if (!shop) {
             return;
         }
         displayName.textContent = shop.shopName || 'Nha Nam Official';
         displayInitials.textContent = getInitials(shop.shopName);
+        updateHeaderName(shop.shopName);
 
         // Show logo image if available, otherwise show initials
         if (shop.logoUrl && displayLogo) {
@@ -484,20 +490,48 @@
         }
     }
 
-    async function loadShop() {
-        clearAlert();
-        setLoading(true);
-        try {
-            const data = await request(API_BASE, { method: 'GET' });
-            currentShop = data;
-            fillForm(data);
-            updateImagePreviews(data);
-            syncHero(data);
-        } catch (error) {
+    /**
+     * Nhận dữ liệu shop từ sự kiện do shop-seller-integration.js phát ra
+     * để tránh gọi API trùng lặp
+     */
+    function onShopLoaded(shop) {
+        if (shop) {
+            currentShop = shop;
+            fillForm(shop);
+            updateImagePreviews(shop);
+            syncHero(shop);
+            setLoading(false);
+        } else {
             currentShop = null;
             fillForm({});
             updateImagePreviews({});
             showAlert('error', 'Chua co shop hoac ban chua dang nhap role SELLER.');
+            setLoading(false);
+        }
+    }
+
+    // Lắng nghe sự kiện từ shop-seller-integration.js
+    window.addEventListener('shop:loaded', (e) => {
+        onShopLoaded(e.detail);
+    });
+
+    // Fallback: nếu shop-seller-integration.js không kịp phát event trong 3 giây,
+    // tự gọi API để đảm bảo panel luôn có dữ liệu
+    setTimeout(() => {
+        if (currentShop === null && !loading) {
+            console.warn('⚠️ shop:loaded event not received, falling back to direct API call');
+            loadShopFallback();
+        }
+    }, 3000);
+
+    async function loadShopFallback() {
+        clearAlert();
+        setLoading(true);
+        try {
+            const data = await request(API_BASE, { method: 'GET' });
+            onShopLoaded(data);
+        } catch (error) {
+            onShopLoaded(null);
         } finally {
             setLoading(false);
         }
@@ -613,7 +647,9 @@
         });
     }
 
-    loadShop();
+    // Không gọi loadShop() ở đây nữa - dữ liệu được nhận qua sự kiện 'shop:loaded'
+    // từ shop-seller-integration.js. Nếu sự kiện không đến trong 3 giây,
+    // fallback loadShopFallback() sẽ tự động được gọi.
 })();
 </script>
 <script th:src="@{/js/api-service.js}"></script>
@@ -621,4 +657,3 @@
 <script th:src="@{/js/pages/shop-voucher-fetch.js}"></script>
 <script th:src="@{/js/pages/shop-product-fetch.js}"></script>
 </body>
-</html>

@@ -1,9 +1,8 @@
 package com.example.bookstore.model.enums;
 
 public enum OrderStatus {
-    PENDING_PAYMENT,//
-    PROCESSING,// đã xác nhận
-    COMFIRMED,
+    PROCESSING,// đang xác nhận
+    COMFIRMED, // đã xác nhận
     SHIPPING, // ĐANG GIAO
     COMPLETED,// ĐÃ HOÀN THÀNH
     CANCELLED// ĐÃ HỦY

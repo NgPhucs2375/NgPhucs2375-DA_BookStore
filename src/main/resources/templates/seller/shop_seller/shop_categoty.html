@@ -9,36 +9,64 @@
                 <h2 class="text-lg font-bold uppercase tracking-wide">Danh Mục Shop</h2>
             </div>
 
+            <!-- Danh mục - JS render động -->
             <div class="mb-8">
-                <ul class="space-y-4 text-sm font-semibold text-brand-dark">
-                    <li><a href="#" class="flex items-center justify-between text-brand-brown group"><span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-brand-brown"></span> Tất cả sản phẩm</span> <span class="text-xs bg-brand-hero px-2 py-0.5 rounded-full">1245</span></a></li>
-                    <li><a href="#" class="flex items-center justify-between group hover:text-brand-brown transition-colors"><span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-brand-border group-hover:bg-brand-brown transition-colors"></span> Tiểu Thuyết Nước Ngoài</span></a></li>
-                    <li><a href="#" class="flex items-center justify-between group hover:text-brand-brown transition-colors"><span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-brand-border group-hover:bg-brand-brown transition-colors"></span> Văn Học Trong Nước</span></a></li>
-                    <li><a href="#" class="flex items-center justify-between group hover:text-brand-brown transition-colors"><span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-brand-border group-hover:bg-brand-brown transition-colors"></span> Sách Tâm Lý - Kỹ Năng</span></a></li>
-                    <li><a href="#" class="flex items-center justify-between group hover:text-brand-brown transition-colors"><span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-brand-border group-hover:bg-brand-brown transition-colors"></span> Truyện Ngắn - Tản Văn</span></a></li>
-                    <li><a href="#" class="flex items-center justify-between group hover:text-brand-brown transition-colors"><span class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-brand-border group-hover:bg-brand-brown transition-colors"></span> Sách Thiếu Nhi</span></a></li>
+                <ul id="category-list" class="space-y-4 text-sm font-semibold text-brand-dark">
+                    <!-- "Tất cả sản phẩm" luôn hiển thị đầu tiên -->
+                    <li>
+                        <a href="#" id="filter-category-all"
+                           class="flex items-center justify-between text-brand-brown group"
+                           data-category-id="all">
+                            <span class="flex items-center gap-3">
+                                <span class="w-1.5 h-1.5 rounded-full bg-brand-brown"></span>
+                                Tất cả sản phẩm
+                            </span>
+                            <span id="category-all-count" class="text-xs bg-brand-hero px-2 py-0.5 rounded-full">0</span>
+                        </a>
+                    </li>
+                    <!-- Các danh mục khác sẽ được JS render vào đây -->
                 </ul>
             </div>
 
             <hr class="border-brand-border mb-6">
 
+            <!-- Khoảng Giá -->
             <div class="mb-8">
                 <h3 class="font-bold text-brand-dark mb-4 text-sm uppercase">Khoảng Giá</h3>
                 <div class="flex items-center gap-2 mb-4">
-                    <input type="number" placeholder="Từ" class="w-full border border-brand-border rounded px-3 py-2 text-sm outline-none focus:border-brand-brown bg-brand-bg">
+                    <input type="number" id="price-min" placeholder="Từ"
+                           class="w-full border border-brand-border rounded px-3 py-2 text-sm outline-none focus:border-brand-brown bg-brand-bg"
+                           min="0">
                     <span class="text-gray-400">-</span>
-                    <input type="number" placeholder="Đến" class="w-full border border-brand-border rounded px-3 py-2 text-sm outline-none focus:border-brand-brown bg-brand-bg">
+                    <input type="number" id="price-max" placeholder="Đến"
+                           class="w-full border border-brand-border rounded px-3 py-2 text-sm outline-none focus:border-brand-brown bg-brand-bg"
+                           min="0">
                 </div>
-                <button class="w-full bg-white border-2 border-brand-brown text-brand-brown font-bold text-sm py-2 rounded hover:bg-brand-brown hover:text-white transition-colors">Áp Dụng</button>
+                <button id="btn-apply-price"
+                        class="w-full bg-white border-2 border-brand-brown text-brand-brown font-bold text-sm py-2 rounded hover:bg-brand-brown hover:text-white transition-colors">
+                    Áp Dụng
+                </button>
             </div>
 
             <hr class="border-brand-border mb-6">
 
+            <!-- Đánh giá -->
             <div>
                 <h3 class="font-bold text-brand-dark mb-4 text-sm uppercase">Đánh giá</h3>
                 <ul class="space-y-3">
-                    <li><label class="flex items-center gap-3 cursor-pointer group"><input type="checkbox" class="custom-cb"><div class="flex text-yellow-400 text-sm tracking-widest">★★★★★</div></label></li>
-                    <li><label class="flex items-center gap-3 cursor-pointer group"><input type="checkbox" class="custom-cb"><div class="flex text-yellow-400 text-sm tracking-widest">★★★★<span class="text-gray-300">★</span></div><span class="text-sm text-gray-500">trở lên</span></label></li>
+                    <li>
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" id="rating-5" class="custom-cb" value="5">
+                            <div class="flex text-yellow-400 text-sm tracking-widest">★★★★★</div>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" id="rating-4" class="custom-cb" value="4">
+                            <div class="flex text-yellow-400 text-sm tracking-widest">★★★★<span class="text-gray-300">★</span></div>
+                            <span class="text-sm text-gray-500">trở lên</span>
+                        </label>
+                    </li>
                 </ul>
             </div>
 
@@ -46,4 +74,4 @@
     </aside>
     <!--shop_product-->
     <div th:replace="~{seller/shop_seller/shop_product :: shop_product}"></div>
-    </section>
+</section>

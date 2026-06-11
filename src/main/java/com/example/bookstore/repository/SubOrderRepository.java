@@ -173,4 +173,11 @@ public interface SubOrderRepository extends JpaRepository<SubOrder, Long> {
      */
     @Query("SELECT COUNT(so) FROM SubOrder so WHERE so.parentOrder.buyer = :buyer")
     long countByBuyer(@Param("buyer") User buyer);
+
+    /**
+     * Lấy danh sách buyer IDs đã từng mua hàng từ seller (distinct).
+     * Không JOIN FETCH items để tránh Cartesian product gây lỗi 500.
+     */
+    @Query("SELECT DISTINCT so.parentOrder.buyer.id FROM SubOrder so WHERE so.seller = :seller")
+    List<Long> findDistinctBuyerIdsBySeller(@Param("seller") User seller);
 }

@@ -375,7 +375,7 @@ public class DatabaseSeederService {
                 } catch (NumberFormatException ex) {
                     book.setPublishYear(null);
                 }
-                book.setPublisher(data[6].replace("\"", "").trim());
+                book.setPublisher(data[4].replace("\"", "").trim());
                 book.setImageUrl(data[7].replace("\"", "").trim());
 
                 double randomPrice = Math.round((Math.random() * 200000) + 50000) / 1000 * 1000;

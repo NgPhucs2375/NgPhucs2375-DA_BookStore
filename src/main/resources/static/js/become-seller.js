@@ -7,9 +7,8 @@
         shopName: document.getElementById('shopName').value.trim(),
         slug: document.getElementById('slug').value.trim() || undefined,
         address: document.getElementById('address').value.trim() || undefined,
-        // THAY ĐỔI: Gửi kèm giá trị chuỗi rỗng để tránh lỗi "Cannot insert the value NULL into column 'city'"
-        city: "",
-        province: "",
+        city: document.getElementById('city').value.trim() || undefined,
+        province: document.getElementById('province')?.value?.trim() || undefined,
         contactEmail: document.getElementById('contactEmail').value.trim() || undefined,
         contactPhone: document.getElementById('contactPhone').value.trim() || undefined
     });

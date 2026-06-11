@@ -30,4 +30,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 🆕 Firebase: Tìm user theo email
     java.util.Optional<User> findByEmail(String email);
+
+    // 🆕 Check if phone number already exists
+    boolean existsByPhone(String phone);
 }

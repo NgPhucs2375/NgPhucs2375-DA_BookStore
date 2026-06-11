@@ -10,7 +10,10 @@ import com.example.bookstore.service.recommendation.cosine.CosineSimilarityAlgor
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -138,19 +141,21 @@ public class RecommendationService {
             }
             
             Book sourceBook = sourceBookOpt.get();
-            
-            // Step 2: Get candidate books (same category, approved)
+
             List<Book> candidates = new ArrayList<>();
             if (sourceBook.getCategory() != null) {
-                // FIX: BookRepository may not define findByCategory(Category).
-                // Use findAll() and filter by category to avoid compile error.
-                candidates = bookRepository.findAll().stream()
-                    .filter(b -> b.getCategory() != null && b.getCategory().equals(sourceBook.getCategory()))
-                    .filter(b -> b.getApprovalStatus() == ApprovalStatus.APPROVED)
-                    .filter(b -> !b.getId().equals(bookId))  // Exclude self
-                    .collect(Collectors.toList());
-                
-                logger.debug("[RecommendationService] Found {} candidates in same category", candidates.size());
+                //  Gắn thêm Sort để 50 ứng viên này là những cuốn sách mới nhất
+                Pageable topCandidates = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+                // (Hoặc nếu hệ thống có trường số lượng bán, lấy 50 cuốn bán chạy nhất làm ứng viên)
+                // Pageable topCandidates = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "soldQuantity"));
+
+                candidates = bookRepository.findByCategoryIdAndIdNotAndApprovalStatusAndIsActiveTrue(
+                        sourceBook.getCategory().getId(),
+                        bookId,
+                        ApprovalStatus.APPROVED,
+                        topCandidates
+                );
             }
             
             // Step 3: Score each candidate using cosine similarity

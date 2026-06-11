@@ -1,5 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
-    if (!window.ApiService) {
+const initDetailsPage = () => {    if (!window.ApiService) {
         console.error('ApiService not available');
         return;
     }
@@ -36,13 +35,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const ensureBuyer = (message) => {
-        const { userId, role } = ApiService.getAuth();
-        if (!userId || !role || !role.includes('BUYER')) {
+        const auth = ApiService.getAuth(); // Gọi qua lõi đã được bọc thép
+
+        if (!auth.userId || auth.role !== 'BUYER') {
             alert(message);
             window.location.href = '/main/auth';
             return null;
         }
-        return userId;
+        return auth.userId;
     };
 
     (async () => {
@@ -591,4 +591,11 @@ buyNowButton?.addEventListener('click', async () => {
     fetchRatingDistribution();
     fetchReviews(0);
     checkReviewEligibility();
-});
+};
+
+// 🛡️ ÉP CHẠY NGAY LẬP TỨC NẾU TRANG ĐÃ LOAD XONG:
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDetailsPage);
+} else {
+    initDetailsPage();
+}

@@ -26,10 +26,13 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 1 giỏ hàng thuộc sở hữu của 1 người bán
     @OneToOne
     @JoinColumn(name = "buyer_id", nullable = false, unique = true)
     private User buyer;
 
+    //1 giỏ hàng có thể có nhiều item
+    //orphanRemoval = true : use to đảm bảo item sẽ bị xóa khỏi list , cũng bị xóa khỏi database
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @Builder.Default

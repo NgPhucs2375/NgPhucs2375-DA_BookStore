@@ -64,7 +64,8 @@ public class Book {
         this.categoryId = categoryId;
     }
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // nhiều người seller có thể bán cùng 1 cuốn sách
+    @ManyToOne(fetch = FetchType.LAZY) // để không cần phải tải hết
     @JoinColumn(name = "seller_id", nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "books", "roles"})
     @ToString.Exclude
@@ -73,7 +74,7 @@ public class Book {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20, columnDefinition = "NVARCHAR(20)")
-    private ApprovalStatus approvalStatus;
+    private ApprovalStatus approvalStatus; // trạng thái sách phải thông qua admin đối với sách của seller thông qua emum ApprovalStatus
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;

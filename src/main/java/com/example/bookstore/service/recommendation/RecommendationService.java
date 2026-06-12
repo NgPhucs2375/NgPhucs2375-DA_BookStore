@@ -14,7 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -63,6 +63,7 @@ public class RecommendationService {
      * @param bookId Source book ID
      * @return List of recommended books (up to maxBoughtTogether)
      */
+    @Transactional(readOnly = true)
     public List<Book> getBoughtTogetherBooks(Long bookId) {
         logger.debug("[RecommendationService] Bắt đầu lấy gợi ý Lambda (Redis + FP-Growth DB) cho Sách {}", bookId);
 
@@ -127,7 +128,9 @@ public class RecommendationService {
      * @param bookId Source book ID
      * @return List of similar books (up to maxSimilar)
      */
-    public List<Book> getSimilarBooks(Long bookId) {
+    @Transactional(readOnly = true)
+    public
+    List<Book> getSimilarBooks(Long bookId) {
         logger.debug("[RecommendationService] Getting 'similar books' for bookId={}", bookId);
         
         List<Book> result = new ArrayList<>();
@@ -145,12 +148,12 @@ public class RecommendationService {
             List<Book> candidates = new ArrayList<>();
             if (sourceBook.getCategory() != null) {
                 //  Gắn thêm Sort để 50 ứng viên này là những cuốn sách mới nhất
-                Pageable topCandidates = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+                Pageable topCandidates = PageRequest.of(0, 50); //, Sort.by(Sort.Direction.DESC, "createdAt"));
 
                 // (Hoặc nếu hệ thống có trường số lượng bán, lấy 50 cuốn bán chạy nhất làm ứng viên)
                 // Pageable topCandidates = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "soldQuantity"));
 
-                candidates = bookRepository.findByCategoryIdAndIdNotAndApprovalStatusAndIsActiveTrue(
+                candidates = bookRepository.findByCategory_IdAndIdNotAndApprovalStatusAndIsActiveTrue(
                         sourceBook.getCategory().getId(),
                         bookId,
                         ApprovalStatus.APPROVED,

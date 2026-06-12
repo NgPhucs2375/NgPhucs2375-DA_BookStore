@@ -21,9 +21,11 @@ public interface BookRepository extends JpaRepository<Book, Long>,JpaSpecificati
     // 1. Dùng cho Trang chủ (index.html) - CHỈ hiển thị sách đã duyệt và đang bán
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"category", "seller"})
     Page<Book> findByApprovalStatusAndIsActiveTrue(ApprovalStatus status, Pageable pageable);
+
     // 2. Dùng cho mục "Thường được mua kèm" (Details_Produce.html)
     // Lấy sách cùng danh mục, trừ cuốn hiện tại ra, ưu tiên sách đã duyệt
-    List<Book> findByCategoryIdAndIdNotAndApprovalStatusAndIsActiveTrue(
+    // ĐÃ FIX: Thêm dấu gạch dưới vào Category_Id để Spring Boot không bị ngáo
+    List<Book> findByCategory_IdAndIdNotAndApprovalStatusAndIsActiveTrue(
             Long categoryId,
             Long currentBookId,
             ApprovalStatus status,
@@ -212,5 +214,3 @@ public interface BookRepository extends JpaRepository<Book, Long>,JpaSpecificati
     );
 
 }
-
-

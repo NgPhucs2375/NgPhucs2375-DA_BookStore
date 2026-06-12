@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @AllArgsConstructor // Auto tao Constructor co tham so
 @DynamicUpdate // hỗ trợ để update động
 
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+
 public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // auto tang id theo index
